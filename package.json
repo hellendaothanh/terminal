@@ -13,6 +13,9 @@
     "build:win": "npm run compile && electron-builder --win",
     "build:mac": "npm run compile && electron-builder --mac",
     "build:all": "npm run compile && electron-builder -mw",
+    "release:patch": "npm version patch && git push origin main --tags",
+    "release:minor": "npm version minor && git push origin main --tags",
+    "release:major": "npm version major && git push origin main --tags",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "postinstall": "node -e \"require('fs').existsSync('node_modules/electron') && require('fs').writeFileSync('node_modules/electron/path.txt', 'Electron.app/Contents/MacOS/Electron')\""
