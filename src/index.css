@@ -1,0 +1,256 @@
+/* Modern Dark Theme Design System for OmniTerminal */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
+
+  /* HSL Color Palette - Sleek Dark UI */
+  --bg-primary: hsl(224, 25%, 8%);
+  --bg-secondary: hsl(224, 20%, 12%);
+  --bg-tertiary: hsl(224, 18%, 16%);
+  --bg-surface: hsl(224, 18%, 18%);
+  --bg-glass: rgba(20, 24, 33, 0.75);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: hsl(217, 91%, 60%);
+
+  /* Accent Colors */
+  --accent-primary: hsl(217, 91%, 60%);
+  --accent-primary-hover: hsl(217, 91%, 68%);
+  --accent-glow: rgba(59, 130, 246, 0.25);
+
+  --accent-success: hsl(142, 71%, 45%);
+  --accent-warning: hsl(38, 92%, 50%);
+  --accent-danger: hsl(346, 84%, 61%);
+  --accent-info: hsl(199, 89%, 48%);
+
+  /* Environment Badges */
+  --env-dev: hsl(142, 71%, 45%);
+  --env-staging: hsl(38, 92%, 50%);
+  --env-prod: hsl(346, 84%, 61%);
+
+  /* Text Colors */
+  --text-main: hsl(210, 40%, 98%);
+  --text-muted: hsl(215, 15%, 65%);
+  --text-dim: hsl(215, 12%, 48%);
+
+  /* Shadows & Glassmorphism */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(12px);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Button & Input Base Components */
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.input-field {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-main);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color var(--transition-fast), transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-surface);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger {
+  background: var(--accent-danger);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-danger:hover {
+  filter: brightness(1.1);
+}
+
+/* Badge System */
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-dev {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--env-dev);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-staging {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--env-staging);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-prod {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--env-prod);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.tag-pill {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* Modal Backdrop & Container */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: var(--glass-blur);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-body {
+  padding: 24px;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

@@ -1,0 +1,61 @@
+{
+  "name": "omni-terminal",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cross-platform Server Management Tool integrating SSH, SFTP, and RDP",
+  "main": "dist-electron/main.cjs",
+  "type": "module",
+  "author": "Hautp",
+  "scripts": {
+    "dev": "vite",
+    "compile": "tsc && vite build",
+    "build": "npm run compile && electron-builder",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit",
+    "postinstall": "node -e \"require('fs').existsSync('node_modules/electron') && require('fs').writeFileSync('node_modules/electron/path.txt', 'Electron.app/Contents/MacOS/Electron')\""
+  },
+  "build": {
+    "appId": "com.omniterminal.app",
+    "productName": "OmniTerminal",
+    "directories": {
+      "output": "dist-app"
+    },
+    "publish": null,
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
+  },
+  "dependencies": {
+    "@xterm/addon-canvas": "^0.7.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "ioredis": "^6.0.0",
+    "lucide-react": "^0.469.0",
+    "mysql2": "^3.23.3",
+    "pg": "^8.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ssh2": "^1.15.0",
+    "ssh2-sftp-client": "^10.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.21.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/ssh2": "^1.11.10",
+    "@types/ssh2-sftp-client": "^9.0.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "tree-kill": "^1.2.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-electron": "^0.15.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}
