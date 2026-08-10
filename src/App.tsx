@@ -245,6 +245,8 @@ export const App: React.FC = () => {
         hasVault={hasVault}
         onUnlock={handleUnlockVault}
         onInitVault={handleInitVault}
+        language={settings.language || 'vi'}
+        onToggleLanguage={() => setSettings((s) => ({ ...s, language: s.language === 'en' ? 'vi' : 'en' }))}
       />
     );
   }
@@ -290,6 +292,7 @@ export const App: React.FC = () => {
           onDeleteServer={handleDeleteServer}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
+          settings={settings}
         />
 
         {/* Central Active Viewport Container */}
@@ -303,6 +306,7 @@ export const App: React.FC = () => {
             onNewTab={() => setActiveTabId(null)}
             isSidebarCollapsed={isSidebarCollapsed}
             onToggleSidebar={() => setIsSidebarCollapsed((v) => !v)}
+            settings={settings}
           />
 
           {/* Active Workspace Component Container */}
@@ -320,6 +324,7 @@ export const App: React.FC = () => {
                   setEditingServer(server);
                   setIsServerModalOpen(true);
                 }}
+                settings={settings}
               />
             </div>
 
@@ -390,6 +395,7 @@ export const App: React.FC = () => {
         onSave={handleSaveServer}
         editingServer={editingServer}
         keys={vaultData.keys}
+        settings={settings}
       />
 
       <KeyManagerModal
@@ -398,6 +404,7 @@ export const App: React.FC = () => {
         keys={vaultData.keys}
         onSaveKey={handleSaveKey}
         onDeleteKey={handleDeleteKey}
+        settings={settings}
       />
 
       <ImportExportModal
@@ -405,6 +412,7 @@ export const App: React.FC = () => {
         onClose={() => setIsImportExportOpen(false)}
         vaultData={vaultData}
         onImportVaultData={(imported) => saveVaultData(imported)}
+        settings={settings}
       />
 
       <SettingsModal

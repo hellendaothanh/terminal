@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, KeyRound, ArrowRight, AlertCircle } from 'lucide-react';
+import { Lock, ShieldCheck, KeyRound, ArrowRight, AlertCircle, Globe } from 'lucide-react';
+import { Language } from '../i18n/translations';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface LockScreenProps {
   hasVault: boolean;
   onUnlock: (passphrase: string) => Promise<boolean>;
   onInitVault: (passphrase: string) => Promise<boolean>;
+  language?: Language;
+  onToggleLanguage?: () => void;
 }
 
-export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onInitVault }) => {
+export const LockScreen: React.FC<LockScreenProps> = ({
+  hasVault,
+  onUnlock,
+  onInitVault,
+  language = 'vi',
+  onToggleLanguage
+}) => {
   const [passphrase, setPassphrase] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation({ fontSize: 14, fontFamily: '', theme: 'one-dark', cursorBlink: true, scrollback: 5000, language });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!passphrase.trim()) {
-      setError('Vui lòng nhập Master Passphrase.');
+      setError(t('passphraseRequired'));
       return;
     }
 
@@ -26,23 +37,23 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
     try {
       if (!hasVault) {
         if (passphrase !== confirmPassphrase) {
-          setError('Xác nhận Passphrase không trùng khớp.');
+          setError(t('passphraseMismatch'));
           setLoading(false);
           return;
         }
         if (passphrase.length < 6) {
-          setError('Passphrase phải có ít nhất 6 ký tự.');
+          setError(t('passphraseMinLength'));
           setLoading(false);
           return;
         }
         const success = await onInitVault(passphrase);
-        if (!success) setError('Không thể khởi tạo kho dữ liệu mã hóa.');
+        if (!success) setError(t('initVaultFailed'));
       } else {
         const success = await onUnlock(passphrase);
-        if (!success) setError('Master Passphrase không chính xác. Vui lòng thử lại.');
+        if (!success) setError(t('incorrectPassphrase'));
       }
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra.');
+      setError(err.message || 'Error occurred.');
     } finally {
       setLoading(false);
     }
@@ -56,8 +67,38 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
       backgroundColor: 'var(--bg-primary)',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.08), transparent 70%)'
+      backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.08), transparent 70%)',
+      position: 'relative'
     }}>
+      {/* Top Right Quick Language Switcher Button */}
+      {onToggleLanguage && (
+        <button
+          onClick={onToggleLanguage}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            height: '36px',
+            padding: '0 12px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-main)',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+          title="Đổi Ngôn Ngữ / Change Language"
+        >
+          <Globe size={16} style={{ color: 'var(--accent-primary)' }} />
+          <span>{language === 'vi' ? '🇻🇳 Tiếng Việt' : '🇺🇸 English'}</span>
+        </button>
+      )}
+
       <div style={{
         width: '420px',
         padding: '36px',
@@ -85,7 +126,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
         </div>
 
         <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
-          {hasVault ? 'Mở khóa OmniTerminal' : 'Khởi tạo Master Passphrase'}
+          {hasVault ? t('unlockTitle') : t('initTitle')}
         </h2>
         
         <p style={{
@@ -95,9 +136,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
           marginBottom: '24px',
           lineHeight: '1.4'
         }}>
-          {hasVault
-            ? 'Nhập Master Passphrase để giải mã toàn bộ danh sách server, mật khẩu và SSH private keys của bạn.'
-            : 'Tạo Master Passphrase an toàn để bảo vệ kho dữ liệu bằng chuẩn mã hóa AES-256-GCM.'}
+          {hasVault ? t('unlockDesc') : t('initDesc')}
         </p>
 
         {error && (
@@ -122,7 +161,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
         <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-              Master Passphrase
+              {t('passphraseLabel')}
             </label>
             <div style={{ position: 'relative' }}>
               <input
@@ -141,7 +180,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
           {!hasVault && (
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                Xác nhận Passphrase
+                {t('confirmPassphraseLabel')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -163,7 +202,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ hasVault, onUnlock, onIn
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginTop: '8px', padding: '10px' }}
           >
-            <span>{hasVault ? 'Giải mã kho dữ liệu' : 'Khởi tạo và Bảo mật'}</span>
+            <span>{hasVault ? t('unlockBtn') : t('createVaultBtn')}</span>
             <ArrowRight size={16} />
           </button>
         </form>

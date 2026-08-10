@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
-import { VaultData } from '../types';
+import { VaultData, TerminalSettings } from '../types';
 import { ArrowUpDown, Download, Upload, FileText, Check, X, AlertCircle } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface ImportExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   vaultData: VaultData;
   onImportVaultData: (data: VaultData) => void;
+  settings?: TerminalSettings;
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   isOpen,
   onClose,
   vaultData,
-  onImportVaultData
+  onImportVaultData,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -24,10 +28,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const jsonStr = JSON.stringify(vaultData, null, 2);
       const success = await window.api.saveFileDialog('omni_servers_backup.json', jsonStr);
       if (success) {
-        setStatusMessage('Xuất danh sách máy chủ thành công!');
+        setStatusMessage('Export JSON succeeded!');
       }
     } catch (err: any) {
-      setStatusMessage(`Lỗi xuất dữ liệu: ${err.message}`);
+      setStatusMessage(`Export error: ${err.message}`);
     }
   };
 
@@ -40,10 +44,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const csvStr = headers + rows;
       const success = await window.api.saveFileDialog('omni_servers.csv', csvStr);
       if (success) {
-        setStatusMessage('Xuất CSV thành công!');
+        setStatusMessage('Export CSV succeeded!');
       }
     } catch (err: any) {
-      setStatusMessage(`Lỗi xuất CSV: ${err.message}`);
+      setStatusMessage(`Export CSV error: ${err.message}`);
     }
   };
 
@@ -54,13 +58,13 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         const importedData: VaultData = JSON.parse(file.content);
         if (Array.isArray(importedData.servers)) {
           onImportVaultData(importedData);
-          setStatusMessage('Nhập dữ liệu thành công!');
+          setStatusMessage('Import succeeded!');
         } else {
-          setStatusMessage('Cấu trúc file JSON không hợp lệ.');
+          setStatusMessage('Invalid JSON format.');
         }
       }
     } catch (err: any) {
-      setStatusMessage(`Lỗi đọc file: ${err.message}`);
+      setStatusMessage(`File error: ${err.message}`);
     }
   };
 
@@ -71,7 +75,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ArrowUpDown size={20} style={{ color: 'var(--accent-primary)' }} />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-              Xuất / Nhập Cấu Hình Máy Chủ & Kho Khóa
+              {t('importExportTitle')}
             </h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -102,19 +106,19 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
           }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Download size={16} style={{ color: 'var(--accent-success)' }} />
-              Xuất Cấu Hình (Export Backup)
+              {t('exportData')}
             </h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-              Lưu trữ danh sách máy chủ ({vaultData.servers.length} server) và SSH keys ra file để dễ dàng đồng bộ sang máy tính khác.
+              {t('exportDesc')}
             </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-primary" onClick={handleExportJSON} style={{ flex: 1, justifyContent: 'center' }}>
-                <FileText size={15} />
-                <span>Xuất JSON (Đầy đủ)</span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="btn-secondary" onClick={handleExportJSON} style={{ fontSize: '0.8rem' }}>
+                <Download size={14} />
+                <span>Export JSON</span>
               </button>
-              <button className="btn-secondary" onClick={handleExportCSV} style={{ flex: 1, justifyContent: 'center' }}>
-                <FileText size={15} />
-                <span>Xuất CSV (Bảng tính)</span>
+              <button className="btn-secondary" onClick={handleExportCSV} style={{ fontSize: '0.8rem' }}>
+                <FileText size={14} />
+                <span>Export CSV</span>
               </button>
             </div>
           </div>
@@ -127,21 +131,17 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             padding: '16px'
           }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Upload size={16} style={{ color: 'var(--accent-warning)' }} />
-              Nhập Cấu Hình (Import Backup)
+              <Upload size={16} style={{ color: 'var(--accent-primary)' }} />
+              {t('importData')}
             </h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-              Khôi phục danh sách máy chủ từ file sao lưu JSON.
+              {t('importDesc')}
             </p>
-            <button className="btn-secondary" onClick={handleImportJSON} style={{ width: '100%', justifyContent: 'center' }}>
-              <Upload size={15} />
-              <span>Chọn File JSON Để Nhập Dữ Liệu</span>
+            <button className="btn-primary" onClick={handleImportJSON} style={{ fontSize: '0.8rem' }}>
+              <Upload size={14} />
+              <span>{t('chooseFile')}</span>
             </button>
           </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Đóng</button>
         </div>
       </div>
     </div>

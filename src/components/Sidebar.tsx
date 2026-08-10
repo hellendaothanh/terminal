@@ -16,7 +16,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
-import { ServerConfig, Environment, Protocol } from '../types';
+import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface SidebarProps {
   servers: ServerConfig[];
@@ -31,6 +32,7 @@ interface SidebarProps {
   onDeleteServer: (serverId: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  settings?: TerminalSettings;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -45,8 +47,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onEditServer,
   onDeleteServer,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
 
   const toggleEnvCollapse = (envKey: string) => {
@@ -79,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Unique tags
   const allTags = Array.from(new Set(servers.flatMap((s) => s.tags || [])));
 
-  // Render Mini Collapsed Sidebar (50px width)
+  // If sidebar is collapsed into a 50px mini-bar
   if (isCollapsed) {
     return (
       <div style={{
@@ -89,90 +93,91 @@ export const Sidebar: React.FC<SidebarProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '12px 0',
-        gap: '16px',
+        paddingTop: '12px',
+        gap: '12px',
         userSelect: 'none'
       }}>
-        <button
-          onClick={onToggleCollapse}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--accent-primary)',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: 'var(--radius-sm)'
-          }}
-          title="Mở rộng danh sách Máy Chủ (Ctrl+B)"
-        >
-          <PanelLeftOpen size={18} />
-        </button>
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent-primary)',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: 'var(--radius-sm)'
+            }}
+            title={t('expandSidebar')}
+          >
+            <PanelLeftOpen size={20} />
+          </button>
+        )}
 
         <button
           onClick={onAddServer}
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: 'var(--radius-sm)',
+            width: '34px',
+            height: '34px',
+            borderRadius: '50%',
             backgroundColor: 'var(--accent-primary)',
             color: '#fff',
             border: 'none',
-            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            cursor: 'pointer'
           }}
-          title="Thêm Server Mới"
+          title={t('addServer')}
         >
-          <Plus size={16} />
+          <Plus size={18} />
         </button>
 
         <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+        {/* Mini Env Badges */}
+        <button
+          onClick={() => onSelectEnv('ALL')}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            border: selectedEnv === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+            backgroundColor: selectedEnv === 'ALL' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+            color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)',
+            cursor: 'pointer'
+          }}
+          title={t('allEnvs')}
+        >
+          ALL
+        </button>
+
+        {environments.map((env) => (
           <button
-            onClick={() => onSelectEnv('ALL')}
+            key={env}
+            onClick={() => onSelectEnv(env)}
             style={{
               width: '32px',
               height: '32px',
-              borderRadius: '50%',
-              backgroundColor: selectedEnv === 'ALL' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-              color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)',
-              border: '1px solid var(--border-subtle)',
-              fontSize: '0.7rem',
+              borderRadius: '8px',
+              fontSize: '0.65rem',
               fontWeight: 700,
+              border: selectedEnv === env ? '1px solid currentColor' : '1px solid var(--border-subtle)',
+              backgroundColor: selectedEnv === env ? 'var(--bg-surface)' : 'var(--bg-tertiary)',
+              color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)',
               cursor: 'pointer'
             }}
-            title="Tất cả môi trường"
+            title={env}
           >
-            ALL
+            {env.substring(0, 3)}
           </button>
-          {environments.map((env) => (
-            <button
-              key={env}
-              onClick={() => onSelectEnv(env)}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: selectedEnv === env ? 'var(--bg-surface)' : 'var(--bg-tertiary)',
-                color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-              title={`Lọc môi trường ${env}`}
-            >
-              {env.slice(0, 3)}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
     );
   }
 
-  // Render Full Expanded Sidebar (260px width)
   return (
     <div style={{
       width: '260px',
@@ -205,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Server size={18} />
           </div>
           <div>
-            <h1 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>Máy Chủ</h1>
+            <h1 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('servers')}</h1>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{filteredServers.length} / {servers.length} Servers</span>
           </div>
         </div>
@@ -215,10 +220,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="btn-primary"
             onClick={onAddServer}
             style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-            title="Thêm Máy Chủ Mới"
+            title={t('addServer')}
           >
             <Plus size={16} />
-            <span>Mới</span>
+            <span>+</span>
           </button>
           {onToggleCollapse && (
             <button
@@ -231,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 padding: '4px',
                 borderRadius: '4px'
               }}
-              title="Thu gọn danh sách (Ctrl+B)"
+              title={t('collapseSidebar')}
             >
               <PanelLeftClose size={18} />
             </button>
@@ -243,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
         <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Layers size={14} />
-          <span>Môi trường</span>
+          <span>{t('environment')}</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button
@@ -259,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)'
             }}
           >
-            Tất cả
+            {t('allEnvs')}
           </button>
           {environments.map((env) => (
             <button
@@ -287,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Tag size={14} />
-            <span>Thẻ (Tags)</span>
+            <span>{t('tags')}</span>
           </div>
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxHeight: '70px', overflowY: 'auto' }}>
             {selectedTag && (
@@ -303,7 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                Clear tag
+                {t('clearTag')}
               </button>
             )}
             {allTags.map((tag) => (
@@ -314,9 +319,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   fontSize: '0.7rem',
                   padding: '2px 8px',
                   borderRadius: '4px',
+                  border: selectedTag === tag ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
                   backgroundColor: selectedTag === tag ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
                   color: selectedTag === tag ? 'var(--accent-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
                   cursor: 'pointer'
                 }}
               >
@@ -327,11 +332,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* Server Tree List Section */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+      {/* Server Tree List Grouped by Environments */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
         {filteredServers.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-            Không tìm thấy máy chủ nào khớp với điều kiện lọc.
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+            {t('noServersFound')}
           </div>
         ) : (
           environments.map((env) => {
@@ -350,9 +355,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '4px 8px',
+                    padding: '6px 8px',
                     fontSize: '0.75rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)',
                     cursor: 'pointer',
                     borderRadius: 'var(--radius-sm)'
@@ -397,14 +402,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <button
                               onClick={() => onEditServer(server)}
                               style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px' }}
-                              title="Sửa Máy Chủ"
+                              title={t('editServer')}
                             >
                               <Edit2 size={13} />
                             </button>
                             <button
                               onClick={() => onDeleteServer(server.id)}
                               style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '2px' }}
-                              title="Xóa Máy Chủ"
+                              title={t('deleteServer')}
                             >
                               <Trash2 size={13} />
                             </button>
@@ -430,6 +435,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 justifyContent: 'center',
                                 gap: '4px'
                               }}
+                              title={t('manageDb')}
                             >
                               <Database size={12} />
                               <span>{server.dbType || 'DB'}</span>
@@ -451,6 +457,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 justifyContent: 'center',
                                 gap: '4px'
                               }}
+                              title={t('connectRdp')}
                             >
                               <Monitor size={12} />
                               <span>RDP</span>
@@ -463,9 +470,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   flex: 1,
                                   padding: '4px 8px',
                                   fontSize: '0.75rem',
-                                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                                  color: 'var(--env-dev)',
-                                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                  color: 'var(--accent-primary)',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
                                   borderRadius: '4px',
                                   cursor: 'pointer',
                                   display: 'flex',
@@ -473,19 +480,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   justifyContent: 'center',
                                   gap: '4px'
                                 }}
+                                title={t('connectSsh')}
                               >
                                 <Terminal size={12} />
                                 <span>SSH</span>
                               </button>
+
                               <button
                                 onClick={() => onConnect(server, 'SFTP')}
                                 style={{
                                   flex: 1,
                                   padding: '4px 8px',
                                   fontSize: '0.75rem',
-                                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                  color: 'var(--env-staging)',
-                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                  color: 'var(--accent-success)',
+                                  border: '1px solid rgba(16, 185, 129, 0.3)',
                                   borderRadius: '4px',
                                   cursor: 'pointer',
                                   display: 'flex',
@@ -493,6 +502,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                   justifyContent: 'center',
                                   gap: '4px'
                                 }}
+                                title={t('openSftp')}
                               >
                                 <Folder size={12} />
                                 <span>SFTP</span>

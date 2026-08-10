@@ -13,6 +13,21 @@ export const translations = {
     aiAssistant: 'Trợ Lý AI',
     dashboard: 'Tổng Quan',
 
+    // LockScreen (Master Passphrase)
+    unlockTitle: 'Mở Khóa Vault Mã Hóa',
+    initTitle: 'Khởi Tạo Master Passphrase',
+    unlockDesc: 'Nhập Master Passphrase để giải mã toàn bộ danh sách server, mật khẩu và SSH private keys của bạn.',
+    initDesc: 'Tạo Master Passphrase an toàn để bảo vệ kho dữ liệu bằng chuẩn mã hóa AES-256-GCM.',
+    passphraseLabel: 'Master Passphrase',
+    confirmPassphraseLabel: 'Xác Nhận Passphrase',
+    unlockBtn: 'Giải mã kho dữ liệu',
+    createVaultBtn: 'Khởi tạo và Bảo mật',
+    passphraseRequired: 'Vui lòng nhập Master Passphrase.',
+    passphraseMismatch: 'Xác nhận Passphrase không trùng khớp.',
+    passphraseMinLength: 'Passphrase phải có ít nhất 6 ký tự.',
+    initVaultFailed: 'Không thể khởi tạo kho dữ liệu mã hóa.',
+    incorrectPassphrase: 'Master Passphrase không chính xác. Vui lòng thử lại.',
+
     // Sidebar
     servers: 'Máy Chủ',
     environment: 'Môi trường',
@@ -22,7 +37,11 @@ export const translations = {
     noServersFound: 'Không tìm thấy máy chủ nào khớp với điều kiện lọc.',
     editServer: 'Sửa Máy Chủ',
     deleteServer: 'Xóa Máy Chủ',
-    
+    connectSsh: 'Mở SSH Terminal',
+    openSftp: 'Mở Duyệt File SFTP',
+    connectRdp: 'Kết Nối RDP Remote Desktop',
+    manageDb: 'Quản Lý CSDL Database',
+
     // TabBar
     closeTab: 'Đóng Tab',
     newTab: 'Mở Trang Tổng Quan',
@@ -82,6 +101,26 @@ export const translations = {
     testApiKey: 'Kiểm Tra API Key',
     saveSettings: 'Lưu Cài Đặt',
 
+    // Key Manager Modal
+    keyManagerTitle: 'Quản Lý Khóa SSH Key Vault',
+    generateNewKey: 'Sinh Cặp Khóa Mới',
+    keyName: 'Tên Nhãn Khóa',
+    keyType: 'Loại Khóa (Type)',
+    bits: 'Số Bit (Bits)',
+    generateKeyBtn: 'Sinh Cặp Khóa',
+    keyDetails: 'Chi Tiết Khóa',
+    copyPublicKey: 'Copy Public Key',
+    deleteKey: 'Xóa Khóa',
+    noKeysFound: 'Chưa có cặp khóa SSH nào trong kho dữ liệu.',
+
+    // Import / Export Modal
+    importExportTitle: 'Nhập & Xuất Dữ Liệu Vault',
+    exportData: 'Xuất File Mã Hóa (.json)',
+    exportDesc: 'Xuất toàn bộ cấu hình máy chủ dưới dạng mã hóa an toàn.',
+    importData: 'Nhập File Dữ Liệu (.json)',
+    importDesc: 'Tải file cấu hình backup để khôi phục hoặc đồng bộ danh sách máy chủ.',
+    chooseFile: 'Chọn Tệp Để Nhập',
+
     // Database Explorer
     databases: 'Cơ Sở Dữ Liệu',
     tables: 'Danh Sách Bảng',
@@ -124,6 +163,21 @@ export const translations = {
     aiAssistant: 'AI Assistant',
     dashboard: 'Dashboard',
 
+    // LockScreen (Master Passphrase)
+    unlockTitle: 'Unlock Encrypted Vault',
+    initTitle: 'Setup Master Passphrase',
+    unlockDesc: 'Enter your Master Passphrase to decrypt all server configurations, credentials, and SSH private keys.',
+    initDesc: 'Create a secure Master Passphrase to protect your server vault using AES-256-GCM encryption.',
+    passphraseLabel: 'Master Passphrase',
+    confirmPassphraseLabel: 'Confirm Passphrase',
+    unlockBtn: 'Unlock Vault',
+    createVaultBtn: 'Initialize & Secure',
+    passphraseRequired: 'Please enter Master Passphrase.',
+    passphraseMismatch: 'Passphrases do not match.',
+    passphraseMinLength: 'Passphrase must be at least 6 characters.',
+    initVaultFailed: 'Could not initialize encrypted vault.',
+    incorrectPassphrase: 'Incorrect Master Passphrase. Please try again.',
+
     // Sidebar
     servers: 'Servers',
     environment: 'Environment',
@@ -133,6 +187,10 @@ export const translations = {
     noServersFound: 'No servers found matching the filter criteria.',
     editServer: 'Edit Server',
     deleteServer: 'Delete Server',
+    connectSsh: 'Open SSH Terminal',
+    openSftp: 'Open SFTP File Browser',
+    connectRdp: 'Connect RDP Remote Desktop',
+    manageDb: 'Manage Database',
 
     // TabBar
     closeTab: 'Close Tab',
@@ -192,6 +250,26 @@ export const translations = {
     aiBaseUrl: 'Custom Base URL (REST Endpoint)',
     testApiKey: 'Test API Key',
     saveSettings: 'Save Settings',
+
+    // Key Manager Modal
+    keyManagerTitle: 'SSH Key Vault Manager',
+    generateNewKey: 'Generate New Key Pair',
+    keyName: 'Key Label Name',
+    keyType: 'Key Type',
+    bits: 'Bits',
+    generateKeyBtn: 'Generate Key Pair',
+    keyDetails: 'Key Details',
+    copyPublicKey: 'Copy Public Key',
+    deleteKey: 'Delete Key',
+    noKeysFound: 'No SSH key pairs stored in vault.',
+
+    // Import / Export Modal
+    importExportTitle: 'Import & Export Vault Data',
+    exportData: 'Export Encrypted File (.json)',
+    exportDesc: 'Export all server configurations as an encrypted JSON backup file.',
+    importData: 'Import Data File (.json)',
+    importDesc: 'Upload a backup JSON file to restore or synchronize server configs.',
+    chooseFile: 'Select File to Import',
 
     // Database Explorer
     databases: 'Databases',

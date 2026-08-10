@@ -1,6 +1,7 @@
 import React from 'react';
 import { Terminal, FolderOpen, Monitor, Key, Settings, X, Plus, Database, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { TabItem } from '../types';
+import { TabItem, TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface TabBarProps {
   tabs: TabItem[];
@@ -10,6 +11,7 @@ interface TabBarProps {
   onNewTab: () => void;
   onToggleSidebar?: () => void;
   isSidebarCollapsed?: boolean;
+  settings?: TerminalSettings;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({
@@ -19,8 +21,11 @@ export const TabBar: React.FC<TabBarProps> = ({
   onCloseTab,
   onNewTab,
   onToggleSidebar,
-  isSidebarCollapsed
+  isSidebarCollapsed,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
+
   const getTabIcon = (type: TabItem['type']) => {
     switch (type) {
       case 'SSH':
@@ -67,7 +72,7 @@ export const TabBar: React.FC<TabBarProps> = ({
             justifyContent: 'center',
             marginRight: '6px'
           }}
-          title={isSidebarCollapsed ? "Mở danh sách Máy Chủ (Ctrl+B)" : "Thu gọn danh sách Máy Chủ (Ctrl+B)"}
+          title={isSidebarCollapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
           {isSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
         </button>
@@ -99,13 +104,7 @@ export const TabBar: React.FC<TabBarProps> = ({
               }}
             >
               {getTabIcon(tab.type)}
-              <span
-                style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {tab.title}
               </span>
               <button
@@ -124,7 +123,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
-                title="Đóng Tab"
+                title={t('closeTab')}
               >
                 <X size={12} />
               </button>
@@ -135,20 +134,21 @@ export const TabBar: React.FC<TabBarProps> = ({
         <button
           onClick={onNewTab}
           style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-dim)',
-            cursor: 'pointer',
-            padding: '6px',
+            height: '26px',
+            width: '26px',
             borderRadius: '4px',
+            backgroundColor: 'transparent',
+            color: 'var(--text-muted)',
+            border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            cursor: 'pointer',
             marginLeft: '4px'
           }}
-          title="Mở Trang Tổng Quan (Dashboard)"
+          title={t('newTab')}
         >
-          <Plus size={16} />
+          <Plus size={14} />
         </button>
       </div>
     </div>

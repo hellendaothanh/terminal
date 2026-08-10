@@ -14,6 +14,7 @@ import {
   FileCode
 } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface DatabaseExplorerProps {
   sessionId: string;
@@ -28,6 +29,7 @@ export const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   settings,
   onUpdateServerPassword
 }) => {
+  const { t } = useTranslation(settings);
   const [currentServer, setCurrentServer] = useState<ServerConfig>(initialServer);
   const [dbType] = useState<string>(initialServer.dbType || 'MySQL');
 

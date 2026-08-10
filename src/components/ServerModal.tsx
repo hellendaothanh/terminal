@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ServerConfig, SSHKey, Protocol, AuthType, Environment, DBType } from '../types';
+import { ServerConfig, SSHKey, Protocol, AuthType, Environment, DBType, TerminalSettings } from '../types';
 import { Server, X, Shield, Check, AlertCircle, RefreshCw, Database } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface ServerModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ServerModalProps {
   onSave: (server: Partial<ServerConfig>) => void;
   editingServer?: ServerConfig | null;
   keys: SSHKey[];
+  settings?: TerminalSettings;
 }
 
 export const ServerModal: React.FC<ServerModalProps> = ({
@@ -15,8 +17,10 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   onClose,
   onSave,
   editingServer,
-  keys
+  keys,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
   const [name, setName] = useState('');
   const [host, setHost] = useState('');
   const [port, setPort] = useState(22);
@@ -67,38 +71,42 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       setEnvironment('DEV');
       setTagsInput('');
     }
-    setTestSecretStatus({ testing: false });
   }, [editingServer, isOpen]);
 
   if (!isOpen) return null;
 
   const handleProtocolChange = (p: Protocol) => {
     setProtocol(p);
-    if (p === 'RDP') setPort(3389);
-    else if (p === 'DATABASE') setPort(3306);
-    else setPort(22);
+    if (p === 'SSH' || p === 'SFTP') setPort(22);
+    else if (p === 'RDP') setPort(3389);
+    else if (p === 'DATABASE') {
+      if (dbType === 'MySQL') setPort(3306);
+      else if (dbType === 'PostgreSQL') setPort(5432);
+      else if (dbType === 'Redis') setPort(6379);
+      else if (dbType === 'MongoDB') setPort(27017);
+    }
   };
 
-  const handleDbTypeChange = (type: DBType) => {
-    setDbType(type);
-    if (type === 'MySQL') setPort(3306);
-    else if (type === 'PostgreSQL') setPort(5432);
-    else if (type === 'Redis') setPort(6379);
-    else if (type === 'MongoDB') setPort(27017);
+  const handleDbTypeChange = (db: DBType) => {
+    setDbType(db);
+    if (db === 'MySQL') setPort(3306);
+    else if (db === 'PostgreSQL') setPort(5432);
+    else if (db === 'Redis') setPort(6379);
+    else if (db === 'MongoDB') setPort(27017);
   };
 
   const handleTestVaultSecret = async () => {
     if (!vaultSecretPath) return;
     setTestSecretStatus({ testing: true });
     try {
-      const res = await window.api.hashicorpVaultFetchSecret(null, vaultSecretPath, vaultKeyName);
-      if (res.success) {
-        setTestSecretStatus({ testing: false, success: true, message: `Lấy secret từ HashiCorp Vault thành công!` });
+      const secretVal = await window.api.hashicorpGetSecret(vaultSecretPath, vaultKeyName);
+      if (secretVal) {
+        setTestSecretStatus({ testing: false, success: true, message: `Successfully fetched! Key length: ${secretVal.length} chars` });
       } else {
-        setTestSecretStatus({ testing: false, success: false, message: res.error || 'Lỗi lấy secret từ Vault.' });
+        setTestSecretStatus({ testing: false, success: false, message: 'Key not found in secret path.' });
       }
-    } catch (e: any) {
-      setTestSecretStatus({ testing: false, success: false, message: e.message });
+    } catch (err: any) {
+      setTestSecretStatus({ testing: false, success: false, message: err.message || 'Connection to Vault failed.' });
     }
   };
 
@@ -126,17 +134,18 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       environment,
       tags
     });
+
     onClose();
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '640px' }}>
+      <div className="modal-content">
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Server size={20} style={{ color: 'var(--accent-primary)' }} />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-              {editingServer ? 'Chỉnh Sửa Thông Tin Máy Chủ / CSDL' : 'Thêm Máy Chủ / CSDL Mới'}
+              {editingServer ? t('editServerTitle') : t('addServerTitle')}
             </h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -146,81 +155,80 @@ export const ServerModal: React.FC<ServerModalProps> = ({
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Protocol Selector */}
+            {/* Connection Protocol Selector */}
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                Giao Thức / Loại Máy Chủ
+                {t('connectionProtocol')}
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                 {(['SSH', 'SFTP', 'RDP', 'DATABASE'] as Protocol[]).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => handleProtocolChange(p)}
                     style={{
-                      flex: 1,
                       padding: '8px',
                       borderRadius: 'var(--radius-sm)',
-                      border: protocol === p ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                      backgroundColor: protocol === p ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-                      color: protocol === p ? 'var(--accent-primary)' : 'var(--text-muted)',
+                      fontSize: '0.82rem',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      fontSize: '0.82rem'
+                      border: protocol === p ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                      backgroundColor: protocol === p ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                      color: protocol === p ? 'var(--accent-primary)' : 'var(--text-muted)'
                     }}
                   >
-                    {p === 'DATABASE' && <Database size={14} />}
-                    <span>{p}</span>
+                    {p === 'DATABASE' ? '🗄️ Database' : p}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Database Engine Type & Default Database Name */}
+            {/* DB Engine Sub-Type (When Protocol is DATABASE) */}
             {protocol === 'DATABASE' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                    Loại Cơ Sở Dữ Liệu (DB Engine)
-                  </label>
-                  <select
-                    className="input-field"
-                    value={dbType}
-                    onChange={(e) => handleDbTypeChange(e.target.value as DBType)}
-                  >
-                    <option value="MySQL">MySQL / MariaDB</option>
-                    <option value="PostgreSQL">PostgreSQL</option>
-                    <option value="Redis">Redis Cache</option>
-                    <option value="MongoDB">MongoDB</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                    Tên Database Mặc Định
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="e.g. production_db"
-                    value={dbName}
-                    onChange={(e) => setDbName(e.target.value)}
-                  />
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                      {t('dbEngineType')}
+                    </label>
+                    <select
+                      className="input-field"
+                      value={dbType}
+                      onChange={(e) => handleDbTypeChange(e.target.value as DBType)}
+                    >
+                      <option value="MySQL">MySQL / MariaDB (3306)</option>
+                      <option value="PostgreSQL">PostgreSQL (5432)</option>
+                      <option value="Redis">Redis Cache (6379)</option>
+                      <option value="MongoDB">MongoDB (27017)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                      {t('defaultDbName')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. production_db"
+                      value={dbName}
+                      onChange={(e) => setDbName(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Name & Host & Port */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '12px' }}>
+            {/* Basic Info: Name & Host & Port */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Tên Kết Nối</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  {t('serverName')}
+                </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="e.g. MySQL Master Production"
+                  placeholder="e.g. Web Server Production"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -228,11 +236,13 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Host / Địa chỉ IP</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  {t('hostIp')}
+                </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="192.168.1.100"
+                  placeholder="192.168.1.100 or domain.com"
                   value={host}
                   onChange={(e) => setHost(e.target.value)}
                   required
@@ -240,7 +250,9 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Port</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  {t('port')}
+                </label>
                 <input
                   type="number"
                   className="input-field"
@@ -251,115 +263,157 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               </div>
             </div>
 
-            {/* Auth Type & User Credentials */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Username / DB User</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Phương Thức Xác Thực</label>
-                <select
-                  className="input-field"
-                  value={authType}
-                  onChange={(e) => setAuthType(e.target.value as AuthType)}
-                >
-                  <option value="password">Mật Khẩu Trực Tiếp (Password)</option>
-                  <option value="privateKey">Khóa Khóa SSH (Private Key)</option>
-                  <option value="hashicorpVault">🔐 HashiCorp Vault (Bảo Mật Cao)</option>
-                </select>
-              </div>
+            {/* Username */}
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                {t('username')}
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="root, ubuntu, Administrator, postgres..."
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
             </div>
 
-            {authType === 'password' ? (
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Mật Khẩu CSDL</label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            ) : authType === 'privateKey' ? (
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Chọn SSH Key từ Vault</label>
-                <select
-                  className="input-field"
-                  value={privateKeyId}
-                  onChange={(e) => setPrivateKeyId(e.target.value)}
+            {/* Authentication Method Options */}
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                {t('authMethod')}
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAuthType('password')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    border: authType === 'password' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                    backgroundColor: authType === 'password' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                    color: authType === 'password' ? 'var(--accent-primary)' : 'var(--text-muted)'
+                  }}
                 >
-                  <option value="">-- Chọn Khóa SSH --</option>
-                  {keys.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.name} ({k.type})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              /* HashiCorp Vault Secret Configuration */
-              <div style={{
-                backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-primary)', fontSize: '0.88rem', fontWeight: 600 }}>
-                  <Shield size={16} />
-                  <span>Cấu Hình Lấy Secret Từ HashiCorp Vault</span>
-                </div>
+                  {t('directPassword')}
+                </button>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAuthType('privateKey')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    border: authType === 'privateKey' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                    backgroundColor: authType === 'privateKey' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                    color: authType === 'privateKey' ? 'var(--accent-primary)' : 'var(--text-muted)'
+                  }}
+                >
+                  {t('privateKeyOption')}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAuthType('hashicorpVault')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: authType === 'hashicorpVault' ? '1px solid #c084fc' : '1px solid var(--border-subtle)',
+                    backgroundColor: authType === 'hashicorpVault' ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-tertiary)',
+                    color: authType === 'hashicorpVault' ? '#c084fc' : 'var(--text-muted)'
+                  }}
+                >
+                  {t('hashicorpVaultOption')}
+                </button>
+              </div>
+
+              {/* Dynamic Auth Fields */}
+              {authType === 'password' && (
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    {t('password')}
+                  </label>
+                  <input
+                    type="password"
+                    className="input-field"
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {authType === 'privateKey' && (
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    {t('privateKeyOption')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={privateKeyId}
+                    onChange={(e) => setPrivateKeyId(e.target.value)}
+                  >
+                    <option value="">{t('selectSshKey')}</option>
+                    {keys.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        🔑 {k.name} ({k.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {authType === 'hashicorpVault' && (
+                <div style={{ padding: '12px', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div>
                     <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                      Secret Path (Đường dẫn Secret trên Vault)
+                      {t('vaultSecretPath')}
                     </label>
                     <input
                       type="text"
                       className="input-field"
-                      placeholder="e.g. secret/data/db/mysql-prod"
+                      placeholder="secret/data/production/web-server"
                       value={vaultSecretPath}
                       onChange={(e) => setVaultSecretPath(e.target.value)}
                       required
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                      Key Name
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="password"
-                      value={vaultKeyName}
-                      onChange={(e) => setVaultKeyName(e.target.value)}
-                    />
-                  </div>
-                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={handleTestVaultSecret}
-                    disabled={testSecretStatus.testing || !vaultSecretPath}
-                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                  >
-                    {testSecretStatus.testing ? <RefreshCw size={13} className="spin" /> : <Shield size={13} />}
-                    <span>{testSecretStatus.testing ? 'Đang thử...' : 'Thử Lấy Secret từ Vault'}</span>
-                  </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '10px', alignItems: 'end' }}>
+                    <div>
+                      <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                        {t('vaultKeyName')}
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="password or private_key"
+                        value={vaultKeyName}
+                        onChange={(e) => setVaultKeyName(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleTestVaultSecret}
+                      disabled={testSecretStatus.testing || !vaultSecretPath}
+                      style={{ height: '36px', fontSize: '0.75rem' }}
+                    >
+                      {testSecretStatus.testing ? <RefreshCw size={13} className="spin" /> : <Shield size={13} />}
+                      <span>{testSecretStatus.testing ? t('testing') : t('testVaultSecret')}</span>
+                    </button>
+                  </div>
 
                   {testSecretStatus.message && (
                     <div style={{
@@ -374,43 +428,89 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Environment & Tags */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Môi Trường</label>
-                <select
-                  className="input-field"
-                  value={environment}
-                  onChange={(e) => setEnvironment(e.target.value as Environment)}
+            {/* Environment Selection */}
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                {t('envLabel')}
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEnvironment('DEV')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: environment === 'DEV' ? '1px solid var(--env-dev)' : '1px solid var(--border-subtle)',
+                    backgroundColor: environment === 'DEV' ? 'var(--bg-tertiary)' : 'transparent',
+                    color: 'var(--env-dev)'
+                  }}
                 >
-                  <option value="DEV">DEV (Phát triển)</option>
-                  <option value="STAGING">STAGING (Thử nghiệm)</option>
-                  <option value="PRODUCTION">PRODUCTION (Vận hành)</option>
-                </select>
-              </div>
+                  {t('envDev')}
+                </button>
 
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Thẻ Tag (Phân cách bởi dấu phẩy)</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="mysql, production, db"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                />
+                <button
+                  type="button"
+                  onClick={() => setEnvironment('STAGING')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: environment === 'STAGING' ? '1px solid var(--env-staging)' : '1px solid var(--border-subtle)',
+                    backgroundColor: environment === 'STAGING' ? 'var(--bg-tertiary)' : 'transparent',
+                    color: 'var(--env-staging)'
+                  }}
+                >
+                  {t('envStaging')}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEnvironment('PRODUCTION')}
+                  style={{
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: environment === 'PRODUCTION' ? '1px solid var(--env-prod)' : '1px solid var(--border-subtle)',
+                    backgroundColor: environment === 'PRODUCTION' ? 'var(--bg-tertiary)' : 'transparent',
+                    color: 'var(--env-prod)'
+                  }}
+                >
+                  {t('envProduction')}
+                </button>
               </div>
+            </div>
+
+            {/* Tags Input */}
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                {t('tagsInputLabel')}
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="web, production, Nginx, Docker..."
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>
-              Hủy
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-primary">
-              Lưu Máy Chủ / CSDL
+              {t('saveServer')}
             </button>
           </div>
         </form>

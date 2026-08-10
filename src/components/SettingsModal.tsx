@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TerminalSettings, HashiCorpVaultConfig, AISettings } from '../types';
 import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onSaveSettings
 }) => {
+  const { t } = useTranslation(settings);
   const [activeTab, setActiveTab] = useState<'general' | 'hashicorp' | 'ai'>('general');
 
   // HashiCorp Vault Form State
@@ -50,30 +52,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const res = await window.api.hashicorpVaultTest(vaultConfig);
       if (res.success) {
-        setTestStatus({ testing: false, success: true, message: `Kết nối thành công! HashiCorp Vault Version: ${res.version}` });
+        setTestStatus({ testing: false, success: true, message: `Connected! Vault Version: ${res.version}` });
       } else {
-        setTestStatus({ testing: false, success: false, message: res.error || 'Kết nối thất bại.' });
+        setTestStatus({ testing: false, success: false, message: res.error || 'Connection failed.' });
       }
     } catch (e: any) {
       setTestStatus({ testing: false, success: false, message: e.message });
     }
   };
 
-  const handleTestAi = async () => {
+  const handleTestAI = async () => {
     setTestAiStatus({ testing: true });
     try {
-      const res = await window.api.aiTestKey(aiConfig);
-      if (res.success) {
-        setTestAiStatus({ testing: false, success: true, message: res.message || 'Xác thực API Key thành công!' });
+      const reply = await window.api.aiSendMessage('Ping check AI connection', aiConfig);
+      if (reply) {
+        setTestAiStatus({ testing: false, success: true, message: `Connected to ${aiConfig.model} successfully!` });
       } else {
-        setTestAiStatus({ testing: false, success: false, message: res.error || 'Lỗi xác thực API Key.' });
+        setTestAiStatus({ testing: false, success: false, message: 'AI returned empty response.' });
       }
     } catch (e: any) {
-      setTestAiStatus({ testing: false, success: false, message: e.message });
+      setTestAiStatus({ testing: false, success: false, message: e.message || 'AI test failed.' });
     }
   };
 
-  const handleSaveAll = () => {
+  const handleSave = () => {
     onSaveSettings({
       ...settings,
       hashicorpVault: vaultConfig,
@@ -84,12 +86,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '600px' }}>
+      <div className="modal-content" style={{ maxWidth: '640px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Settings size={20} style={{ color: 'var(--accent-primary)' }} />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-              Cài Đặt Hệ Thống & Trợ Lý AI
+              {t('settingsTitle')}
             </h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -112,8 +114,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               cursor: 'pointer'
             }}
           >
-            Giao Diện & Terminal
+            {t('tabGeneral')}
           </button>
+
           <button
             onClick={() => setActiveTab('hashicorp')}
             style={{
@@ -124,15 +127,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               color: activeTab === 'hashicorp' ? 'var(--accent-primary)' : 'var(--text-muted)',
               fontWeight: 600,
               fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              cursor: 'pointer'
             }}
           >
-            <Shield size={14} />
-            <span>HashiCorp Vault</span>
+            {t('tabVault')}
           </button>
+
           <button
             onClick={() => setActiveTab('ai')}
             style={{
@@ -150,7 +150,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }}
           >
             <Sparkles size={14} style={{ color: '#c084fc' }} />
-            <span>Trợ Lý AI</span>
+            <span>{t('tabAI')}</span>
           </button>
         </div>
 
@@ -159,7 +159,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Cỡ Chữ Terminal (Font Size)
+                  {t('fontSize')}
                 </label>
                 <input
                   type="number"
@@ -173,37 +173,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Font Chữ (Font Family)
+                  {t('fontFamily')}
                 </label>
                 <select
                   className="input-field"
                   value={settings.fontFamily}
                   onChange={(e) => onSaveSettings({ ...settings, fontFamily: e.target.value })}
                 >
-                  <option value="JetBrains Mono, monospace">JetBrains Mono (Khuyên dùng)</option>
+                  <option value="JetBrains Mono, monospace">JetBrains Mono</option>
+                  <option value="Fira Code, monospace">Fira Code</option>
                   <option value="Menlo, Monaco, monospace">Menlo / Monaco</option>
                   <option value="Consolas, monospace">Consolas</option>
-                  <option value="Courier New, monospace">Courier New</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Chủ Đề Màu Sắc (Color Theme)
+                  {t('colorTheme')}
                 </label>
                 <select
                   className="input-field"
                   value={settings.theme}
                   onChange={(e) => onSaveSettings({ ...settings, theme: e.target.value as any })}
                 >
-                  <option value="one-dark">One Dark (Mặc định)</option>
+                  <option value="one-dark">One Dark</option>
                   <option value="dracula">Dracula Dark</option>
                   <option value="monokai">Monokai Dark</option>
                 </select>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>Con trỏ nhấp nháy (Cursor Blink)</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>{t('cursorBlink')}</span>
                 <input
                   type="checkbox"
                   checked={settings.cursorBlink}
@@ -213,7 +213,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Giới Hạn Dòng Cuộn (Scrollback Limit)
+                  {t('scrollbackLimit')}
                 </label>
                 <input
                   type="number"
@@ -225,7 +225,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  🌐 Ngôn Ngữ Giao Diện (Language)
+                  🌐 {t('language')}
                 </label>
                 <select
                   className="input-field"
@@ -241,7 +241,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Địa Chỉ Máy Chủ HashiCorp Vault (Vault Server URL)
+                  {t('vaultServerUrl')}
                 </label>
                 <input
                   type="text"
@@ -254,14 +254,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Phương Thức Xác Thực (Auth Method)
+                  {t('vaultAuthMethod')}
                 </label>
                 <select
                   className="input-field"
                   value={vaultConfig.authMethod}
                   onChange={(e) => setVaultConfig({ ...vaultConfig, authMethod: e.target.value as any })}
                 >
-                  <option value="token">Vault Token (X-Vault-Token)</option>
+                  <option value="token">Vault Token</option>
                   <option value="approle">AppRole (Role ID + Secret ID)</option>
                 </select>
               </div>
@@ -269,7 +269,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {vaultConfig.authMethod === 'token' ? (
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                    Vault Client Token
+                    {t('vaultClientToken')}
                   </label>
                   <input
                     type="password"
@@ -286,7 +286,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       type="text"
                       className="input-field"
-                      placeholder="db-role-id..."
+                      placeholder="db-role-id"
                       value={vaultConfig.roleId || ''}
                       onChange={(e) => setVaultConfig({ ...vaultConfig, roleId: e.target.value })}
                     />
@@ -296,7 +296,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       type="password"
                       className="input-field"
-                      placeholder="secret-id..."
+                      placeholder="••••••••"
                       value={vaultConfig.secretId || ''}
                       onChange={(e) => setVaultConfig({ ...vaultConfig, secretId: e.target.value })}
                     />
@@ -306,55 +306,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Vault Namespace (Tùy chọn cho Vault Enterprise)
+                  Namespace (Optional)
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="admin/finance (tùy chọn)"
+                  placeholder="admin/finance"
                   value={vaultConfig.namespace || ''}
                   onChange={(e) => setVaultConfig({ ...vaultConfig, namespace: e.target.value })}
                 />
               </div>
 
-              {/* Connection Status & Test Button */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={handleTestVault}
-                  disabled={testStatus.testing || !vaultConfig.url}
-                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                >
-                  {testStatus.testing ? <RefreshCw size={14} className="spin" /> : <Shield size={14} />}
-                  <span>{testStatus.testing ? 'Đang kiểm tra...' : 'Kiểm Tra Kết Nối Vault'}</span>
-                </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleTestVault}
+                disabled={testStatus.testing || !vaultConfig.url}
+                style={{ height: '36px', fontSize: '0.8rem', justifyContent: 'center' }}
+              >
+                {testStatus.testing ? <RefreshCw size={14} className="spin" /> : <Shield size={14} />}
+                <span>{testStatus.testing ? t('checking') : t('testVaultConnection')}</span>
+              </button>
 
-                {testStatus.message && (
-                  <div style={{
-                    fontSize: '0.78rem',
-                    color: testStatus.success ? 'var(--accent-success)' : 'var(--accent-danger)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    {testStatus.success ? <Check size={14} /> : <AlertCircle size={14} />}
-                    <span>{testStatus.message}</span>
-                  </div>
-                )}
-              </div>
+              {testStatus.message && (
+                <div style={{
+                  fontSize: '0.8rem',
+                  color: testStatus.success ? 'var(--accent-success)' : 'var(--accent-danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: testStatus.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'
+                }}>
+                  {testStatus.success ? <Check size={14} /> : <AlertCircle size={14} />}
+                  <span>{testStatus.message}</span>
+                </div>
+              )}
             </>
           ) : (
-            /* AI Assistant Tab */
+            /* AI Assistant Settings Tab */
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-tertiary)', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Bot size={20} style={{ color: '#c084fc' }} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-main)' }}>Kích Hoạt Trợ Lý AI</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Hỗ trợ phân tích Terminal SSH, SQL Database & gợi ý sửa lỗi</div>
-                  </div>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('enableAi')}</span>
                 <input
                   type="checkbox"
                   checked={aiConfig.enabled}
@@ -362,64 +356,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </div>
 
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                {t('aiDesc')}
+              </p>
+
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Nhà Cung Cấp AI (AI Provider)
+                  {t('aiProvider')}
                 </label>
                 <select
                   className="input-field"
                   value={aiConfig.provider}
                   onChange={(e) => {
                     const p = e.target.value as any;
-                    const defaultModel = p === 'gemini' ? 'gemini-1.5-flash' : p === 'openai' ? 'gpt-4o-mini' : 'llama3';
-                    setAiConfig({ ...aiConfig, provider: p, model: defaultModel });
+                    let defModel = 'gemini-1.5-flash';
+                    if (p === 'openai') defModel = 'gpt-4o-mini';
+                    else if (p === 'custom') defModel = 'llama3';
+                    setAiConfig({ ...aiConfig, provider: p, model: defModel });
                   }}
                 >
-                  <option value="gemini">Google Gemini AI</option>
-                  <option value="openai">OpenAI / Compatible API</option>
+                  <option value="gemini">Google Gemini AI (Recommend)</option>
+                  <option value="openai">OpenAI (ChatGPT)</option>
                   <option value="custom">Custom Endpoint (Ollama / vLLM / LocalAI / DeepSeek)</option>
                 </select>
               </div>
 
-              {/* Flexible Model Name Text Input */}
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  Tên Model (Nhập trực tiếp tên Model bất kỳ bạn muốn)
+                  {t('aiModelName')}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  list="popular-ai-models"
-                  placeholder="Nhập tên Model (ví dụ: gemini-1.5-flash, gpt-4o, deepseek-r1...)"
+                  placeholder="e.g. gemini-1.5-flash, gemini-2.0-flash, gpt-4o, deepseek-r1..."
                   value={aiConfig.model}
                   onChange={(e) => setAiConfig({ ...aiConfig, model: e.target.value })}
-                  required
                 />
-                <datalist id="popular-ai-models">
-                  <option value="gemini-1.5-flash" />
-                  <option value="gemini-1.5-pro" />
-                  <option value="gemini-2.0-flash" />
-                  <option value="gpt-4o-mini" />
-                  <option value="gpt-4o" />
-                  <option value="gpt-3.5-turbo" />
-                  <option value="deepseek-coder" />
-                  <option value="deepseek-r1" />
-                  <option value="llama3" />
-                  <option value="qwen2.5-coder" />
-                </datalist>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                  💡 Gợi ý: Bạn có thể gõ bất kỳ tên Model mới nhất nào từ nhà cung cấp (e.g. <code>gemini-2.0-flash</code>, <code>gpt-4o</code>, <code>deepseek-r1</code>).
-                </div>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  API Key ({aiConfig.provider === 'custom' ? 'Tùy chọn cho LocalAI' : 'Bắt buộc'})
+                  {t('aiApiKey')}
                 </label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="AI API Key..."
+                  placeholder="AI API Key (AIZA... or sk-...)"
                   value={aiConfig.apiKey}
                   onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
                 />
@@ -428,50 +410,55 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {aiConfig.provider === 'custom' && (
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                    Custom Base URL (REST Endpoint)
+                    {t('aiBaseUrl')}
                   </label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="e.g. http://localhost:11434/v1"
+                    placeholder="http://localhost:11434/v1 or https://api.deepseek.com/v1"
                     value={aiConfig.baseUrl || ''}
                     onChange={(e) => setAiConfig({ ...aiConfig, baseUrl: e.target.value })}
                   />
                 </div>
               )}
 
-              {/* AI Test Key Button */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={handleTestAi}
-                  disabled={testAiStatus.testing}
-                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                >
-                  {testAiStatus.testing ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} style={{ color: '#c084fc' }} />}
-                  <span>{testAiStatus.testing ? 'Đang kiểm tra...' : 'Kiểm Tra API Key'}</span>
-                </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleTestAI}
+                disabled={testAiStatus.testing || !aiConfig.apiKey}
+                style={{ height: '36px', fontSize: '0.8rem', justifyContent: 'center', backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}
+              >
+                {testAiStatus.testing ? <RefreshCw size={14} className="spin" /> : <Bot size={14} />}
+                <span>{testAiStatus.testing ? t('checking') : t('testApiKey')}</span>
+              </button>
 
-                {testAiStatus.message && (
-                  <div style={{
-                    fontSize: '0.78rem',
-                    color: testAiStatus.success ? 'var(--accent-success)' : 'var(--accent-danger)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    {testAiStatus.success ? <Check size={14} /> : <AlertCircle size={14} />}
-                    <span>{testAiStatus.message}</span>
-                  </div>
-                )}
-              </div>
+              {testAiStatus.message && (
+                <div style={{
+                  fontSize: '0.8rem',
+                  color: testAiStatus.success ? 'var(--accent-success)' : 'var(--accent-danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: testAiStatus.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'
+                }}>
+                  {testAiStatus.success ? <Check size={14} /> : <AlertCircle size={14} />}
+                  <span>{testAiStatus.message}</span>
+                </div>
+              )}
             </>
           )}
         </div>
 
         <div className="modal-footer">
-          <button className="btn-primary" onClick={handleSaveAll}>Lưu Cài Đặt</button>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            {t('cancel')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleSave}>
+            {t('saveSettings')}
+          </button>
         </div>
       </div>
     </div>

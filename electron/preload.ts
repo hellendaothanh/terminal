@@ -11,10 +11,18 @@ contextBridge.exposeInMainWorld('api', {
   vaultGenerateKey: (type: 'RSA-4096' | 'Ed25519') => ipcRenderer.invoke('vault:generate-key', type),
   hashicorpVaultTest: (config: any) => ipcRenderer.invoke('vault:hashicorp-test', config),
   hashicorpVaultFetchSecret: (config: any, secretPath: string, keyName?: string) => ipcRenderer.invoke('vault:hashicorp-fetch-secret', { config, secretPath, keyName }),
+  hashicorpGetSecret: async (secretPath: string, keyName?: string) => {
+    const res = await ipcRenderer.invoke('vault:hashicorp-fetch-secret', { config: null, secretPath, keyName });
+    return res?.secret || null;
+  },
 
   /* AI APIs */
   aiTestKey: (settings: any) => ipcRenderer.invoke('ai:test-key', settings),
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => ipcRenderer.invoke('ai:chat', { settings, userPrompt, history, contextSnippet }),
+  aiSendMessage: async (prompt: string, aiConfig: any) => {
+    const res = await ipcRenderer.invoke('ai:chat', { settings: aiConfig, userPrompt: prompt, history: [] });
+    return res?.reply || res?.error || 'No response from AI.';
+  },
 
   /* Database APIs */
   dbConnect: (options: any) => ipcRenderer.invoke('db:connect', options),
