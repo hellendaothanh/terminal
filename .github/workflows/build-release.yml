@@ -36,8 +36,13 @@ jobs:
         shell: bash
         run: |
           TAG_VERSION=${GITHUB_REF_NAME#v}
-          echo "Syncing package.json version to $TAG_VERSION from tag $GITHUB_REF_NAME"
-          npm version $TAG_VERSION --no-git-tag-version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
+            echo "Syncing package.json version from $CURRENT_VERSION to $TAG_VERSION..."
+            npm version $TAG_VERSION --no-git-tag-version
+          else
+            echo "package.json version is already up-to-date ($CURRENT_VERSION)."
+          fi
 
       - name: Compile Application
         run: npm run compile
