@@ -77,6 +77,7 @@ export interface TerminalSettings {
   theme: 'dracula' | 'one-dark' | 'monokai' | 'solarized-dark';
   cursorBlink: boolean;
   scrollback: number;
+  language?: 'vi' | 'en';
   hashicorpVault?: HashiCorpVaultConfig;
   ai?: AISettings;
 }

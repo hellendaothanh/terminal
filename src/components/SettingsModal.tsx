@@ -222,6 +222,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onChange={(e) => onSaveSettings({ ...settings, scrollback: parseInt(e.target.value) || 5000 })}
                 />
               </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  🌐 Ngôn Ngữ Giao Diện (Language)
+                </label>
+                <select
+                  className="input-field"
+                  value={settings.language || 'vi'}
+                  onChange={(e) => onSaveSettings({ ...settings, language: e.target.value as 'vi' | 'en' })}
+                >
+                  <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
+                  <option value="en">🇺🇸 English</option>
+                </select>
+              </div>
             </>
           ) : activeTab === 'hashicorp' ? (
             <>

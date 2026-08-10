@@ -2,7 +2,7 @@
   "name": "omni-terminal",
   "private": true,
   "version": "1.0.0",
-  "description": "Cross-platform Server Management Tool integrating SSH, SFTP, and RDP",
+  "description": "Cross-platform Server & Database Management Tool integrating SSH, SFTP, RDP, MySQL, PostgreSQL, Redis, MongoDB and AI Assistant",
   "main": "dist-electron/main.cjs",
   "type": "module",
   "author": "Hautp",
@@ -10,6 +10,9 @@
     "dev": "vite",
     "compile": "tsc && vite build",
     "build": "npm run compile && electron-builder",
+    "build:win": "npm run compile && electron-builder --win",
+    "build:mac": "npm run compile && electron-builder --mac",
+    "build:all": "npm run compile && electron-builder -mw",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "postinstall": "node -e \"require('fs').existsSync('node_modules/electron') && require('fs').writeFileSync('node_modules/electron/path.txt', 'Electron.app/Contents/MacOS/Electron')\""
@@ -17,6 +20,7 @@
   "build": {
     "appId": "com.omniterminal.app",
     "productName": "OmniTerminal",
+    "npmRebuild": false,
     "directories": {
       "output": "dist-app"
     },
@@ -26,6 +30,28 @@
         "dmg",
         "zip"
       ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   },
   "dependencies": {

@@ -7,8 +7,11 @@ import {
   Lock,
   Plus,
   Terminal,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface TopBarProps {
   searchQuery: string;
@@ -19,6 +22,8 @@ interface TopBarProps {
   onAddServer: () => void;
   onLockVault: () => void;
   onToggleAI?: () => void;
+  settings?: TerminalSettings;
+  onToggleLanguage?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -29,8 +34,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenSettings,
   onAddServer,
   onLockVault,
-  onToggleAI
+  onToggleAI,
+  settings,
+  onToggleLanguage
 }) => {
+  const { t, lang } = useTranslation(settings);
+
   return (
     <div
       style={{
@@ -68,7 +77,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <input
             type="text"
             className="input-field"
-            placeholder="Tìm kiếm nhanh theo Tên, IP, Username, Tag..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             style={{ paddingLeft: '36px', height: '34px', fontSize: '0.82rem' }}
@@ -102,6 +111,27 @@ export const TopBar: React.FC<TopBarProps> = ({
           WebkitAppRegion: 'no-drag'
         } as any}
       >
+        {/* Quick Language Toggle Button */}
+        {onToggleLanguage && (
+          <button
+            className="btn-secondary"
+            onClick={onToggleLanguage}
+            style={{
+              height: '34px',
+              padding: '0 10px',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Đổi Ngôn Ngữ / Change Language"
+          >
+            <Globe size={14} style={{ color: 'var(--accent-primary)' }} />
+            <span>{lang === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}</span>
+          </button>
+        )}
+
         <button
           className="btn-secondary"
           onClick={onToggleAI}
@@ -112,10 +142,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             color: '#c084fc',
             border: '1px solid rgba(168, 85, 247, 0.3)'
           }}
-          title="Bật / Tắt Trợ Lý AI"
+          title={t('aiAssistant')}
         >
           <Sparkles size={15} />
-          <span>Trợ Lý AI</span>
+          <span>{t('aiAssistant')}</span>
         </button>
 
         <button
@@ -124,17 +154,17 @@ export const TopBar: React.FC<TopBarProps> = ({
           style={{ height: '34px', fontSize: '0.8rem' }}
         >
           <Plus size={15} />
-          <span>Thêm Server</span>
+          <span>{t('addServer')}</span>
         </button>
 
         <button
           className="btn-secondary"
           onClick={onOpenKeyManager}
           style={{ height: '34px', fontSize: '0.8rem' }}
-          title="Quản lý SSH Key (Tạo cặp khóa RSA/Ed25519)"
+          title="Quản lý SSH Key"
         >
           <Key size={15} />
-          <span>SSH Keys</span>
+          <span>{t('sshKeys')}</span>
         </button>
 
         <button
@@ -144,14 +174,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           title="Xuất / Nhập cấu hình mã hóa"
         >
           <ArrowUpDown size={15} />
-          <span>Import/Export</span>
+          <span>{t('importExport')}</span>
         </button>
 
         <button
           className="btn-secondary"
           onClick={onOpenSettings}
           style={{ height: '34px', padding: '8px', width: '34px', justifyContent: 'center' }}
-          title="Cài đặt Terminal & Giao diện"
+          title={t('settings')}
         >
           <Settings size={16} />
         </button>
@@ -160,7 +190,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           className="btn-secondary"
           onClick={onLockVault}
           style={{ height: '34px', padding: '8px', width: '34px', justifyContent: 'center', color: 'var(--accent-warning)' }}
-          title="Khóa ứng dụng (Lock Vault)"
+          title={t('lockVault')}
         >
           <Lock size={16} />
         </button>

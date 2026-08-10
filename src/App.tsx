@@ -259,6 +259,8 @@ export const App: React.FC = () => {
         onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onToggleAI={() => setIsAIOpen((v) => !v)}
+        settings={settings}
+        onToggleLanguage={() => setSettings((s) => ({ ...s, language: s.language === 'en' ? 'vi' : 'en' }))}
         onAddServer={() => {
           setEditingServer(null);
           setIsServerModalOpen(true);
