@@ -540,7 +540,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-subtle)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Shield size={14} />
-            <span>Bảo Mật (Security)</span>
+            <span>{t('securitySection')}</span>
           </div>
           <button
             onClick={onOpenPasswords}
@@ -562,7 +562,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
           >
             <KeyRound size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>Mật Khẩu (Passwords)</span>
+            <span>{t('passwords')}</span>
           </button>
           
           <button
@@ -585,7 +585,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
           >
             <Shield size={16} style={{ color: 'var(--accent-success)' }} />
-            <span>Mã Xác Thực (OTP)</span>
+            <span>{t('otpAuth')}</span>
           </button>
 
           <button
@@ -608,7 +608,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
           >
             <Network size={16} style={{ color: '#c084fc' }} />
-            <span>SSH Tunnels & Forwarding</span>
+            <span>{t('sshTunnels')}</span>
           </button>
 
           <button
@@ -631,7 +631,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
           >
             <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>Multi-Exec & Snippets</span>
+            <span>{t('multiExec')}</span>
           </button>
 
           <button
@@ -654,7 +654,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
           >
             <ShieldAlert size={16} style={{ color: 'var(--accent-danger)' }} />
-            <span>Session Audit Logs</span>
+            <span>{t('auditLogs')}</span>
           </button>
         </div>
       )}

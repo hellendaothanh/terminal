@@ -158,6 +158,14 @@ export const translations = {
     sshServers: 'Máy Chủ SSH',
     databaseServers: 'Cơ Sở Dữ Liệu',
     rdpServers: 'Máy Chủ RDP / SFTP',
+    // Security Section
+    securitySection: 'BẢO MẬT & CÔNG CỤ',
+    passwords: 'Mật Khẩu (Passwords)',
+    otpAuth: 'Mã Xác Thực (OTP)',
+    sshTunnels: 'SSH Tunnels & Forwarding',
+    multiExec: 'Multi-Exec & Snippets',
+    auditLogs: 'Session Audit Logs',
+
     quickStart: 'Thao Tác Nhanh'
   },
   en: {
@@ -317,6 +325,14 @@ export const translations = {
     sshServers: 'SSH Servers',
     databaseServers: 'Database Engines',
     rdpServers: 'RDP / SFTP Servers',
+    // Security Section
+    securitySection: 'SECURITY & TOOLS',
+    passwords: 'Password Manager',
+    otpAuth: '2FA Authenticator (OTP)',
+    sshTunnels: 'SSH Tunnels & Forwarding',
+    multiExec: 'Multi-Exec & Snippets',
+    auditLogs: 'Session Audit Logs',
+
     quickStart: 'Quick Actions'
   }
 };
