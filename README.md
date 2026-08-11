@@ -10,6 +10,7 @@
 
 ### 1. 🔒 Encrypted Master Passphrase & Local Vault
 * **Master Passphrase Protection:** All server configurations, credentials, and private keys are encrypted using **AES-256-GCM** combined with **PBKDF2 key derivation (100,000 iterations)**.
+* **Encrypted Vault Import/Export:** Securely backup and restore your entire vault data with custom **AES-256-GCM passphrase protection** for `.enc.json` files.
 * **SSH Key Vault Manager:** Generate secure **RSA 4096-bit** and **Ed25519** key pairs directly within the application with one-click public key copying for `~/.ssh/authorized_keys`.
 
 ### 2. 🛡️ HashiCorp Vault Enterprise Integration
