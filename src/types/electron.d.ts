@@ -6,6 +6,7 @@ export interface ElectronAPI {
   vaultSaveData: (data: any) => Promise<{ success: boolean; error?: string }>;
   vaultLock: () => Promise<{ success: boolean }>;
   vaultGenerateKey: (type: 'RSA-4096' | 'Ed25519') => Promise<{ publicKey: string; privateKey: string }>;
+  vaultDerivePublicKey: (privateKey: string, passphrase?: string) => Promise<{ publicKey: string; privateKey: string; type: 'RSA-4096' | 'Ed25519' }>;
   hashicorpVaultTest: (config: any) => Promise<{ success: boolean; version?: string; error?: string }>;
   hashicorpVaultFetchSecret: (config: any, secretPath: string, keyName?: string) => Promise<{ success: boolean; secret?: string; error?: string }>;
   hashicorpGetSecret: (secretPath: string, keyName?: string) => Promise<string | null>;

@@ -21,11 +21,18 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
   settings
 }) => {
   const { t } = useTranslation(settings);
+  const [activeTab, setActiveTab] = useState<'generate' | 'import'>('generate');
   const [keyName, setKeyName] = useState('');
   const [keyType, setKeyType] = useState<'RSA-4096' | 'Ed25519'>('Ed25519');
   const [passphrase, setPassphrase] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedPrivateId, setCopiedPrivateId] = useState<string | null>(null);
+
+  // Import key state
+  const [importKeyName, setImportKeyName] = useState('');
+  const [importPrivateKey, setImportPrivateKey] = useState('');
+  const [importPassphrase, setImportPassphrase] = useState('');
 
   if (!isOpen) return null;
 
@@ -56,10 +63,72 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
     }
   };
 
+  const handleImportKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importKeyName.trim() || !importPrivateKey.trim()) return;
+
+    setLoading(true);
+    try {
+      const derived = await window.api.vaultDerivePublicKey(
+        importPrivateKey.trim(),
+        importPassphrase || undefined
+      );
+
+      const newKey: SSHKey = {
+        id: 'key_' + Date.now(),
+        name: importKeyName.trim(),
+        type: derived.type,
+        publicKey: derived.publicKey,
+        privateKey: derived.privateKey,
+        passphrase: importPassphrase || undefined,
+        createdAt: Date.now()
+      };
+
+      onSaveKey(newKey);
+      setImportKeyName('');
+      setImportPrivateKey('');
+      setImportPassphrase('');
+    } catch (err: any) {
+      alert(`Error importing key: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = (event.target?.result as string) || '';
+      
+      if (text.startsWith('PuTTY-User-Key-File')) {
+        alert(
+          t('puttyKeyWarning') || 
+          'Tệp khóa PuTTY (.ppk) không được hỗ trợ trực tiếp. Vui lòng chuyển đổi sang định dạng OpenSSH (PEM) bằng công cụ PuTTYgen (Conversions -> Export OpenSSH Key) trước khi import.'
+        );
+        return;
+      }
+
+      setImportPrivateKey(text);
+      if (!importKeyName) {
+        setImportKeyName(file.name);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleCopyPublic = (publicKey: string, id: string) => {
     navigator.clipboard.writeText(publicKey);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCopyPrivate = (privateKey: string, id: string) => {
+    navigator.clipboard.writeText(privateKey);
+    setCopiedPrivateId(id);
+    setTimeout(() => setCopiedPrivateId(null), 2000);
   };
 
   return (
@@ -78,58 +147,170 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
         </div>
 
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Key Generator Form */}
+          {/* Key Generator & Import Tab Wrapper */}
           <div style={{
             backgroundColor: 'var(--bg-tertiary)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-md)',
             padding: '16px'
           }}>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Plus size={16} style={{ color: 'var(--accent-primary)' }} />
-              {t('generateNewKey')}
-            </h4>
-
-            <form onSubmit={handleGenerateKey} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 1fr auto', gap: '10px', alignItems: 'end' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('keyName')}</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="e.g. id_ed25519_prod"
-                  value={keyName}
-                  onChange={(e) => setKeyName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('keyType')}</label>
-                <select
-                  className="input-field"
-                  value={keyType}
-                  onChange={(e) => setKeyType(e.target.value as any)}
-                >
-                  <option value="Ed25519">Ed25519 (Recommend)</option>
-                  <option value="RSA-4096">RSA (4096-bit)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Passphrase (Optional)</label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="Passphrase"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                />
-              </div>
-
-              <button type="submit" className="btn-primary" disabled={loading} style={{ height: '36px' }}>
-                <span>{loading ? t('testing') : t('generateKeyBtn')}</span>
+            {/* Tabs Header */}
+            <div style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('generate')}
+                style={{
+                  padding: '8px 12px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === 'generate' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                  color: activeTab === 'generate' ? 'var(--text-main)' : 'var(--text-dim)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+              >
+                {t('generateKeyTab')}
               </button>
-            </form>
+              <button
+                type="button"
+                onClick={() => setActiveTab('import')}
+                style={{
+                  padding: '8px 12px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === 'import' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                  color: activeTab === 'import' ? 'var(--text-main)' : 'var(--text-dim)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+              >
+                {t('importKeyTab')}
+              </button>
+            </div>
+
+            {activeTab === 'generate' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <form onSubmit={handleGenerateKey} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 1fr auto', gap: '10px', alignItems: 'end' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('keyName')}</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. id_ed25519_prod"
+                      value={keyName}
+                      onChange={(e) => setKeyName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('keyType')}</label>
+                    <select
+                      className="input-field"
+                      value={keyType}
+                      onChange={(e) => setKeyType(e.target.value as any)}
+                    >
+                      <option value="Ed25519">Ed25519 (Recommend)</option>
+                      <option value="RSA-4096">RSA (4096-bit)</option>
+                    </select>
+                  </div>
+                  {/* Passphrase field removed for generated keys as they are secured by the vault automatically */}
+
+                  <button type="submit" className="btn-primary" disabled={loading} style={{ height: '36px' }}>
+                    <span>{loading ? t('testing') : t('generateKeyBtn')}</span>
+                  </button>
+                </form>
+
+                {/* Warning/Tip Text based on Key Type */}
+                <div style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                  {keyType === 'RSA-4096' ? (
+                    <span style={{ color: 'var(--accent-warning)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      ⚠️ {t('rsaWarning')}
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--accent-success)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      ✨ {t('ed25519Tip')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleImportKey} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('keyName')}</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. imported_key"
+                      value={importKeyName}
+                      onChange={(e) => setImportKeyName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Passphrase (Optional)</label>
+                    <input
+                      type="password"
+                      className="input-field"
+                      placeholder="Passphrase"
+                      value={importPassphrase}
+                      onChange={(e) => setImportPassphrase(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                 <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('privateKeyLabel')}</label>
+                    <label style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--accent-primary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      fontWeight: 500
+                    }}>
+                      <span>{t('chooseFileBtn')}</span>
+                      <input
+                        type="file"
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                        accept=".pem,.key,.pub,id_*,*"
+                      />
+                    </label>
+                  </div>
+                  <textarea
+                    className="input-field"
+                    style={{
+                      height: '100px',
+                      fontFamily: 'monospace',
+                      fontSize: '0.8rem',
+                      resize: 'vertical',
+                      whiteSpace: 'pre',
+                      lineHeight: '1.2'
+                    }}
+                    placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
+                    value={importPrivateKey}
+                    onChange={(e) => setImportPrivateKey(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="submit" className="btn-primary" disabled={loading} style={{ height: '36px' }}>
+                    <span>{loading ? t('testing') : t('importKeyBtn')}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Key List Section */}
@@ -170,7 +351,7 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
                         className="btn-secondary"
                         onClick={() => handleCopyPublic(k.publicKey, k.id)}
@@ -178,11 +359,20 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
                         title={t('copyPublicKey')}
                       >
                         {copiedId === k.id ? <Check size={14} style={{ color: 'var(--accent-success)' }} /> : <Copy size={14} />}
-                        <span>{copiedId === k.id ? 'Copied' : t('copyCode')}</span>
+                        <span>{copiedId === k.id ? 'Copied Pub' : 'Public Key'}</span>
+                      </button>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleCopyPrivate(k.privateKey, k.id)}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                        title={t('copyPrivateKey')}
+                      >
+                        {copiedPrivateId === k.id ? <Check size={14} style={{ color: 'var(--accent-success)' }} /> : <Key size={14} />}
+                        <span>{copiedPrivateId === k.id ? 'Copied Priv' : 'Private Key'}</span>
                       </button>
                       <button
                         onClick={() => onDeleteKey(k.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '4px' }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
                         title={t('deleteKey')}
                       >
                         <Trash2 size={14} />

@@ -98,6 +98,10 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
     setIsConnected(false);
     setError(null);
 
+    if (fitAddonRef.current) {
+      fitAddonRef.current.fit();
+    }
+
     term.writeln(`\x1b[36mConnecting to ${targetServer.username}@${targetServer.host}:${targetServer.port} via SSH...\x1b[0m\r\n`);
 
     window.api
@@ -105,7 +109,9 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
         sessionId,
         server: targetServer,
         key: targetServer.authType === 'privateKey' ? keyObj : undefined,
-        vaultConfig: settings.hashicorpVault
+        vaultConfig: settings.hashicorpVault,
+        cols: term.cols,
+        rows: term.rows
       })
       .then((res) => {
         setConnecting(false);
@@ -116,10 +122,6 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
         } else {
           setIsConnected(true);
           setIsReAuthOpen(false);
-          if (fitAddonRef.current) {
-            fitAddonRef.current.fit();
-            window.api.sshResize(sessionId, term.cols, term.rows);
-          }
         }
       });
   };

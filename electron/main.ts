@@ -95,6 +95,10 @@ function setupIpcHandlers() {
     return vaultService.generateKeyPair(type);
   });
 
+  ipcMain.handle('vault:derive-public-key', (_, { privateKey, passphrase }) => {
+    return vaultService.derivePublicKey(privateKey, passphrase);
+  });
+
   /* ================= HashiCorp Vault Handlers ================= */
   ipcMain.handle('vault:hashicorp-test', async (_, config) => {
     return hashicorpVaultService.testConnection(config);

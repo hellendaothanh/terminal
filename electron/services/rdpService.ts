@@ -103,11 +103,11 @@ export class RDPService {
       const rdpContent = [
         `full address:s:${host}:${port}`,
         `username:s:${username}`,
-        `desktopwidth:i:${width}`,
-        `desktopheight:i:${height}`,
+        `smart sizing:i:1`,
+        `dynamic resolution:i:1`,
         `session bpp:i:32`,
         `prompt for credentials:i:0`,
-        `screen mode id:i:1`,
+        `screen mode id:i:2`,
         `use multimon:i:0`,
         `authentication level:i:2`
       ].join('\r\n');

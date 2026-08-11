@@ -1,7 +1,7 @@
 {
   "name": "omni-terminal",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Cross-platform Server & Database Management Tool integrating SSH, SFTP, RDP, MySQL, PostgreSQL, Redis, MongoDB and AI Assistant",
   "main": "dist-electron/main.cjs",
   "type": "module",
@@ -18,7 +18,7 @@
     "release:major": "npm version major && git push origin main --tags",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "postinstall": "node -e \"require('fs').existsSync('node_modules/electron') && require('fs').writeFileSync('node_modules/electron/path.txt', 'Electron.app/Contents/MacOS/Electron')\""
+    "postinstall": "node -e \"const fs = require('fs'); if (fs.existsSync('node_modules/electron')) { const exe = process.platform === 'darwin' ? 'Electron.app/Contents/MacOS/Electron' : (process.platform === 'win32' ? 'electron.exe' : 'electron'); fs.writeFileSync('node_modules/electron/path.txt', exe); }\""
   },
   "build": {
     "appId": "com.omniterminal.app",

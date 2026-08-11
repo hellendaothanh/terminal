@@ -152,68 +152,83 @@ export const App: React.FC = () => {
     });
   };
 
-  /* Server CRUD Operations */
   const handleSaveServer = (serverData: Partial<ServerConfig>) => {
-    if (serverData.id) {
-      // Edit existing
+    setVaultData((prev) => {
+      let newData: VaultData;
       let updatedServerObj: ServerConfig | null = null;
-      const updated = vaultData.servers.map((s) => {
-        if (s.id === serverData.id) {
-          updatedServerObj = { ...s, ...serverData, updatedAt: Date.now() } as ServerConfig;
-          return updatedServerObj;
-        }
-        return s;
-      });
-      saveVaultData({ ...vaultData, servers: updated });
+
+      if (serverData.id) {
+        // Edit existing
+        const updated = prev.servers.map((s) => {
+          if (s.id === serverData.id) {
+            updatedServerObj = { ...s, ...serverData, updatedAt: Date.now() } as ServerConfig;
+            return updatedServerObj;
+          }
+          return s;
+        });
+        newData = { ...prev, servers: updated };
+      } else {
+        // Create new
+        const newServer: ServerConfig = {
+          id: 'srv_' + Date.now(),
+          name: serverData.name || 'Server Mới',
+          host: serverData.host || '127.0.0.1',
+          port: serverData.port || 22,
+          protocol: serverData.protocol || 'SSH',
+          username: serverData.username || 'root',
+          authType: serverData.authType || 'password',
+          password: serverData.password,
+          privateKeyId: serverData.privateKeyId,
+          environment: serverData.environment || 'DEV',
+          tags: serverData.tags || [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        newData = { ...prev, servers: [...prev.servers, newServer] };
+      }
+
+      window.api.vaultSaveData(newData);
+
       if (updatedServerObj) {
         setTabs((prevTabs) =>
           prevTabs.map((t) => (t.serverId === serverData.id ? { ...t, server: updatedServerObj! } : t))
         );
       }
-    } else {
-      // Create new
-      const newServer: ServerConfig = {
-        id: 'srv_' + Date.now(),
-        name: serverData.name || 'Server Mới',
-        host: serverData.host || '127.0.0.1',
-        port: serverData.port || 22,
-        protocol: serverData.protocol || 'SSH',
-        username: serverData.username || 'root',
-        authType: serverData.authType || 'password',
-        password: serverData.password,
-        privateKeyId: serverData.privateKeyId,
-        environment: serverData.environment || 'DEV',
-        tags: serverData.tags || [],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      saveVaultData({ ...vaultData, servers: [...vaultData.servers, newServer] });
-    }
+      return newData;
+    });
     setEditingServer(null);
   };
 
   const handleUpdateServerPassword = (serverId: string, newPassword: string) => {
-    let updatedServerObj: ServerConfig | null = null;
-    const updated = vaultData.servers.map((s) => {
-      if (s.id === serverId) {
-        updatedServerObj = { ...s, authType: 'password' as const, password: newPassword, updatedAt: Date.now() };
-        return updatedServerObj;
-      }
-      return s;
-    });
-    saveVaultData({ ...vaultData, servers: updated });
+    setVaultData((prev) => {
+      let updatedServerObj: ServerConfig | null = null;
+      const updated = prev.servers.map((s) => {
+        if (s.id === serverId) {
+          updatedServerObj = { ...s, authType: 'password' as const, password: newPassword, updatedAt: Date.now() };
+          return updatedServerObj;
+        }
+        return s;
+      });
+      const newData = { ...prev, servers: updated };
+      window.api.vaultSaveData(newData);
 
-    if (updatedServerObj) {
-      setTabs((prevTabs) =>
-        prevTabs.map((t) => (t.serverId === serverId ? { ...t, server: updatedServerObj! } : t))
-      );
-    }
+      if (updatedServerObj) {
+        setTabs((prevTabs) =>
+          prevTabs.map((t) => (t.serverId === serverId ? { ...t, server: updatedServerObj! } : t))
+        );
+      }
+      return newData;
+    });
   };
 
   const handleDeleteServer = (serverId: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa máy chủ này khỏi kho dữ liệu?')) {
-      const updated = vaultData.servers.filter((s) => s.id !== serverId);
-      saveVaultData({ ...vaultData, servers: updated });
+      setVaultData((prev) => {
+        const updated = prev.servers.filter((s) => s.id !== serverId);
+        const newData = { ...prev, servers: updated };
+        window.api.vaultSaveData(newData);
+        return newData;
+      });
     }
   };
 
@@ -324,6 +339,7 @@ export const App: React.FC = () => {
                   setEditingServer(server);
                   setIsServerModalOpen(true);
                 }}
+                onDeleteServer={handleDeleteServer}
                 settings={settings}
               />
             </div>

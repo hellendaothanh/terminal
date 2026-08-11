@@ -1,6 +1,6 @@
 import React from 'react';
 import { ServerConfig, Protocol, TerminalSettings } from '../types';
-import { Server, Terminal, FolderOpen, Monitor, Plus, ShieldCheck, Tag, Layers, Globe, Edit2 } from 'lucide-react';
+import { Server, Terminal, FolderOpen, Monitor, Plus, ShieldCheck, Tag, Layers, Globe, Edit2, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface DashboardProps {
@@ -8,6 +8,7 @@ interface DashboardProps {
   onConnect: (server: ServerConfig, protocol: Protocol) => void;
   onAddServer: () => void;
   onEditServer: (server: ServerConfig) => void;
+  onDeleteServer?: (serverId: string) => void;
   settings?: TerminalSettings;
 }
 
@@ -16,6 +17,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onConnect,
   onAddServer,
   onEditServer,
+  onDeleteServer,
   settings
 }) => {
   const { t } = useTranslation(settings);
@@ -248,6 +250,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 >
                   <Edit2 size={14} />
                 </button>
+                {onDeleteServer && (
+                  <button
+                    onClick={() => onDeleteServer(server.id)}
+                    className="btn-secondary"
+                    style={{ height: '32px', width: '32px', padding: 0, justifyContent: 'center', color: 'var(--accent-danger)' }}
+                    title={t('deleteServer')}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

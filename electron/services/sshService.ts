@@ -1,4 +1,4 @@
-import { Client, ConnectConfig } from 'ssh2';
+import { Client, ConnectConfig, utils } from 'ssh2';
 import { BrowserWindow } from 'electron';
 import { ServerConfig, SSHKey } from '../../src/types';
 
@@ -6,6 +6,8 @@ export interface SSHSessionOptions {
   sessionId: string;
   server: ServerConfig;
   key?: SSHKey;
+  cols?: number;
+  rows?: number;
 }
 
 export class SSHService {
@@ -16,7 +18,7 @@ export class SSHService {
     options: SSHSessionOptions
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const { sessionId, server, key } = options;
+      const { sessionId, server, key, cols = 80, rows = 24 } = options;
       const client = new Client();
 
       const connectConfig: ConnectConfig = {
@@ -29,8 +31,39 @@ export class SSHService {
       };
 
       if (server.authType === 'privateKey' && key) {
+        let needPassphrase = false;
+        try {
+          // Try parsing without passphrase first
+          const parsed = utils.parseKey(key.privateKey);
+          if (parsed instanceof Error) {
+            throw parsed;
+          }
+          console.log(`[SSH] Private key parsed successfully (no passphrase needed). Algorithm:`, (parsed as any).type);
+        } catch (e) {
+          // If parsing without passphrase fails, try parsing with passphrase if available
+          if (key.passphrase) {
+            try {
+              const parsed = utils.parseKey(key.privateKey, key.passphrase);
+              if (parsed instanceof Error) {
+                throw parsed;
+              }
+              console.log(`[SSH] Private key parsed successfully (with passphrase). Algorithm:`, (parsed as any).type);
+              needPassphrase = true;
+            } catch (err: any) {
+              console.error('[SSH] Failed to parse private key with passphrase:', err.message);
+              let msg = `Không thể phân tích Private Key: ${err.message}`;
+              if (err.message.includes('Unsupported key format') && key.privateKey.includes('BEGIN OPENSSH PRIVATE KEY')) {
+                 msg = 'Khóa Ed25519 (OpenSSH) có mật khẩu không được hỗ trợ giải mã trên hệ điều hành này. Vui lòng chọn "Sinh Khóa Mới", hoặc dùng lệnh: ssh-keygen -p -f <file_key> để gỡ mật khẩu khóa cũ.';
+              }
+              return resolve({ success: false, error: msg });
+            }
+          } else {
+            console.error('[SSH] Private key requires passphrase but none was provided.');
+            return resolve({ success: false, error: 'Khóa SSH yêu cầu mật khẩu giải mã (Passphrase) nhưng chưa được cung cấp.' });
+          }
+        }
         connectConfig.privateKey = key.privateKey;
-        if (key.passphrase) {
+        if (needPassphrase && key.passphrase) {
           connectConfig.passphrase = key.passphrase;
         }
       } else if (server.password) {
@@ -43,7 +76,7 @@ export class SSHService {
       });
 
       client.on('ready', () => {
-        client.shell({ term: 'xterm-256color', cols: 80, rows: 24 }, (err, stream) => {
+        client.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
           if (err) {
             client.end();
             return resolve({ success: false, error: err.message });

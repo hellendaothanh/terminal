@@ -18,12 +18,17 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentServer, setCurrentServer] = useState<ServerConfig>(initialServer);
-  const [resolution, setResolution] = useState<{ width: number; height: number }>({ width: 1280, height: 720 });
+
+  useEffect(() => {
+    setCurrentServer(initialServer);
+  }, [initialServer]);
+
+
   const [statusInfo, setStatusInfo] = useState<string>('Đang kiểm tra kết nối TCP tới máy chủ RDP...');
   const [connected, setConnected] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoFit, setAutoFit] = useState<boolean>(true);
+
   const [isReAuthOpen, setIsReAuthOpen] = useState<boolean>(false);
   const [copiedPass, setCopiedPass] = useState<boolean>(false);
 
@@ -39,7 +44,6 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
     if (!containerRef.current) return;
     const initialWidth = containerRef.current.clientWidth || 1280;
     const initialHeight = containerRef.current.clientHeight || 720;
-    setResolution({ width: initialWidth, height: initialHeight });
     setConnecting(true);
     setError(null);
     setStatusInfo(`Đang kiểm tra kết nối TCP tới ${targetServer.host}:${targetServer.port || 3389}...`);
@@ -78,33 +82,15 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
     const removeRdpStatusListener = window.api.onRdpStatus((_, payload) => {
       if (payload.sessionId === sessionId) {
         setConnected(payload.connected);
-        if (payload.resolution) setResolution(payload.resolution);
         if (payload.info) setStatusInfo(payload.info);
       }
     });
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!autoFit) return;
-      for (const entry of entries) {
-        const width = Math.floor(entry.contentRect.width);
-        const height = Math.floor(entry.contentRect.height);
-        if (width > 200 && height > 200) {
-          setResolution({ width, height });
-          window.api.rdpResize(sessionId, width, height);
-        }
-      }
-    });
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
     return () => {
       removeRdpStatusListener();
-      resizeObserver.disconnect();
       window.api.rdpDisconnect(sessionId);
     };
-  }, [sessionId, initialServer.id, autoFit]);
+  }, [sessionId, initialServer.id]);
 
   const handleRetryAuth = (newPassword: string, saveToVault: boolean) => {
     if (saveToVault && onUpdateServerPassword) {
@@ -206,16 +192,6 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
             </button>
           )}
 
-          <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)' }} />
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.75rem' }}>
-            <input
-              type="checkbox"
-              checked={autoFit}
-              onChange={(e) => setAutoFit(e.target.checked)}
-            />
-            <span>Auto-fit ({resolution.width}x{resolution.height})</span>
-          </label>
         </div>
       </div>
 
@@ -258,8 +234,8 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
         }}
       >
         <div style={{
-          width: autoFit ? '100%' : `${resolution.width}px`,
-          height: autoFit ? '100%' : `${resolution.height}px`,
+          width: '100%',
+          height: '100%',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 'var(--radius-md)',
           backgroundColor: '#111827',
@@ -329,19 +305,6 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
                 </button>
               </div>
 
-              <div style={{
-                marginTop: '20px',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                color: 'var(--accent-primary)',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-mono)',
-                display: 'inline-block'
-              }}>
-                Resolution: {resolution.width} x {resolution.height} px
-              </div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', maxWidth: '480px' }}>

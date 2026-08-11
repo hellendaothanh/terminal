@@ -24,8 +24,39 @@ export class SFTPService {
     };
 
     if (server.authType === 'privateKey' && key) {
+      let needPassphrase = false;
+      try {
+        const { utils } = require('ssh2');
+        // Try parsing without passphrase first
+        const parsed = utils.parseKey(key.privateKey);
+        if (parsed instanceof Error) {
+          throw parsed;
+        }
+      } catch (e) {
+        // Try parsing with passphrase if available
+        if (key.passphrase) {
+          try {
+            const { utils } = require('ssh2');
+            const parsed = utils.parseKey(key.privateKey, key.passphrase);
+            if (parsed instanceof Error) {
+              throw parsed;
+            }
+            needPassphrase = true;
+          } catch (err: any) {
+            console.error('[SFTP] Failed to parse private key with passphrase:', err.message);
+            let msg = `Không thể phân tích Private Key: ${err.message}`;
+            if (err.message.includes('Unsupported key format') && key.privateKey.includes('BEGIN OPENSSH PRIVATE KEY')) {
+               msg = 'Khóa Ed25519 (OpenSSH) có mật khẩu không được hỗ trợ giải mã trên hệ điều hành này. Vui lòng chọn "Sinh Khóa Mới", hoặc dùng lệnh: ssh-keygen -p -f <file_key> để gỡ mật khẩu khóa cũ.';
+            }
+            return { success: false, error: msg };
+          }
+        } else {
+          console.error('[SFTP] Private key requires passphrase but none was provided.');
+          return { success: false, error: 'Khóa SSH yêu cầu mật khẩu giải mã (Passphrase) nhưng chưa được cung cấp.' };
+        }
+      }
       connectConfig.privateKey = key.privateKey;
-      if (key.passphrase) {
+      if (needPassphrase && key.passphrase) {
         connectConfig.passphrase = key.passphrase;
       }
     } else if (server.password) {
