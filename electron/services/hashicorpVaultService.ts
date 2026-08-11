@@ -77,10 +77,30 @@ export class HashiCorpVaultService {
     try {
       const baseUrl = config.url.replace(/\/+$/, '');
       const healthUrl = `${baseUrl}/v1/sys/health`;
-      const res = await this.makeRequest(healthUrl, { method: 'GET' });
+      let res: any;
+      try {
+        res = await this.makeRequest(healthUrl, { method: 'GET' });
+      } catch (err: any) {
+        // Vault returns HTTP 429 / 472 / 473 for Standby/PerfStandby nodes which is normal and valid for cluster nodes
+        if (err.message.includes('API Error (429)') || err.message.includes('API Error (472)') || err.message.includes('API Error (473)')) {
+          const jsonMatch = err.message.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              res = JSON.parse(jsonMatch[0]);
+            } catch (e) {
+              res = { version: 'Cluster Node' };
+            }
+          } else {
+            res = { version: 'Cluster Node' };
+          }
+        } else {
+          throw err;
+        }
+      }
+
       return {
         success: true,
-        version: res.version || 'v1.x'
+        version: res.version || 'v1.x (Standby Node)'
       };
     } catch (err: any) {
       return {
