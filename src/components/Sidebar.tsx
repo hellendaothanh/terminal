@@ -267,7 +267,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   collapsedEnvs={collapsedEnvs}
                   toggleEnvCollapse={toggleEnvCollapse}
                   onConnect={onConnect}
-                  onAddServer={onAddServer}
                   onEditServer={onEditServer}
                   onDeleteServer={onDeleteServer}
                   onCloneServer={onCloneServer}
