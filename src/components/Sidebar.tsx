@@ -18,7 +18,8 @@ import {
   KeyRound,
   Shield,
   Network,
-  Code2
+  Code2,
+  ShieldAlert
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -41,6 +42,7 @@ interface SidebarProps {
   onOpenOTPs?: () => void;
   onOpenTunnels?: () => void;
   onOpenMultiExec?: () => void;
+  onOpenAuditLogs?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -60,7 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenPasswords,
   onOpenOTPs,
   onOpenTunnels,
-  onOpenMultiExec
+  onOpenMultiExec,
+  onOpenAuditLogs
 }) => {
   const { t } = useTranslation(settings);
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
@@ -629,6 +632,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
             <span>Multi-Exec & Snippets</span>
+          </button>
+
+          <button
+            onClick={onOpenAuditLogs}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <ShieldAlert size={16} style={{ color: 'var(--accent-danger)' }} />
+            <span>Session Audit Logs</span>
           </button>
         </div>
       )}

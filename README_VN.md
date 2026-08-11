@@ -58,7 +58,13 @@
 * **Bộ Thực Thi Song Song (Parallel Execution Engine):** Chạy đồng thời một câu lệnh SSH hoặc SQL trên hàng loạt máy chủ/CSDL bất đồng bộ.
 * **Hiển Thị Kết Quả Song Song:** Giao diện lưới dạng card hiển thị log stdout, stderr, đo thời gian thực thi (ms) và trạng thái thành công/thất bại theo thời gian thực.
 
-### 11. ⚡ Workspace Đa Tab & Docked Side Panel
+### 11. 🛡️ Ghi Vết & Nhật Ký Kiểm Toán Phiên Làm Việc (Session Recording & Audit Logs)
+* **Ghi Vết Chuẩn Asciinema v2:** Tự động ghi vết phiên làm việc SSH ra định dạng chuẩn `.cast` (lưu trữ đầy đủ luồng input/output và mốc thời gian offset).
+* **Trình Phát Lại Phiên SSH (Asciinema Session Player):** Phát lại trực tiếp nội dung phiên SSH ngay trong ứng dụng với các nút Play, Pause, Điều chỉnh tốc độ (`1x`, `2x`, `4x`) và thanh tua thời gian.
+* **Phát Hiện & Cảnh Báo Lệnh Nguy Hiểm:** Kiểm toán thời gian thực các câu lệnh SQL và SSH với bộ đánh giá rủi ro tự động (Cảnh báo màu đỏ cho `rm -rf`, `DROP TABLE`, `chmod 777`).
+* **Xuất Báo Cáo Nhật Ký:** Cho phép xuất dữ liệu kiểm toán ra file định dạng `.cast` hoặc file báo cáo `.txt`.
+
+### 12. ⚡ Workspace Đa Tab & Docked Side Panel
 * **Persistent Tab Sessions:** Các tab SSH, SFTP, RDP, Database, Password Manager và OTP duy trì kết nối liên tục trong bộ nhớ khi chuyển tab.
 * **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Nút thu gọn Sidebar danh sách máy chủ về dạng Mini-bar (50px) để tối đa hóa không gian màn hình làm việc.
 * **Docked AI Side Panel:** Khung Trợ Lý AI đính kèm cạnh bên dạng Docked Panel giúp xem Terminal và hỏi đáp AI song song không lo bị che khuất.

@@ -30,6 +30,12 @@ contextBridge.exposeInMainWorld('api', {
   multiExecSsh: (targetServers: any[], commandStr: string, keys: any[]) => ipcRenderer.invoke('multi-exec:ssh', { targetServers, commandStr, keys }),
   multiExecDb: (targetServers: any[], queryStr: string) => ipcRenderer.invoke('multi-exec:db', { targetServers, queryStr }),
 
+  /* Audit Log APIs */
+  auditList: () => ipcRenderer.invoke('audit:list'),
+  auditLogCommand: (entry: any) => ipcRenderer.invoke('audit:log-command', entry),
+  auditGetCast: (logId: string) => ipcRenderer.invoke('audit:get-cast', logId),
+  auditExport: (logId: string, format: 'cast' | 'txt') => ipcRenderer.invoke('audit:export', { logId, format }),
+
   /* AI APIs */
   aiTestKey: (settings: any) => ipcRenderer.invoke('ai:test-key', settings),
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => ipcRenderer.invoke('ai:chat', { settings, userPrompt, history, contextSnippet }),

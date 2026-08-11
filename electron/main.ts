@@ -9,6 +9,7 @@ import { HashiCorpVaultService } from './services/hashicorpVaultService';
 import { DatabaseService } from './services/databaseService';
 import { AIService } from './services/aiService';
 import { SSHTunnelService } from './services/SSHTunnelService';
+import { AuditLogService } from './services/AuditLogService';
 
 let mainWindow: BrowserWindow | null = null;
 const vaultService = new VaultService();
@@ -19,6 +20,7 @@ const hashicorpVaultService = new HashiCorpVaultService();
 const databaseService = new DatabaseService();
 const aiService = new AIService();
 const tunnelService = new SSHTunnelService();
+const auditLogService = new AuditLogService();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -210,6 +212,24 @@ function setupIpcHandlers() {
       }
     });
     return Promise.all(promises);
+  });
+
+  /* ================= Audit Log Handlers ================= */
+  ipcMain.handle('audit:list', async () => {
+    return auditLogService.getList();
+  });
+
+  ipcMain.handle('audit:log-command', async (_, entry) => {
+    auditLogService.logEntry(entry);
+    return { success: true };
+  });
+
+  ipcMain.handle('audit:get-cast', async (_, logId: string) => {
+    return auditLogService.getCast(logId);
+  });
+
+  ipcMain.handle('audit:export', async (_, { logId, format }) => {
+    return auditLogService.exportLog(logId, format);
   });
 
   /* ================= HashiCorp Vault Handlers ================= */

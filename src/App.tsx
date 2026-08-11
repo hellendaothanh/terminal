@@ -18,6 +18,7 @@ import { PasswordManager } from './components/PasswordManager';
 import { OTPManager } from './components/OTPManager';
 import { SSHTunnelManager } from './components/SSHTunnelManager';
 import { MultiExecManager } from './components/MultiExecManager';
+import { AuditLogManager } from './components/AuditLogManager';
 
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
@@ -359,6 +360,16 @@ export const App: React.FC = () => {
               setActiveTabId(newTabId);
             }
           }}
+          onOpenAuditLogs={() => {
+            const exists = tabs.find((t) => t.type === 'AUDIT_LOG_MANAGER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Session Audit Logs', type: 'AUDIT_LOG_MANAGER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
         />
 
         {/* Central Active Viewport Container */}
@@ -398,7 +409,7 @@ export const App: React.FC = () => {
             {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER') return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER') return null;
 
               return (
                 <div
@@ -488,6 +499,8 @@ export const App: React.FC = () => {
                         saveVaultData({ ...vaultData, snippets: newSns });
                       }}
                     />
+                  ) : tab.type === 'AUDIT_LOG_MANAGER' ? (
+                    <AuditLogManager />
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}

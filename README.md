@@ -58,7 +58,13 @@
 * **Parallel Execution Engine:** Execute an SSH command or SQL query simultaneously across multiple selected servers or databases asynchronously.
 * **Side-by-Side Output Visualizer:** Multi-card grid layout comparing stdout, stderr, execution times (ms), and success/error badges per host in real time.
 
-### 11. ⚡ Multi-Tab Workspace & Docked AI Side Panel
+### 11. 🛡️ Session Recording & Security Audit Logs
+* **Asciinema v2 Session Recording:** Automatically records SSH terminal sessions in standard `.cast` format (including input/output streams and timing offsets).
+* **Built-in Asciinema Session Player:** Replay recorded terminal sessions directly in app with Play, Pause, Speed adjustment (1x, 2x, 4x), and seek controls.
+* **High-Risk Command Detection:** Real-time auditing for SQL queries and SSH commands with automatic risk scoring (CRITICAL / HIGH risk warnings for `rm -rf`, `DROP TABLE`, `chmod 777`).
+* **Log Export Options:** Export audit trails to `.cast` or `.txt` log reports with timestamp integrity.
+
+### 12. ⚡ Multi-Tab Workspace & Docked AI Side Panel
 * **Persistent Tab Sessions:** Active SSH, SFTP, RDP, Database, Password Manager, and OTP sessions persist in DOM memory when switching tabs.
 * **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Toggle server list sidebar into a 50px compact mini-bar to maximize workspace real estate.
 * **Docked AI Side Panel:** The AI Assistant operates as a docked flex panel alongside the terminal without covering or obscuring terminal text.

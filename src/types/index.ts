@@ -134,10 +134,25 @@ export interface VaultData {
   hashicorpVault?: HashiCorpVaultConfig;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  sessionId: string;
+  targetId?: string;
+  targetName: string;
+  protocol: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE';
+  user: string;
+  commandOrQuery: string;
+  status: 'SUCCESS' | 'ERROR';
+  executionTimeMs?: number;
+  timestamp: number;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  castData?: Array<[number, string, string]>; // asciinema v2 frames: [time_offset, 'o'|'i', data]
+}
+
 export interface TabItem {
   id: string;
   title: string;
-  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER';
+  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER' | 'AUDIT_LOG_MANAGER';
   serverId?: string;
   server?: ServerConfig;
 }
