@@ -1,30 +1,12 @@
 import React, { useState } from 'react';
-import {
-  Server,
-  Plus,
-  Terminal,
-  Folder,
-  Monitor,
-  Database,
-  Edit2,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-  Layers,
-  Tag,
-  Globe,
-  PanelLeftClose,
-  PanelLeftOpen,
-  KeyRound,
-  Shield,
-  Network,
-  Code2,
-  ShieldAlert,
-  Box,
-  Cloud
+import { 
+  Server, Layers, Tag, Shield, Database, TerminalSquare, 
+  Key, FileKey2, FileClock, Network, SplitSquareHorizontal, 
+  DatabaseBackup, Activity, Cloud, LayoutGrid
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
+import { ServerListSection } from './sidebar/ServerListSection';
 
 interface SidebarProps {
   servers: ServerConfig[];
@@ -37,6 +19,7 @@ interface SidebarProps {
   onAddServer: () => void;
   onEditServer: (server: ServerConfig) => void;
   onDeleteServer: (serverId: string) => void;
+  onCloneServer?: (server: ServerConfig) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   settings?: TerminalSettings;
@@ -63,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAddServer,
   onEditServer,
   onDeleteServer,
+  onCloneServer,
   isCollapsed = false,
   onToggleCollapse,
   settings,
@@ -78,6 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenCloudExplorer
 }) => {
   const { t } = useTranslation(settings);
+  const [activePane, setActivePane] = useState<'SERVERS' | 'SECURITY' | 'DATABASES' | 'DEVOPS'>('SERVERS');
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
 
   const toggleEnvCollapse = (envKey: string) => {
@@ -110,679 +95,213 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Unique tags
   const allTags = Array.from(new Set(servers.flatMap((s) => s.tags || [])));
 
-  // If sidebar is collapsed into a 50px mini-bar
-  if (isCollapsed) {
-    return (
-      <div style={{
-        width: '50px',
-        backgroundColor: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: '12px',
-        gap: '12px',
-        userSelect: 'none'
-      }}>
-        {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-primary)',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: 'var(--radius-sm)'
-            }}
-            title={t('expandSidebar')}
-          >
-            <PanelLeftOpen size={20} />
-          </button>
-        )}
+  const ActivityIcon = ({ id, icon: Icon, tooltip }: { id: any, icon: any, tooltip: string }) => (
+    <div 
+      className={`activity-icon ${activePane === id ? 'activity-icon-active' : ''}`}
+      onClick={() => {
+        setActivePane(id);
+        if (isCollapsed && onToggleCollapse) onToggleCollapse(); // Expand if collapsed
+      }}
+      style={{
+        width: '100%', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        marginBottom: '4px'
+      }}
+      title={tooltip}
+    >
+      <Icon size={22} strokeWidth={1.5} />
+    </div>
+  );
 
-        <button
-          onClick={onAddServer}
-          style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#fff',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer'
-          }}
-          title={t('addServer')}
-        >
-          <Plus size={18} />
-        </button>
-
-        <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-
-        {/* Mini Env Badges */}
-        <button
-          onClick={() => onSelectEnv('ALL')}
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            border: selectedEnv === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-            backgroundColor: selectedEnv === 'ALL' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-            color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)',
-            cursor: 'pointer'
-          }}
-          title={t('allEnvs')}
-        >
-          ALL
-        </button>
-
-        {environments.map((env) => (
-          <button
-            key={env}
-            onClick={() => onSelectEnv(env)}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              border: selectedEnv === env ? '1px solid currentColor' : '1px solid var(--border-subtle)',
-              backgroundColor: selectedEnv === env ? 'var(--bg-surface)' : 'var(--bg-tertiary)',
-              color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)',
-              cursor: 'pointer'
-            }}
-            title={env}
-          >
-            {env.substring(0, 3)}
-          </button>
-        ))}
-      </div>
-    );
-  }
+  const ToolButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick?: () => void }) => (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px',
+        backgroundColor: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer',
+        fontSize: '0.85rem', textAlign: 'left', borderBottom: '1px solid var(--border-subtle)',
+        transition: 'background-color var(--transition-fast)'
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+    >
+      <Icon size={18} style={{ color: 'var(--accent-primary)' }} />
+      <span>{label}</span>
+    </button>
+  );
 
   return (
-    <div style={{
-      width: '260px',
-      backgroundColor: 'var(--bg-secondary)',
-      borderRight: '1px solid var(--border-subtle)',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      userSelect: 'none'
-    }}>
-      {/* Header Section */}
-      <div style={{
-        padding: '14px 16px',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
+    <div style={{ display: 'flex', height: '100%', backgroundColor: 'var(--bg-primary)', userSelect: 'none' }}>
+      
+      {/* 1. Activity Rail (Leftmost) */}
+      <div style={{ 
+        width: '54px', 
+        borderRight: '1px solid var(--border-subtle)', 
+        backgroundColor: 'var(--bg-secondary)', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        paddingTop: '12px',
+        zIndex: 10
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-            color: 'var(--accent-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Server size={18} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('servers')}</h1>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{filteredServers.length} / {servers.length} Servers</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <button
-            className="btn-primary"
-            onClick={onAddServer}
-            style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-            title={t('addServer')}
-          >
-            <Plus size={16} />
-            <span>+</span>
-          </button>
-          {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '4px'
-              }}
-              title={t('collapseSidebar')}
-            >
-              <PanelLeftClose size={18} />
-            </button>
-          )}
-        </div>
+        <ActivityIcon id="SERVERS" icon={Server} tooltip={t('servers')} />
+        <ActivityIcon id="SECURITY" icon={Shield} tooltip="Security & Identity" />
+        <ActivityIcon id="DATABASES" icon={Database} tooltip="Databases & Data" />
+        <ActivityIcon id="DEVOPS" icon={TerminalSquare} tooltip="DevOps & Cloud" />
       </div>
 
-      {/* Environment Filters */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Layers size={14} />
-          <span>{t('environment')}</span>
-        </div>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => onSelectEnv('ALL')}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '12px',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              border: selectedEnv === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-              backgroundColor: selectedEnv === 'ALL' ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-              color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)'
-            }}
-          >
-            {t('allEnvs')}
-          </button>
-          {environments.map((env) => (
-            <button
-              key={env}
-              onClick={() => onSelectEnv(env)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '12px',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                border: selectedEnv === env ? '1px solid currentColor' : '1px solid var(--border-subtle)',
-                backgroundColor: selectedEnv === env ? 'var(--bg-surface)' : 'var(--bg-tertiary)',
-                color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)'
-              }}
-            >
-              {env}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tags Section */}
-      {allTags.length > 0 && (
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Tag size={14} />
-            <span>{t('tags')}</span>
+      {/* 2. Secondary Panel (Collapsible) */}
+      {!isCollapsed && (
+        <div style={{ 
+          width: '260px', 
+          backgroundColor: 'var(--bg-tertiary)', 
+          borderRight: '1px solid var(--border-subtle)', 
+          display: 'flex', 
+          flexDirection: 'column',
+          height: '100%'
+        }}>
+          
+          {/* Header */}
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <h2 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '0.5px' }}>
+              {activePane === 'SERVERS' ? t('servers') : activePane === 'SECURITY' ? 'Security & Identity' : activePane === 'DATABASES' ? 'Databases' : 'DevOps & Tools'}
+            </h2>
           </div>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxHeight: '70px', overflowY: 'auto' }}>
-            {selectedTag && (
-              <button
-                onClick={() => onSelectTag(null)}
-                style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  backgroundColor: 'var(--accent-primary)',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('clearTag')}
-              </button>
-            )}
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => onSelectTag(selectedTag === tag ? null : tag)}
-                style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  border: selectedTag === tag ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                  backgroundColor: selectedTag === tag ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-                  color: selectedTag === tag ? 'var(--accent-primary)' : 'var(--text-muted)',
-                  cursor: 'pointer'
-                }}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Server Tree List Grouped by Environments */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
-        {filteredServers.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-            {t('noServersFound')}
-          </div>
-        ) : (
-          environments.map((env) => {
-            const envServers = groupedServers[env];
-            if (envServers.length === 0 && selectedEnv !== 'ALL') return null;
-            if (envServers.length === 0) return null;
-
-            const isCollapsed = collapsedEnvs[env];
-
-            return (
-              <div key={env} style={{ marginBottom: '12px' }}>
-                {/* Environment Group Header */}
-                <div
-                  onClick={() => toggleEnvCollapse(env)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '6px 8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)',
-                    cursor: 'pointer',
-                    borderRadius: 'var(--radius-sm)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    <span>{env}</span>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {activePane === 'SERVERS' && (
+              <>
+                {/* Environment Filters */}
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Layers size={14} />
+                    <span>{t('environment')}</span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>{envServers.length}</span>
-                </div>
-
-                {/* Servers under Environment */}
-                {!isCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px', paddingLeft: '8px' }}>
-                    {envServers.map((server) => (
-                      <div
-                        key={server.id}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => onSelectEnv('ALL')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        border: selectedEnv === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                        backgroundColor: selectedEnv === 'ALL' ? 'var(--accent-glow)' : 'var(--bg-secondary)',
+                        color: selectedEnv === 'ALL' ? 'var(--accent-primary)' : 'var(--text-muted)'
+                      }}
+                    >
+                      {t('allEnvs')}
+                    </button>
+                    {environments.map((env) => (
+                      <button
+                        key={env}
+                        onClick={() => onSelectEnv(env)}
                         style={{
-                          backgroundColor: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '10px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                          transition: 'all 0.15s ease'
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          border: selectedEnv === env ? '1px solid currentColor' : '1px solid var(--border-subtle)',
+                          backgroundColor: selectedEnv === env ? 'var(--bg-surface)' : 'var(--bg-secondary)',
+                          color: env === 'DEV' ? 'var(--env-dev)' : env === 'STAGING' ? 'var(--env-staging)' : 'var(--env-prod)'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                          <div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                              {server.name}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Globe size={11} />
-                              <span>{server.username}@{server.host}:{server.port}</span>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '2px' }}>
-                            <button
-                              onClick={() => onEditServer(server)}
-                              style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px' }}
-                              title={t('editServer')}
-                            >
-                              <Edit2 size={13} />
-                            </button>
-                            <button
-                              onClick={() => onDeleteServer(server.id)}
-                              style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '2px' }}
-                              title={t('deleteServer')}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Quick Connection Action Buttons */}
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          {server.protocol === 'DATABASE' ? (
-                            <button
-                              onClick={() => onConnect(server, 'DATABASE')}
-                              style={{
-                                flex: 1,
-                                padding: '4px 8px',
-                                fontSize: '0.75rem',
-                                backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                                color: '#c084fc',
-                                border: '1px solid rgba(168, 85, 247, 0.3)',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '4px'
-                              }}
-                              title={t('manageDb')}
-                            >
-                              <Database size={12} />
-                              <span>{server.dbType || 'DB'}</span>
-                            </button>
-                          ) : server.protocol === 'RDP' ? (
-                            <button
-                              onClick={() => onConnect(server, 'RDP')}
-                              style={{
-                                flex: 1,
-                                padding: '4px 8px',
-                                fontSize: '0.75rem',
-                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                color: 'var(--accent-primary)',
-                                border: '1px solid rgba(59, 130, 246, 0.3)',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '4px'
-                              }}
-                              title={t('connectRdp')}
-                            >
-                              <Monitor size={12} />
-                              <span>RDP</span>
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => onConnect(server, 'SSH')}
-                                style={{
-                                  flex: 1,
-                                  padding: '4px 8px',
-                                  fontSize: '0.75rem',
-                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                  color: 'var(--accent-primary)',
-                                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '4px'
-                                }}
-                                title={t('connectSsh')}
-                              >
-                                <Terminal size={12} />
-                                <span>SSH</span>
-                              </button>
-
-                              <button
-                                onClick={() => onConnect(server, 'SFTP')}
-                                style={{
-                                  flex: 1,
-                                  padding: '4px 8px',
-                                  fontSize: '0.75rem',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                                  color: 'var(--accent-success)',
-                                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '4px'
-                                }}
-                                title={t('openSftp')}
-                              >
-                                <Folder size={12} />
-                                <span>SFTP</span>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                        {env}
+                      </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Tags Section */}
+                {allTags.length > 0 && (
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Tag size={14} />
+                      <span>{t('tags')}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxHeight: '70px', overflowY: 'auto' }}>
+                      {selectedTag && (
+                        <button
+                          onClick={() => onSelectTag(null)}
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: 'var(--accent-primary)',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {t('clearTag')}
+                        </button>
+                      )}
+                      {allTags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => onSelectTag(selectedTag === tag ? null : tag)}
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: selectedTag === tag ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                            backgroundColor: selectedTag === tag ? 'var(--accent-glow)' : 'var(--bg-secondary)',
+                            color: selectedTag === tag ? 'var(--accent-primary)' : 'var(--text-muted)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
+
+                {/* Server Tree List Grouped by Environments */}
+                <ServerListSection
+                  filteredServers={filteredServers}
+                  environments={environments}
+                  groupedServers={groupedServers}
+                  selectedEnv={selectedEnv}
+                  collapsedEnvs={collapsedEnvs}
+                  toggleEnvCollapse={toggleEnvCollapse}
+                  onConnect={onConnect}
+                  onAddServer={onAddServer}
+                  onEditServer={onEditServer}
+                  onDeleteServer={onDeleteServer}
+                  onCloneServer={onCloneServer}
+                  t={t}
+                />
+              </>
+            )}
+
+            {activePane === 'SECURITY' && (
+              <div>
+                <ToolButton icon={Key} label="Password Manager" onClick={onOpenPasswords} />
+                <ToolButton icon={FileKey2} label="2FA (OTP) Manager" onClick={onOpenOTPs} />
+                <ToolButton icon={FileClock} label="Session Audit Logs" onClick={onOpenAuditLogs} />
               </div>
-            );
-          })
-        )}
-      </div>
+            )}
 
-      {/* Security Management Section (Expanded Only) */}
-      {!isCollapsed && (
-        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-subtle)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Shield size={14} />
-            <span>{t('securitySection')}</span>
+            {activePane === 'DATABASES' && (
+              <div>
+                <ToolButton icon={SplitSquareHorizontal} label="ERD & Schema Diff" onClick={onOpenErdDiff} />
+                <ToolButton icon={LayoutGrid} label="Visual Query Builder" onClick={onOpenVisualQueryBuilder} />
+                <ToolButton icon={DatabaseBackup} label="Data Pump Stream" onClick={onOpenDataPump} />
+              </div>
+            )}
+
+            {activePane === 'DEVOPS' && (
+              <div>
+                <ToolButton icon={Activity} label="Docker & K8s Panel" onClick={onOpenDockerK8s} />
+                <ToolButton icon={Cloud} label="Cloud Explorer (AWS/DO)" onClick={onOpenCloudExplorer} />
+                <ToolButton icon={TerminalSquare} label="Multi-Exec & Snippets" onClick={onOpenMultiExec} />
+                <ToolButton icon={Network} label="SSH Tunnels Manager" onClick={onOpenTunnels} />
+              </div>
+            )}
           </div>
-          <button
-            onClick={onOpenPasswords}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <KeyRound size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>{t('passwords')}</span>
-          </button>
-          
-          <button
-            onClick={onOpenOTPs}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Shield size={16} style={{ color: 'var(--accent-success)' }} />
-            <span>{t('otpAuth')}</span>
-          </button>
 
-          <button
-            onClick={onOpenTunnels}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Network size={16} style={{ color: '#c084fc' }} />
-            <span>{t('sshTunnels')}</span>
-          </button>
-
-          <button
-            onClick={onOpenMultiExec}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>{t('multiExec')}</span>
-          </button>
-
-          <button
-            onClick={onOpenAuditLogs}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <ShieldAlert size={16} style={{ color: 'var(--accent-danger)' }} />
-            <span>{t('auditLogs')}</span>
-          </button>
-
-          <button
-            onClick={onOpenErdDiff}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Database size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>ERD & Schema Diff</span>
-          </button>
-
-          <button
-            onClick={onOpenVisualQueryBuilder}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Database size={16} style={{ color: '#c084fc' }} />
-            <span>Visual Query Builder</span>
-          </button>
-
-          <button
-            onClick={onOpenDataPump}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Database size={16} style={{ color: 'var(--env-dev)' }} />
-            <span>Data Pump Stream</span>
-          </button>
-
-          <button
-            onClick={onOpenDockerK8s}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Box size={16} style={{ color: 'var(--env-dev)' }} />
-            <span>Docker & K8s Panel</span>
-          </button>
-
-          <button
-            onClick={onOpenCloudExplorer}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-          >
-            <Cloud size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>Cloud Explorer</span>
-          </button>
         </div>
       )}
     </div>

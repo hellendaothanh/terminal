@@ -249,6 +249,21 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleCloneServer = (server: ServerConfig) => {
+    setVaultData((prev) => {
+      const clonedServer: ServerConfig = {
+        ...server,
+        id: 'srv_' + Date.now(),
+        name: server.name + ' (Copy)',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      const newData = { ...prev, servers: [...prev.servers, clonedServer] };
+      window.api.vaultSaveData(newData);
+      return newData;
+    });
+  };
+
   /* Key Management */
   const handleSaveKey = (key: SSHKey) => {
     const updatedKeys = [...vaultData.keys, key];
@@ -289,8 +304,6 @@ export const App: React.FC = () => {
       <TopBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onOpenKeyManager={() => setIsKeyManagerOpen(true)}
-        onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onToggleAI={() => setIsAIOpen((v) => !v)}
         settings={settings}
@@ -299,7 +312,6 @@ export const App: React.FC = () => {
           setEditingServer(null);
           setIsServerModalOpen(true);
         }}
-        onLockVault={handleLockVault}
       />
 
       {/* Main Workspace Body */}
@@ -322,6 +334,7 @@ export const App: React.FC = () => {
             setIsServerModalOpen(true);
           }}
           onDeleteServer={handleDeleteServer}
+          onCloneServer={handleCloneServer}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
           settings={settings}
@@ -457,6 +470,7 @@ export const App: React.FC = () => {
                   setIsServerModalOpen(true);
                 }}
                 onDeleteServer={handleDeleteServer}
+                onCloneServer={handleCloneServer}
                 settings={settings}
               />
             </div>
@@ -651,6 +665,9 @@ export const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSaveSettings={setSettings}
+        onOpenKeyManager={() => setIsKeyManagerOpen(true)}
+        onOpenImportExport={() => setIsImportExportOpen(true)}
+        onLockVault={handleLockVault}
       />
     </div>
   );

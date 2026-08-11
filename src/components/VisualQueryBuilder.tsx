@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ServerConfig, TerminalSettings } from '../types';
 import { MousePointer, Database, Plus, Trash2, Play, Code2, Layers, CheckSquare, Square } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface VisualQueryBuilderProps {
   servers: ServerConfig[];
@@ -25,6 +26,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
   onExecuteGeneratedQuery,
   settings
 }) => {
+  const { t } = useTranslation(settings);
   const dbServers = servers.filter((s) => s.protocol === 'DATABASE');
   const [selectedServerId, setSelectedServerId] = useState<string>(dbServers[0]?.id || '');
 
@@ -57,7 +59,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
 
   // Generate SQL Query string automatically
   const generateSql = (): string => {
-    if (selectedTables.length === 0) return '-- Chọn ít nhất 1 bảng để sinh câu lệnh SQL';
+    if (selectedTables.length === 0) return t('vqbSelectTablePrompt');
 
     const colsStr = selectedColumns.length > 0 ? selectedColumns.join(',\n    ') : '*';
     const mainTable = selectedTables[0];
@@ -89,10 +91,10 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <MousePointer size={22} style={{ color: '#c084fc' }} />
-            <span>Visual SQL Query Builder (Trình Dựng Câu Lệnh Kéo-Thả)</span>
+            <span>{t('vqbTitle')}</span>
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Chọn bảng, tích chọn cột và thiết lập điều kiện JOIN/WHERE để tự động sinh câu lệnh SQL chuẩn mực mà không cần viết tay.
+            {t('vqbDesc')}
           </p>
         </div>
 
@@ -110,7 +112,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
               style={{ height: '34px', backgroundColor: '#c084fc' }}
             >
               <Play size={14} />
-              <span>Chạy Query Ngay</span>
+              <span>{t('vqbRunBtn')}</span>
             </button>
           )}
         </div>
@@ -121,7 +123,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
         <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Layers size={16} style={{ color: 'var(--accent-primary)' }} />
-            <span>Danh Sách Bảng & Cột</span>
+            <span>{t('vqbTableColList')}</span>
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
@@ -166,12 +168,12 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
         {/* 2. JOIN & WHERE Condition Designer */}
         <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            🔗 Điều Kiện Liên Kết JOIN & Lọc WHERE
+            {t('vqbJoinWhereRules')}
           </h3>
 
           {/* JOIN Rules */}
           <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>Các Liên Kết JOIN:</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>{t('vqbJoinRules')}</label>
             {joinConditions.map((j, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontSize: '0.78rem' }}>
                 <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{j.leftTable}.{j.leftCol}</span>
@@ -183,7 +185,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
 
           {/* WHERE Rules */}
           <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>Điều Kiện Lọc WHERE:</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>{t('vqbWhereRules')}</label>
             {whereConditions.map((w, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}>
                 <span style={{ color: 'var(--text-main)' }}>{w.column}</span>
@@ -194,7 +196,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Giới Hạn Dòng (LIMIT):</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('vqbLimit')}</label>
             <input type="number" className="input-field" value={limit} onChange={(e) => setLimit(parseInt(e.target.value, 10) || 10)} style={{ width: '100px', height: '32px' }} />
           </div>
         </div>
@@ -204,7 +206,7 @@ export const VisualQueryBuilder: React.FC<VisualQueryBuilderProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Code2 size={16} style={{ color: '#c084fc' }} />
-              <span>Câu Lệnh SQL Tự Động Sinh</span>
+              <span>{t('vqbSqlPreview')}</span>
             </h3>
             <button className="btn-secondary" onClick={() => navigator.clipboard.writeText(generatedSql)} style={{ height: '28px', fontSize: '0.72rem' }}>
               Copy SQL

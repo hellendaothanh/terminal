@@ -4,11 +4,11 @@
   --font-mono: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
 
   /* HSL Color Palette - Sleek Dark UI */
-  --bg-primary: hsl(224, 25%, 8%);
-  --bg-secondary: hsl(224, 20%, 12%);
-  --bg-tertiary: hsl(224, 18%, 16%);
-  --bg-surface: hsl(224, 18%, 18%);
-  --bg-glass: rgba(20, 24, 33, 0.75);
+  --bg-primary: hsl(224, 25%, 6%);
+  --bg-secondary: hsl(224, 20%, 9%);
+  --bg-tertiary: hsl(224, 18%, 14%);
+  --bg-surface: hsl(224, 18%, 16%);
+  --bg-glass: rgba(14, 16, 21, 0.75);
 
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-focus: hsl(217, 91%, 60%);
@@ -253,4 +253,33 @@ input, button, select, textarea {
 @keyframes scaleUp {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.activity-icon-active {
+  color: var(--accent-primary) !important;
+  border-left: 3px solid var(--accent-primary);
+  background: var(--bg-tertiary);
+}
+
+.activity-icon {
+  color: var(--text-muted);
+  border-left: 3px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.activity-icon:hover {
+  color: var(--text-main);
+  background: var(--bg-surface);
 }

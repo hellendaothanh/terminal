@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ServerConfig, TerminalSettings } from '../types';
 import { Box, Layers, RefreshCw, Terminal, FileText, Play, Square, RotateCcw, Search, CheckCircle, AlertCircle, Server } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface DockerK8sPanelProps {
   servers: ServerConfig[];
@@ -31,6 +32,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
   onOpenExecTerminal,
   settings
 }) => {
+  const { t } = useTranslation(settings);
   const sshServers = servers.filter((s) => s.protocol === 'SSH');
   const [selectedServerId, setSelectedServerId] = useState<string>(sshServers[0]?.id || '');
   const [activeTab, setActiveTab] = useState<'DOCKER' | 'K8S'>('DOCKER');
@@ -89,10 +91,10 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Box size={22} style={{ color: 'var(--env-dev)' }} />
-            <span>Docker & Kubernetes Management Panel</span>
+            <span>{t('dkTitle')}</span>
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Quản lý Container Docker & Pods Kubernetes từ xa, xem log thời gian thực và mở Terminal SSH thực thi `docker exec` / `kubectl exec` trực tiếp.
+            {t('dkDesc')}
           </p>
         </div>
 
@@ -113,7 +115,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
 
           <button className="btn-secondary" onClick={fetchLiveItems} disabled={loading} style={{ height: '36px' }}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} />
-            <span>Làm Mới</span>
+            <span>{t('dkRefreshBtn')}</span>
           </button>
         </div>
       </div>
@@ -137,7 +139,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
           }}
         >
           <Box size={16} />
-          <span>Docker Containers ({containers.length})</span>
+          <span>{t('dkContainersTab')} ({containers.length})</span>
         </button>
 
         <button
@@ -157,7 +159,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
           }}
         >
           <Layers size={16} />
-          <span>Kubernetes Pods ({pods.length})</span>
+          <span>{t('dkPodsTab')} ({pods.length})</span>
         </button>
       </div>
 
@@ -172,7 +174,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                 <th style={{ padding: '10px 16px' }}>STATUS</th>
                 <th style={{ padding: '10px 16px' }}>PORTS</th>
                 <th style={{ padding: '10px 16px' }}>CREATED</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>THAO TÁC</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>{t('dkActionsHeader')}</th>
               </tr>
             </thead>
             <tbody>
@@ -206,7 +208,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                         className="btn-secondary"
                         onClick={() => handleExec(c.name, false)}
                         style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        title="Mở Terminal exec /bin/sh vào Container"
+                        title={t('dkExecShellTitle')}
                       >
                         <Terminal size={12} /> Exec Shell
                       </button>
@@ -214,7 +216,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                         className="btn-secondary"
                         onClick={() => handleOpenLogs(c.name)}
                         style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        title="Xem log thời gian thực"
+                        title={t('dkLogsTitle')}
                       >
                         <FileText size={12} /> Logs
                       </button>
@@ -237,7 +239,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                 <th style={{ padding: '10px 16px' }}>POD IP</th>
                 <th style={{ padding: '10px 16px' }}>RESTARTS</th>
                 <th style={{ padding: '10px 16px' }}>AGE</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>THAO TÁC</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>{t('dkActionsHeader')}</th>
               </tr>
             </thead>
             <tbody>
@@ -271,7 +273,7 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                         className="btn-secondary"
                         onClick={() => handleExec(p.name, true)}
                         style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        title="Mở Terminal kubectl exec vào Pod"
+                        title={t('dkKubectlExecTitle')}
                       >
                         <Terminal size={12} /> kubectl exec
                       </button>

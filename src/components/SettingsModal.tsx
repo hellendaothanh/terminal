@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TerminalSettings, HashiCorpVaultConfig, AISettings } from '../types';
-import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles } from 'lucide-react';
+import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles, Key, ArrowUpDown, Lock } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface SettingsModalProps {
@@ -8,13 +8,19 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: TerminalSettings;
   onSaveSettings: (settings: TerminalSettings) => void;
+  onOpenKeyManager?: () => void;
+  onOpenImportExport?: () => void;
+  onLockVault?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   settings,
-  onSaveSettings
+  onSaveSettings,
+  onOpenKeyManager,
+  onOpenImportExport,
+  onLockVault
 }) => {
   const { t } = useTranslation(settings);
   const [activeTab, setActiveTab] = useState<'general' | 'hashicorp' | 'ai'>('general');
@@ -235,6 +241,51 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
                   <option value="en">🇺🇸 English</option>
                 </select>
+              </div>
+
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {onOpenKeyManager && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      onClose();
+                      onOpenKeyManager();
+                    }}
+                    style={{ flex: '1 1 120px', height: '36px', fontSize: '0.8rem', justifyContent: 'center' }}
+                  >
+                    <Key size={14} />
+                    <span>{t('sshKeys')}</span>
+                  </button>
+                )}
+                {onOpenImportExport && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      onClose();
+                      onOpenImportExport();
+                    }}
+                    style={{ flex: '1 1 120px', height: '36px', fontSize: '0.8rem', justifyContent: 'center' }}
+                  >
+                    <ArrowUpDown size={14} />
+                    <span>{t('importExport')}</span>
+                  </button>
+                )}
+                {onLockVault && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      onClose();
+                      onLockVault();
+                    }}
+                    style={{ flex: '1 1 120px', height: '36px', fontSize: '0.8rem', justifyContent: 'center', color: 'var(--accent-warning)', border: '1px solid rgba(245, 158, 11, 0.3)' }}
+                  >
+                    <Lock size={14} />
+                    <span>{t('lockVault')}</span>
+                  </button>
+                )}
               </div>
             </>
           ) : activeTab === 'hashicorp' ? (

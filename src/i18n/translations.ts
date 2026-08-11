@@ -160,6 +160,9 @@ export const translations = {
     rdpServers: 'Máy Chủ RDP / SFTP',
     // Security Section
     securitySection: 'BẢO MẬT & CÔNG CỤ',
+    secSecurityGroup: 'Bảo mật & Truy cập',
+    secDatabaseGroup: 'Quản trị Database',
+    secInfrastructureGroup: 'Hạ tầng & DevOps',
     passwords: 'Mật Khẩu (Passwords)',
     otpAuth: 'Mã Xác Thực (OTP)',
     sshTunnels: 'SSH Tunnels & Forwarding',
@@ -296,7 +299,78 @@ export const translations = {
     statusLabel: 'Trạng thái',
     selectAuditLogPrompt: 'Chọn một nhật ký kiểm toán ở danh sách bên trái để xem chi tiết.',
 
-    quickStart: 'Thao Tác Nhanh'
+    quickStart: 'Thao Tác Nhanh',
+
+    // ERD & Schema Diff
+    erdDiff: 'ERD & Schema Diff',
+    erdTitle: 'Trình Thiết Kế Sơ Đồ ERD & Schema Diff',
+    erdDesc: 'Xem sơ đồ quan hệ cơ sở dữ liệu (Visual ERD) và so sánh sự khác biệt cấu trúc giữa 2 môi trường để sinh script Migration tự động.',
+    erdVisualTab: 'Trực Quan Sơ Đồ ERD',
+    erdCompareTab: 'So Sánh Cấu Trúc (Schema Diff)',
+    erdSelectDb: 'Chọn CSDL xem ERD:',
+    erdSourceDb: 'CSDL Nguồn (Source - Dev):',
+    erdTargetDb: 'CSDL Đích (Target - Staging/Prod):',
+    erdComparing: 'Đang So Sánh...',
+    erdCompareBtn: 'So Sánh Schema Diff',
+    erdDiffSummary: '📊 Tóm Tắt Sự Khác Biệt Cấu Trúc',
+    erdAddedTables: '+ Bảng Mới Thêm Vào',
+    erdRemovedTables: '- Bảng Bị Xóa',
+    erdModifiedTables: '⚡ Bảng Có Cấu Trúc Thay Đổi',
+    erdMigrationScript: 'Script Migration SQL Tự Động',
+
+    // Visual Query Builder
+    visualQueryBuilder: 'Visual Query Builder',
+    vqbTitle: 'Visual SQL Query Builder (Trình Dựng Câu Lệnh Kéo-Thả)',
+    vqbDesc: 'Chọn bảng, tích chọn cột và thiết lập điều kiện JOIN/WHERE để tự động sinh câu lệnh SQL chuẩn mực mà không cần viết tay.',
+    vqbRunBtn: 'Chạy Query Ngay',
+    vqbTableColList: 'Danh Sách Bảng & Cột',
+    vqbJoinWhereRules: '🔗 Điều Kiện Liên Kết JOIN & Lọc WHERE',
+    vqbJoinRules: 'Các Liên Kết JOIN:',
+    vqbWhereRules: 'Điều Kiện Lọc WHERE:',
+    vqbLimit: 'Giới Hạn Dòng (LIMIT):',
+    vqbSqlPreview: 'Câu Lệnh SQL Tự Động Sinh',
+    vqbSelectTablePrompt: '-- Chọn ít nhất 1 bảng để sinh câu lệnh SQL',
+
+    // Data Pump
+    dataPump: 'Data Pump Stream',
+    dpTitle: 'Export/Import Data Pump Nâng Cao (Streaming Dump & Restore)',
+    dpDesc: 'Công cụ sao lưu và khôi phục dữ liệu CSDL lớn dạng luồng (Stream), hỗ trợ định dạng SQL DDL/DML, JSON, Parquet kèm mã hóa AES-256 an toàn.',
+    dpConfigTitle: '⚙️ Cấu Hình Tác Vụ Data Pump',
+    dpModeLabel: 'Chế Độ Thao Tác:',
+    dpTargetDb: 'Mục Tiêu Máy Chủ Cơ Sở Dữ Liệu:',
+    dpFormatLabel: 'Định Dạng Dữ Liệu (Format):',
+    dpEncryptLabel: 'Mã Hóa AES-256 Stream Dữ Liệu',
+    dpPassphrasePlaceholder: 'Nhập Master Passphrase bảo mật file stream...',
+    dpProcessing: 'Đang Xử Lý Stream...',
+    dpStartExport: 'Bắt Đầu Dump Dữ Liệu',
+    dpStartImport: 'Bắt Đầu Restore Dữ Liệu',
+    dpMonitorTitle: '📊 Trạng Thái Luồng Dữ Liệu (Stream Monitor)',
+    dpProgressLabel: 'Tiến độ thực thi:',
+    dpStartPrompt: 'Chọn cấu hình và bấm "Bắt Đầu" để chạy luồng Data Pump an toàn.',
+    dpAlertPassphrase: 'Vui lòng nhập mật khẩu mã hóa stream dữ liệu!',
+    dpStatusInitializing: 'Đang khởi tạo Data Stream Pump...',
+    dpStatusExportSuccess: '✅ Đã xuất dữ liệu thành công! Định dạng:',
+    dpStatusImportSuccess: '✅ Đã khôi phục (Restore) dữ liệu CSDL thành công!',
+
+    // Docker & K8s
+    dockerK8s: 'Docker & K8s Panel',
+    dkTitle: 'Docker & Kubernetes Management Panel',
+    dkDesc: 'Quản lý Container Docker & Pods Kubernetes từ xa, xem log thời gian thực và mở Terminal SSH thực thi `docker exec` / `kubectl exec` trực tiếp.',
+    dkRefreshBtn: 'Làm Mới',
+    dkContainersTab: 'Docker Containers',
+    dkPodsTab: 'Kubernetes Pods',
+    dkActionsHeader: 'THAO TÁC',
+    dkExecShellTitle: 'Mở Terminal exec /bin/sh vào Container',
+    dkLogsTitle: 'Xem log thời gian thực',
+    dkKubectlExecTitle: 'Mở Terminal kubectl exec vào Pod',
+
+    // Cloud Explorer
+    cloudExplorer: 'Cloud Explorer',
+    ceTitle: 'Cloud Infrastructure Explorer (AWS / GCP / Azure)',
+    ceDesc: 'Kết nối API Cloud Provider để đồng bộ danh sách Instance/VM và mở kết nối SSH / RDP tức thì chỉ bằng 1 cú nhấp chuột.',
+    ceSyncBtn: 'Đồng Bộ API Cloud',
+    ceAllCloud: 'Tất cả Cloud',
+    ceConnectBtn: 'Kết Nối'
   },
   en: {
     // App & Header
@@ -457,6 +531,9 @@ export const translations = {
     rdpServers: 'RDP / SFTP Servers',
     // Security Section
     securitySection: 'SECURITY & TOOLS',
+    secSecurityGroup: 'Security & Access',
+    secDatabaseGroup: 'Database Management',
+    secInfrastructureGroup: 'Infrastructure & DevOps',
     passwords: 'Password Manager',
     otpAuth: '2FA Authenticator (OTP)',
     sshTunnels: 'SSH Tunnels & Forwarding',
@@ -593,6 +670,77 @@ export const translations = {
     statusLabel: 'Status',
     selectAuditLogPrompt: 'Select an audit log entry from the left list to view details.',
 
-    quickStart: 'Quick Actions'
+    quickStart: 'Quick Actions',
+
+    // ERD & Schema Diff
+    erdDiff: 'ERD & Schema Diff',
+    erdTitle: 'Visual ERD & Schema Diff Designer',
+    erdDesc: 'View database entity relationships (Visual ERD) and compare structure differences between 2 environments to generate migration scripts automatically.',
+    erdVisualTab: 'Visual ERD Diagram',
+    erdCompareTab: 'Schema Diff & Compare',
+    erdSelectDb: 'Select DB to view ERD:',
+    erdSourceDb: 'Source DB (Source - Dev):',
+    erdTargetDb: 'Target DB (Target - Staging/Prod):',
+    erdComparing: 'Comparing...',
+    erdCompareBtn: 'Compare Schema Diff',
+    erdDiffSummary: '📊 Structure Difference Summary',
+    erdAddedTables: '+ Added Tables',
+    erdRemovedTables: '- Removed Tables',
+    erdModifiedTables: '⚡ Modified Tables',
+    erdMigrationScript: 'SQL Migration Script',
+
+    // Visual Query Builder
+    visualQueryBuilder: 'Visual Query Builder',
+    vqbTitle: 'Visual SQL Query Builder (Drag-and-Drop)',
+    vqbDesc: 'Select tables, check columns, and set JOIN/WHERE conditions to automatically generate standard SQL queries without writing code.',
+    vqbRunBtn: 'Run Query Now',
+    vqbTableColList: 'Tables & Columns List',
+    vqbJoinWhereRules: '🔗 JOIN Conditions & WHERE Filters',
+    vqbJoinRules: 'JOIN Links:',
+    vqbWhereRules: 'WHERE Filter Conditions:',
+    vqbLimit: 'Row Limit (LIMIT):',
+    vqbSqlPreview: 'Auto-Generated SQL Query',
+    vqbSelectTablePrompt: '-- Select at least one table to generate SQL',
+
+    // Data Pump
+    dataPump: 'Data Pump Stream',
+    dpTitle: 'Advanced Export/Import Data Pump (Streaming Dump & Restore)',
+    dpDesc: 'Database backup and restore tool using streams, supporting SQL DDL/DML, JSON, Parquet formats with secure AES-256 encryption.',
+    dpConfigTitle: '⚙️ Data Pump Task Configuration',
+    dpModeLabel: 'Operation Mode:',
+    dpTargetDb: 'Target Database Server:',
+    dpFormatLabel: 'Data Format:',
+    dpEncryptLabel: 'AES-256 Stream Encryption',
+    dpPassphrasePlaceholder: 'Enter master passphrase to secure stream...',
+    dpProcessing: 'Processing Stream...',
+    dpStartExport: 'Start Data Dump',
+    dpStartImport: 'Start Data Restore',
+    dpMonitorTitle: '📊 Stream Monitor Status',
+    dpProgressLabel: 'Execution Progress:',
+    dpStartPrompt: 'Select configuration and click "Start" to run secure Data Pump flow.',
+    dpAlertPassphrase: 'Please enter the decryption passphrase for the data stream!',
+    dpStatusInitializing: 'Initializing Data Stream ...',
+    dpStatusExportSuccess: '✅ Exported successfully! Format:',
+    dpStatusImportSuccess: '✅ Database restore completed successfully!',
+
+    // Docker & K8s
+    dockerK8s: 'Docker & K8s Panel',
+    dkTitle: 'Docker & Kubernetes Management Panel',
+    dkDesc: 'Manage remote Docker Containers & Kubernetes Pods, view real-time logs and open SSH Terminal for `docker exec` / `kubectl exec` directly.',
+    dkRefreshBtn: 'Refresh',
+    dkContainersTab: 'Docker Containers',
+    dkPodsTab: 'Kubernetes Pods',
+    dkActionsHeader: 'ACTIONS',
+    dkExecShellTitle: 'Open Terminal exec /bin/sh into Container',
+    dkLogsTitle: 'View real-time logs',
+    dkKubectlExecTitle: 'Open Terminal kubectl exec into Pod',
+
+    // Cloud Explorer
+    cloudExplorer: 'Cloud Explorer',
+    ceTitle: 'Cloud Infrastructure Explorer (AWS / GCP / Azure)',
+    ceDesc: 'Connect Cloud Provider APIs to sync Instance/VM lists and open SSH / RDP connections instantly in one click.',
+    ceSyncBtn: 'Sync Cloud API',
+    ceAllCloud: 'All Clouds',
+    ceConnectBtn: 'Connect'
   }
 };

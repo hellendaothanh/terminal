@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ServerConfig, TerminalSettings } from '../types';
 import { GitCompare, Database, ArrowRight, RefreshCw, FileCode, CheckCircle, AlertCircle, Layers } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface ERDAndSchemaDiffProps {
   servers: ServerConfig[];
@@ -14,6 +15,7 @@ interface TableSchema {
 }
 
 export const ERDAndSchemaDiff: React.FC<ERDAndSchemaDiffProps> = ({ servers, settings }) => {
+  const { t } = useTranslation(settings);
   const dbServers = servers.filter((s) => s.protocol === 'DATABASE');
   const [sourceServerId, setSourceServerId] = useState<string>(dbServers[0]?.id || '');
   const [targetServerId, setTargetServerId] = useState<string>(dbServers[1]?.id || dbServers[0]?.id || '');
@@ -122,10 +124,10 @@ DROP TABLE IF EXISTS legacy_sessions;
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <GitCompare size={22} style={{ color: 'var(--accent-primary)' }} />
-            <span>Trình Thiết Kế Sơ Đồ ERD & Schema Diff</span>
+            <span>{t('erdTitle')}</span>
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Xem sơ đồ quan hệ cơ sở dữ liệu (Visual ERD) và so sánh sự khác biệt cấu trúc giữa 2 môi trường để sinh script Migration tự động.
+            {t('erdDesc')}
           </p>
         </div>
 
@@ -144,7 +146,7 @@ DROP TABLE IF EXISTS legacy_sessions;
               cursor: 'pointer'
             }}
           >
-            Trực Quan Sơ Đồ ERD
+            {t('erdVisualTab')}
           </button>
           <button
             onClick={() => setActiveSubTab('DIFF')}
@@ -159,7 +161,7 @@ DROP TABLE IF EXISTS legacy_sessions;
               cursor: 'pointer'
             }}
           >
-            So Sánh Cấu Trúc (Schema Diff)
+            {t('erdCompareTab')}
           </button>
         </div>
       </div>
@@ -168,7 +170,7 @@ DROP TABLE IF EXISTS legacy_sessions;
         /* Visual ERD Diagram View */
         <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '20px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chọn CSDL xem ERD:</label>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('erdSelectDb')}</label>
             <select
               className="input-field"
               value={sourceServerId}
@@ -220,7 +222,7 @@ DROP TABLE IF EXISTS legacy_sessions;
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>CSDL Nguồn (Source - Dev):</label>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('erdSourceDb')}</label>
               <select className="input-field" value={sourceServerId} onChange={(e) => setSourceServerId(e.target.value)} style={{ height: '36px', fontSize: '0.82rem' }}>
                 {dbServers.map((s) => (
                   <option key={s.id} value={s.id}>{s.name} ({s.environment})</option>
@@ -231,7 +233,7 @@ DROP TABLE IF EXISTS legacy_sessions;
             <ArrowRight size={20} style={{ color: 'var(--accent-primary)', marginTop: '20px' }} />
 
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>CSDL Đích (Target - Staging/Prod):</label>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('erdTargetDb')}</label>
               <select className="input-field" value={targetServerId} onChange={(e) => setTargetServerId(e.target.value)} style={{ height: '36px', fontSize: '0.82rem' }}>
                 {dbServers.map((s) => (
                   <option key={s.id} value={s.id}>{s.name} ({s.environment})</option>
@@ -241,7 +243,7 @@ DROP TABLE IF EXISTS legacy_sessions;
 
             <button className="btn-primary" onClick={handleRunCompare} disabled={loading} style={{ height: '36px', marginTop: '20px', padding: '0 20px' }}>
               {loading ? <RefreshCw size={14} className="spin" /> : <GitCompare size={14} />}
-              <span>{loading ? 'Đang So Sánh...' : 'So Sánh Schema Diff'}</span>
+              <span>{loading ? t('erdComparing') : t('erdCompareBtn')}</span>
             </button>
           </div>
 
@@ -250,20 +252,20 @@ DROP TABLE IF EXISTS legacy_sessions;
               {/* Diff Summary Cards */}
               <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px' }}>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '12px' }}>
-                  📊 Tóm Tắt Sự Khác Biệt Cấu Trúc
+                  {t('erdDiffSummary')}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.8rem' }}>
                   <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '10px', borderRadius: '4px', color: 'var(--accent-success)' }}>
-                    <strong>+ Bảng Mới Thêm Vào ({diffResult.addedTables.length}):</strong> {diffResult.addedTables.join(', ')}
+                    <strong>{t('erdAddedTables')} ({diffResult.addedTables.length}):</strong> {diffResult.addedTables.join(', ')}
                   </div>
 
                   <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '10px', borderRadius: '4px', color: 'var(--accent-danger)' }}>
-                    <strong>- Bảng Bị Xóa ({diffResult.removedTables.length}):</strong> {diffResult.removedTables.join(', ')}
+                    <strong>{t('erdRemovedTables')} ({diffResult.removedTables.length}):</strong> {diffResult.removedTables.join(', ')}
                   </div>
 
                   <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '10px', borderRadius: '4px', color: 'var(--accent-warning)' }}>
-                    <strong>⚡ Bảng Có Cấu Trúc Thay Đổi ({diffResult.modifiedTables.length}):</strong>
+                    <strong>{t('erdModifiedTables')} ({diffResult.modifiedTables.length}):</strong>
                     <ul style={{ marginTop: '6px', paddingLeft: '20px' }}>
                       {diffResult.modifiedTables.map((m) => (
                         <li key={m.name}>
@@ -280,7 +282,7 @@ DROP TABLE IF EXISTS legacy_sessions;
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FileCode size={16} style={{ color: 'var(--accent-primary)' }} />
-                    <span>Script Migration SQL Tự Động</span>
+                    <span>{t('erdMigrationScript')}</span>
                   </span>
                   <button
                     className="btn-secondary"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ServerConfig, Protocol, TerminalSettings } from '../types';
 import { Cloud, Server, RefreshCw, Terminal, Monitor, Plus, CheckCircle, ExternalLink, Globe } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface CloudExplorerProps {
   onImportCloudInstanceAsServer?: (serverData: Partial<ServerConfig>) => void;
@@ -25,6 +26,7 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
   onConnectServer,
   settings
 }) => {
+  const { t } = useTranslation(settings);
   const [selectedProvider, setSelectedProvider] = useState<'ALL' | 'AWS' | 'GCP' | 'AZURE'>('ALL');
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -77,16 +79,16 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Cloud size={22} style={{ color: 'var(--accent-primary)' }} />
-            <span>Cloud Infrastructure Explorer (AWS / GCP / Azure)</span>
+            <span>{t('ceTitle')}</span>
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Kết nối API Cloud Provider để đồng bộ danh sách Instance/VM và mở kết nối SSH / RDP tức thì chỉ bằng 1 cú nhấp chuột.
+            {t('ceDesc')}
           </p>
         </div>
 
         <button className="btn-primary" onClick={handleSyncCloud} disabled={loading} style={{ height: '36px' }}>
           <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          <span>Đồng Bộ API Cloud</span>
+          <span>{t('ceSyncBtn')}</span>
         </button>
       </div>
 
@@ -107,7 +109,7 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
               cursor: 'pointer'
             }}
           >
-            {prov === 'ALL' ? 'Tất cả Cloud' : prov}
+            {prov === 'ALL' ? t('ceAllCloud') : prov}
           </button>
         ))}
       </div>
@@ -165,7 +167,7 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
                 style={{ width: '100%', height: '34px', fontSize: '0.8rem', justifyContent: 'center' }}
               >
                 {instance.os === 'Windows' ? <Monitor size={14} /> : <Terminal size={14} />}
-                <span>Kết Nối {instance.os === 'Windows' ? 'RDP' : 'SSH'} 1-Click</span>
+                <span>{t('ceConnectBtn')} {instance.os === 'Windows' ? 'RDP' : 'SSH'} 1-Click</span>
               </button>
             </div>
           </div>

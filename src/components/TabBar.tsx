@@ -54,11 +54,11 @@ export const TabBar: React.FC<TabBarProps> = ({
 
   return (
     <div style={{
-      height: '38px',
-      backgroundColor: 'var(--bg-primary)',
+      height: '40px',
+      backgroundColor: 'var(--bg-secondary)', // Matches secondary panel
       borderBottom: '1px solid var(--border-subtle)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-end', // Align tabs to bottom
       paddingLeft: '8px',
       overflowX: 'auto',
       userSelect: 'none'
@@ -77,7 +77,8 @@ export const TabBar: React.FC<TabBarProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: '6px'
+            marginRight: '6px',
+            marginBottom: '4px'
           }}
           title={isSidebarCollapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
@@ -85,7 +86,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         </button>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', height: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100%' }}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTabId;
 
@@ -94,12 +95,14 @@ export const TabBar: React.FC<TabBarProps> = ({
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
               style={{
-                height: '30px',
-                padding: '0 12px',
-                backgroundColor: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                height: isActive ? '34px' : '30px',
+                padding: '0 14px',
+                backgroundColor: isActive ? 'var(--bg-primary)' : 'transparent', // Matches workspace background
                 color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
                 borderTop: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                borderRadius: '4px 4px 0 0',
+                borderLeft: isActive ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                borderRight: isActive ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                borderRadius: '8px 8px 0 0',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -107,7 +110,9 @@ export const TabBar: React.FC<TabBarProps> = ({
                 fontWeight: isActive ? 600 : 400,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
-                maxWidth: '200px'
+                maxWidth: '220px',
+                borderBottom: isActive ? '1px solid var(--bg-primary)' : 'none',
+                marginBottom: isActive ? '-1px' : '0' // Overlap bottom border
               }}
             >
               {getTabIcon(tab.type)}
@@ -116,7 +121,12 @@ export const TabBar: React.FC<TabBarProps> = ({
                  tab.type === 'OTP_MANAGER' ? t('otpAuth') :
                  tab.type === 'TUNNEL_MANAGER' ? t('sshTunnels') :
                  tab.type === 'MULTI_EXEC_MANAGER' ? t('multiExec') :
-                 tab.type === 'AUDIT_LOG_MANAGER' ? t('auditLogs') : tab.title}
+                 tab.type === 'AUDIT_LOG_MANAGER' ? t('auditLogs') :
+                 tab.type === 'ERD_SCHEMA_DIFF' ? t('erdDiff') :
+                 tab.type === 'VISUAL_QUERY_BUILDER' ? t('visualQueryBuilder') :
+                 tab.type === 'DATA_PUMP' ? t('dataPump') :
+                 tab.type === 'DOCKER_K8S' ? t('dockerK8s') :
+                 tab.type === 'CLOUD_EXPLORER' ? t('cloudExplorer') : tab.title}
               </span>
               <button
                 onClick={(e) => {
@@ -126,13 +136,22 @@ export const TabBar: React.FC<TabBarProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--text-dim)',
+                  color: isActive ? 'var(--text-muted)' : 'transparent',
                   cursor: 'pointer',
                   padding: '2px',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  marginLeft: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--accent-danger)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = isActive ? 'var(--text-muted)' : 'transparent';
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }}
                 title={t('closeTab')}
               >
@@ -155,7 +174,8 @@ export const TabBar: React.FC<TabBarProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            marginLeft: '4px'
+            marginLeft: '4px',
+            marginBottom: '4px'
           }}
           title={t('newTab')}
         >
