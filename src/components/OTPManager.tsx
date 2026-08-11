@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { OTPEntry } from '../types';
 import { Plus, Search, Edit2, Trash2, Copy, Shield, Check } from 'lucide-react';
 
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 interface OTPManagerProps {
   otps: OTPEntry[];
   onSaveOTP: (otp: OTPEntry) => void;
   onDeleteOTP: (id: string) => void;
+  settings?: TerminalSettings;
 }
 
-export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDeleteOTP }) => {
+export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDeleteOTP, settings }) => {
+  const { t } = useTranslation(settings);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -107,14 +112,14 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <Shield size={20} style={{ color: 'var(--accent-success)' }} />
-            Mã Xác Thực (OTP)
+            {t('otpTitle')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-            Tự động tạo mã xác thực 2 bước (TOTP).
+            {t('otpSubtitle')}
           </p>
         </div>
         <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={16} /> Thêm OTP
+          <Plus size={16} /> {t('addOtp')}
         </button>
       </div>
 
@@ -122,7 +127,7 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
         <input
           type="text"
           className="input-field"
-          placeholder="Tìm kiếm dịch vụ, tài khoản..."
+          placeholder={t('searchOtps')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ paddingLeft: '36px' }}
@@ -133,7 +138,7 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
         {filteredOTPs.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-            Không có mã OTP nào.
+            {t('noOtpsFound')}
           </div>
         ) : (
           filteredOTPs.map(otp => {

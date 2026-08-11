@@ -2,11 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AuditLogEntry } from '../types';
 import { FileText, Search, Play, Pause, Download, AlertTriangle, ShieldAlert, Clock, Terminal, Database, RefreshCw, Check, ArrowRight, Copy } from 'lucide-react';
 
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 interface AuditLogManagerProps {
   onExportLog?: (logId: string, format: 'cast' | 'txt') => void;
+  settings?: TerminalSettings;
 }
 
-export const AuditLogManager: React.FC<AuditLogManagerProps> = () => {
+export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) => {
+  const { t } = useTranslation(settings);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProtocol, setFilterProtocol] = useState<'ALL' | 'SSH' | 'DATABASE'>('ALL');
@@ -121,15 +126,15 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = () => {
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <ShieldAlert size={22} style={{ color: 'var(--accent-danger)' }} />
-            Ghi Vết & Nhật Ký Kiểm Toán Phiên Làm Việc (Session Recording & Audit Logs)
+            {t('auditTitle')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-            Ghi lại toàn bộ lịch sử thao tác SSH (chuẩn asciinema v2), SQL Queries và cảnh báo các câu lệnh có rủi ro cao.
+            {t('auditSubtitle')}
           </p>
         </div>
 
         <button className="btn-secondary" onClick={fetchLogs} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <RefreshCw size={15} /> Tải Lại Nhật Ký
+          <RefreshCw size={15} /> {t('reloadLogs')}
         </button>
       </div>
 
@@ -143,7 +148,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = () => {
               <input
                 type="text"
                 className="input-field"
-                placeholder="Tìm kiếm lệnh, máy chủ, user..."
+                placeholder={t('searchLogs')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ paddingLeft: '34px', fontSize: '0.85rem' }}
@@ -153,7 +158,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = () => {
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <select className="input-field" value={filterProtocol} onChange={(e) => setFilterProtocol(e.target.value as any)} style={{ fontSize: '0.78rem', flex: 1 }}>
-                <option value="ALL">Tất cả Giao thức</option>
+                <option value="ALL">{t('allProtocols')}</option>
                 <option value="SSH">SSH</option>
                 <option value="DATABASE">Database</option>
               </select>

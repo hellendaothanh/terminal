@@ -166,6 +166,66 @@ export const translations = {
     multiExec: 'Multi-Exec & Snippets',
     auditLogs: 'Session Audit Logs',
 
+    // Password Manager
+    pwManagerTitle: 'Trình Quản Lý Mật Khẩu',
+    pwManagerSubtitle: 'Lưu trữ thông tin tài khoản an toàn với mã hóa AES-256.',
+    addPassword: 'Thêm Mật Khẩu',
+    searchPasswords: 'Tìm kiếm tiêu đề, username, url...',
+    noPasswordsFound: 'Không có mật khẩu nào trong kho dữ liệu.',
+    generatePassword: 'Sinh Mật Khẩu',
+    pwLength: 'Độ dài mật khẩu',
+    includeUppercase: 'Chữ hoa (A-Z)',
+    includeNumbers: 'Chữ số (0-9)',
+    includeSymbols: 'Ký tự đặc biệt (@#$)',
+
+    // OTP Manager
+    otpTitle: 'Mã Xác Thực (OTP)',
+    otpSubtitle: 'Tự động tạo mã xác thực 2 bước (TOTP) thời gian thực.',
+    addOtp: 'Thêm OTP',
+    searchOtps: 'Tìm kiếm dịch vụ, tài khoản...',
+    noOtpsFound: 'Không có mã OTP nào trong kho dữ liệu.',
+    issuerLabel: 'Tên dịch vụ (Issuer)',
+    accountLabel: 'Tên tài khoản (Account)',
+    secretKeyLabel: 'Secret Key (Base32)',
+
+    // Tunnel Manager
+    tunnelTitle: 'SSH Tunneling & Port Forwarding Visualizer',
+    tunnelSubtitle: 'Quản lý và trực quan hóa luồng dữ liệu đường hầm bảo mật (Local, Remote, SOCKS5 Proxy).',
+    addTunnel: 'Tạo Đường Hầm Mới',
+    searchTunnels: 'Tìm kiếm đường hầm...',
+    noTunnelsFound: 'Chưa có SSH Tunnel nào.',
+    flowDiagramTitle: 'Sơ Đồ Luồng Kết Nối:',
+    activeConnections: 'Kết nối đang bật',
+    bytesReceived: 'Dung lượng đã nhận (Download)',
+    bytesTransferred: 'Dung lượng đã truyền (Upload)',
+    speedLabel: 'Tốc độ hiện tại',
+
+    // Multi-Exec Manager
+    multiExecTitle: 'Thư Viện Script & Chạy Lệnh Hàng Loạt (Multi-Exec)',
+    multiExecSubtitle: 'Quản lý script SSH/SQL mẫu và thực thi đồng thời trên hàng loạt máy chủ thời gian thực.',
+    tabMultiExec: 'Chạy Lệnh Hàng Loạt',
+    tabSnippets: 'Thư Viện Snippets',
+    selectTargets: 'Chọn Mục Tiêu',
+    selectAll: 'Chọn tất cả',
+    selectedCount: 'Đã chọn:',
+    executeParallel: 'Thực Thi Song Song',
+    executing: 'Đang Chạy Đồng Thời...',
+    parallelResults: 'Kết Quả Thực Thi Song Song',
+    successCountLabel: 'Thành công',
+    errorCountLabel: 'Thất bại',
+    addSnippet: 'Thêm Snippet Mới',
+
+    // Audit Log Manager
+    auditTitle: 'Ghi Vết & Nhật Ký Kiểm Toán Phiên Làm Việc (Session Recording & Audit Logs)',
+    auditSubtitle: 'Ghi lại toàn bộ lịch sử thao tác SSH (chuẩn asciinema v2), SQL Queries và cảnh báo các câu lệnh có rủi ro cao.',
+    reloadLogs: 'Tải Lại Nhật Ký',
+    searchLogs: 'Tìm kiếm lệnh, máy chủ, user...',
+    allProtocols: 'Tất cả Giao thức',
+    allRisks: 'Mọi Mức Rủi Ro',
+    noAuditLogsFound: 'Không có nhật ký kiểm toán nào.',
+    highRiskWarning: 'CẢNH BÁO KIỂM TOÁN: Phát hiện câu lệnh có khả năng gây rủi ro cao cho hệ thống!',
+    asciinemaPlayerTitle: 'Trình Phát Lại Asciinema Session Player (.cast)',
+
     quickStart: 'Thao Tác Nhanh'
   },
   en: {
@@ -332,6 +392,66 @@ export const translations = {
     sshTunnels: 'SSH Tunnels & Forwarding',
     multiExec: 'Multi-Exec & Snippets',
     auditLogs: 'Session Audit Logs',
+
+    // Password Manager
+    pwManagerTitle: 'Password Manager',
+    pwManagerSubtitle: 'Securely store account credentials with AES-256 encryption.',
+    addPassword: 'Add Password',
+    searchPasswords: 'Search title, username, url...',
+    noPasswordsFound: 'No passwords stored in vault.',
+    generatePassword: 'Generate Password',
+    pwLength: 'Password Length',
+    includeUppercase: 'Uppercase (A-Z)',
+    includeNumbers: 'Numbers (0-9)',
+    includeSymbols: 'Symbols (@#$)',
+
+    // OTP Manager
+    otpTitle: '2FA Authenticator (OTP)',
+    otpSubtitle: 'Generate 2-Step verification codes (TOTP) in real time.',
+    addOtp: 'Add OTP',
+    searchOtps: 'Search service, account...',
+    noOtpsFound: 'No OTP codes stored in vault.',
+    issuerLabel: 'Service Name (Issuer)',
+    accountLabel: 'Account Name',
+    secretKeyLabel: 'Secret Key (Base32)',
+
+    // Tunnel Manager
+    tunnelTitle: 'SSH Tunneling & Port Forwarding Visualizer',
+    tunnelSubtitle: 'Manage and visualize secure tunnel traffic flows (Local, Remote, SOCKS5 Proxy).',
+    addTunnel: 'Create New Tunnel',
+    searchTunnels: 'Search tunnels...',
+    noTunnelsFound: 'No SSH Tunnels created.',
+    flowDiagramTitle: 'Connection Traffic Flow Diagram:',
+    activeConnections: 'Active Connections',
+    bytesReceived: 'Bytes Received (Download)',
+    bytesTransferred: 'Bytes Transferred (Upload)',
+    speedLabel: 'Current Speed',
+
+    // Multi-Exec Manager
+    multiExecTitle: 'Script Library & Multi-Exec Runner',
+    multiExecSubtitle: 'Manage SSH/SQL script snippets and execute commands simultaneously across multiple servers.',
+    tabMultiExec: 'Multi-Exec Runner',
+    tabSnippets: 'Script Library',
+    selectTargets: 'Select Targets',
+    selectAll: 'Select all',
+    selectedCount: 'Selected:',
+    executeParallel: 'Execute Parallel',
+    executing: 'Executing Parallel...',
+    parallelResults: 'Parallel Execution Results',
+    successCountLabel: 'Success',
+    errorCountLabel: 'Failed',
+    addSnippet: 'Add New Snippet',
+
+    // Audit Log Manager
+    auditTitle: 'Session Recording & Security Audit Logs',
+    auditSubtitle: 'Record SSH terminal sessions (.cast format), SQL Queries and audit high-risk commands.',
+    reloadLogs: 'Reload Logs',
+    searchLogs: 'Search command, host, user...',
+    allProtocols: 'All Protocols',
+    allRisks: 'All Risk Levels',
+    noAuditLogsFound: 'No audit logs recorded.',
+    highRiskWarning: 'SECURITY AUDIT ALERT: High-risk system command detected!',
+    asciinemaPlayerTitle: 'Asciinema Session Player (.cast)',
 
     quickStart: 'Quick Actions'
   }

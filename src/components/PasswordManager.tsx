@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { PasswordEntry } from '../types';
 import { Plus, Search, Edit2, Trash2, Copy, Eye, EyeOff, KeyRound, ExternalLink, RefreshCw, Check } from 'lucide-react';
 
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 interface PasswordManagerProps {
   passwords: PasswordEntry[];
   onSavePassword: (pw: PasswordEntry) => void;
   onDeletePassword: (id: string) => void;
+  settings?: TerminalSettings;
 }
 
-export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onSavePassword, onDeletePassword }) => {
+export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onSavePassword, onDeletePassword, settings }) => {
+  const { t } = useTranslation(settings);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,14 +102,14 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <KeyRound size={20} style={{ color: 'var(--accent-primary)' }} />
-            Quản lý Mật khẩu
+            {t('pwManagerTitle')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-            Lưu trữ và quản lý mật khẩu an toàn.
+            {t('pwManagerSubtitle')}
           </p>
         </div>
         <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={16} /> Thêm Mật Khẩu
+          <Plus size={16} /> {t('addPassword')}
         </button>
       </div>
 
@@ -112,7 +117,7 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
         <input
           type="text"
           className="input-field"
-          placeholder="Tìm kiếm mật khẩu..."
+          placeholder={t('searchPasswords')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ paddingLeft: '36px' }}
@@ -123,7 +128,7 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {filteredPasswords.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-            Không tìm thấy mật khẩu nào.
+            {t('noPasswordsFound')}
           </div>
         ) : (
           filteredPasswords.map(pw => (

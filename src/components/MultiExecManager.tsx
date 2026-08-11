@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { CommandSnippet, MultiExecResult, ServerConfig, SSHKey } from '../types';
 import { Play, Plus, Search, Edit2, Trash2, Code2, CheckSquare, Square, Terminal, Database, CheckCircle2, XCircle, Clock, Copy, Check, FileText } from 'lucide-react';
 
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 interface MultiExecManagerProps {
   snippets: CommandSnippet[];
   servers: ServerConfig[];
   keys: SSHKey[];
   onSaveSnippet: (snippet: CommandSnippet) => void;
   onDeleteSnippet: (id: string) => void;
+  settings?: TerminalSettings;
 }
 
 export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
@@ -15,8 +19,10 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
   servers,
   keys,
   onSaveSnippet,
-  onDeleteSnippet
+  onDeleteSnippet,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
   const [activeTab, setActiveTab] = useState<'SNIPPETS' | 'MULTI_EXEC'>('MULTI_EXEC');
   
   // Snippet Library States
@@ -160,10 +166,10 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <Code2 size={22} style={{ color: 'var(--accent-primary)' }} />
-            Thư Viện Script & Chạy Lệnh Hàng Loạt (Multi-Exec)
+            {t('multiExecTitle')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-            Quản lý script SSH/SQL mẫu và thực thi đồng thời trên hàng loạt máy chủ thời gian thực.
+            {t('multiExecSubtitle')}
           </p>
         </div>
 
@@ -184,7 +190,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               gap: '6px'
             }}
           >
-            <Play size={14} /> Chạy Lệnh Hàng Loạt
+            <Play size={14} /> {t('tabMultiExec')}
           </button>
           <button
             onClick={() => setActiveTab('SNIPPETS')}
@@ -202,7 +208,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               gap: '6px'
             }}
           >
-            <FileText size={14} /> Thư Viện Snippets ({snippets.length})
+            <FileText size={14} /> {t('tabSnippets')} ({snippets.length})
           </button>
         </div>
       </div>

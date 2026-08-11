@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { SSHTunnelConfig, ServerConfig, SSHKey, TunnelTrafficStats } from '../types';
 import { Plus, Search, Edit2, Trash2, Network, Play, Square, Activity, ArrowRight, Server, Laptop, Globe, RefreshCw, Zap } from 'lucide-react';
 
+import { TerminalSettings } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 interface SSHTunnelManagerProps {
   tunnels: SSHTunnelConfig[];
   servers: ServerConfig[];
   keys: SSHKey[];
   onSaveTunnel: (tunnel: SSHTunnelConfig) => void;
   onDeleteTunnel: (id: string) => void;
+  settings?: TerminalSettings;
 }
 
 export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
@@ -15,8 +19,10 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
   servers,
   keys,
   onSaveTunnel,
-  onDeleteTunnel
+  onDeleteTunnel,
+  settings
 }) => {
+  const { t } = useTranslation(settings);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -135,14 +141,14 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <Network size={22} style={{ color: 'var(--accent-primary)' }} />
-            SSH Tunneling & Port Forwarding Visualizer
+            {t('tunnelTitle')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-            Quản lý và trực quan hóa luồng dữ liệu đường hầm bảo mật (Local, Remote, SOCKS5 Proxy).
+            {t('tunnelSubtitle')}
           </p>
         </div>
         <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={16} /> Tạo Đường Hầm Mới
+          <Plus size={16} /> {t('addTunnel')}
         </button>
       </div>
 
@@ -154,7 +160,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
             <input
               type="text"
               className="input-field"
-              placeholder="Tìm kiếm đường hầm..."
+              placeholder={t('searchTunnels')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ paddingLeft: '34px', fontSize: '0.85rem' }}

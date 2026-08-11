@@ -446,6 +446,7 @@ export const App: React.FC = () => {
                   ) : tab.type === 'PASSWORD_MANAGER' ? (
                     <PasswordManager
                       passwords={vaultData.passwords || []}
+                      settings={settings}
                       onSavePassword={(pw) => {
                         const newPws = vaultData.passwords?.filter((p) => p.id !== pw.id) || [];
                         newPws.push(pw);
@@ -459,6 +460,7 @@ export const App: React.FC = () => {
                   ) : tab.type === 'OTP_MANAGER' ? (
                     <OTPManager
                       otps={vaultData.otps || []}
+                      settings={settings}
                       onSaveOTP={(otp) => {
                         const newOTPs = vaultData.otps?.filter((o) => o.id !== otp.id) || [];
                         newOTPs.push(otp);
@@ -474,6 +476,7 @@ export const App: React.FC = () => {
                       tunnels={vaultData.tunnels || []}
                       servers={vaultData.servers || []}
                       keys={vaultData.keys || []}
+                      settings={settings}
                       onSaveTunnel={(tn) => {
                         const newTns = vaultData.tunnels?.filter((t) => t.id !== tn.id) || [];
                         newTns.push(tn);
@@ -489,6 +492,7 @@ export const App: React.FC = () => {
                       snippets={vaultData.snippets || []}
                       servers={vaultData.servers || []}
                       keys={vaultData.keys || []}
+                      settings={settings}
                       onSaveSnippet={(sn) => {
                         const newSns = vaultData.snippets?.filter((s) => s.id !== sn.id) || [];
                         newSns.push(sn);
@@ -500,7 +504,7 @@ export const App: React.FC = () => {
                       }}
                     />
                   ) : tab.type === 'AUDIT_LOG_MANAGER' ? (
-                    <AuditLogManager />
+                    <AuditLogManager settings={settings} />
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}
