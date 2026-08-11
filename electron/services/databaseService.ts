@@ -106,8 +106,35 @@ export class DatabaseService {
       } else if (dbType === 'PostgreSQL') {
         const pg = this.activePG.get(sessionId);
         if (!pg) return { success: false, error: 'Chưa kết nối PostgreSQL.' };
-        const res = await pg.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;");
-        const tables = res.rows.map((r: any) => r.table_name);
+        
+        // If a specific target database is selected, re-connect to that database if needed
+        if (dbName && pg.database !== dbName) {
+          try {
+            await pg.end();
+          } catch (e) {}
+          // Get connection options from existing client if possible, or construct
+          const newPg = new PGClient({
+            host: (pg as any).connectionParameters.host,
+            port: (pg as any).connectionParameters.port,
+            user: (pg as any).connectionParameters.user,
+            password: (pg as any).connectionParameters.password,
+            database: dbName,
+            connectionTimeoutMillis: 10000,
+            ssl: { rejectUnauthorized: false }
+          });
+          await newPg.connect();
+          this.activePG.set(sessionId, newPg);
+        }
+
+        const activeClient = this.activePG.get(sessionId) || pg;
+        const res = await activeClient.query(`
+          SELECT table_schema || '.' || table_name AS full_table_name, table_name
+          FROM information_schema.tables
+          WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+            AND table_type = 'BASE TABLE'
+          ORDER BY table_schema, table_name;
+        `);
+        const tables = res.rows.map((r: any) => (r.full_table_name.startsWith('public.') ? r.table_name : r.full_table_name));
         return { success: true, tables };
       } else if (dbType === 'Redis') {
         const redis = this.activeRedis.get(sessionId);
