@@ -6,6 +6,7 @@ export interface SSHSessionOptions {
   sessionId: string;
   server: ServerConfig;
   key?: SSHKey;
+  jumpChain?: { server: ServerConfig; key?: SSHKey }[];
   cols?: number;
   rows?: number;
 }
@@ -13,106 +14,152 @@ export interface SSHSessionOptions {
 export class SSHService {
   private activeSessions: Map<string, { client: Client; stream: any }> = new Map();
 
-  public connect(
+  private buildConnectConfig(server: ServerConfig, key?: SSHKey): { config: ConnectConfig; error?: string } {
+    const connectConfig: ConnectConfig = {
+      host: server.host,
+      port: server.port || 22,
+      username: server.username,
+      readyTimeout: 20000,
+      keepaliveInterval: 10000,
+      tryKeyboard: true
+    };
+
+    if (server.authType === 'privateKey' && key) {
+      let needPassphrase = false;
+      try {
+        const parsed = utils.parseKey(key.privateKey);
+        if (parsed instanceof Error) throw parsed;
+      } catch (e) {
+        if (key.passphrase) {
+          try {
+            const parsed = utils.parseKey(key.privateKey, key.passphrase);
+            if (parsed instanceof Error) throw parsed;
+            needPassphrase = true;
+          } catch (err: any) {
+            let msg = `Không thể phân tích Private Key: ${err.message}`;
+            if (err.message.includes('Unsupported key format') && key.privateKey.includes('BEGIN OPENSSH PRIVATE KEY')) {
+              msg = 'Khóa Ed25519 (OpenSSH) có mật khẩu không được hỗ trợ giải mã trên hệ điều hành này.';
+            }
+            return { config: connectConfig, error: msg };
+          }
+        } else {
+          return { config: connectConfig, error: 'Khóa SSH yêu cầu mật khẩu giải mã (Passphrase) nhưng chưa được cung cấp.' };
+        }
+      }
+      connectConfig.privateKey = key.privateKey;
+      if (needPassphrase && key.passphrase) {
+        connectConfig.passphrase = key.passphrase;
+      }
+    } else if (server.password) {
+      connectConfig.password = server.password;
+    }
+
+    return { config: connectConfig };
+  }
+
+  public async connect(
     window: BrowserWindow,
     options: SSHSessionOptions
   ): Promise<{ success: boolean; error?: string }> {
-    return new Promise((resolve) => {
-      const { sessionId, server, key, cols = 80, rows = 24 } = options;
-      const client = new Client();
+    const { sessionId, server, key, jumpChain = [], cols = 80, rows = 24 } = options;
 
-      const connectConfig: ConnectConfig = {
-        host: server.host,
-        port: server.port || 22,
-        username: server.username,
-        readyTimeout: 20000,
-        keepaliveInterval: 10000,
-        tryKeyboard: true
-      };
+    return new Promise(async (resolve) => {
+      try {
+        let currentStream: any = null;
+        let currentClient: Client | null = null;
+        const clientsToClean: Client[] = [];
 
-      if (server.authType === 'privateKey' && key) {
-        let needPassphrase = false;
-        try {
-          // Try parsing without passphrase first
-          const parsed = utils.parseKey(key.privateKey);
-          if (parsed instanceof Error) {
-            throw parsed;
-          }
-          console.log(`[SSH] Private key parsed successfully (no passphrase needed). Algorithm:`, (parsed as any).type);
-        } catch (e) {
-          // If parsing without passphrase fails, try parsing with passphrase if available
-          if (key.passphrase) {
-            try {
-              const parsed = utils.parseKey(key.privateKey, key.passphrase);
-              if (parsed instanceof Error) {
-                throw parsed;
-              }
-              console.log(`[SSH] Private key parsed successfully (with passphrase). Algorithm:`, (parsed as any).type);
-              needPassphrase = true;
-            } catch (err: any) {
-              console.error('[SSH] Failed to parse private key with passphrase:', err.message);
-              let msg = `Không thể phân tích Private Key: ${err.message}`;
-              if (err.message.includes('Unsupported key format') && key.privateKey.includes('BEGIN OPENSSH PRIVATE KEY')) {
-                 msg = 'Khóa Ed25519 (OpenSSH) có mật khẩu không được hỗ trợ giải mã trên hệ điều hành này. Vui lòng chọn "Sinh Khóa Mới", hoặc dùng lệnh: ssh-keygen -p -f <file_key> để gỡ mật khẩu khóa cũ.';
-              }
-              return resolve({ success: false, error: msg });
+        // If there are Jump Hosts in chain
+        if (jumpChain && jumpChain.length > 0) {
+          for (let i = 0; i < jumpChain.length; i++) {
+            const hop = jumpChain[i];
+            const nextTargetHost = i === jumpChain.length - 1 ? server.host : jumpChain[i + 1].server.host;
+            const nextTargetPort = i === jumpChain.length - 1 ? (server.port || 22) : (jumpChain[i + 1].server.port || 22);
+
+            const hopClient = new Client();
+            clientsToClean.push(hopClient);
+            const { config: hopCfg, error: hopErr } = this.buildConnectConfig(hop.server, hop.key);
+            if (hopErr) return resolve({ success: false, error: `[Bastion Hop ${i + 1} (${hop.server.name})] ${hopErr}` });
+
+            if (currentStream) {
+              hopCfg.sock = currentStream;
             }
-          } else {
-            console.error('[SSH] Private key requires passphrase but none was provided.');
-            return resolve({ success: false, error: 'Khóa SSH yêu cầu mật khẩu giải mã (Passphrase) nhưng chưa được cung cấp.' });
+
+            hopClient.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+              finish(prompts.map(() => hop.server.password || ''));
+            });
+
+            await new Promise<void>((resHop, rejHop) => {
+              hopClient.on('ready', () => {
+                hopClient.forwardOut('127.0.0.1', 0, nextTargetHost, nextTargetPort, (err, stream) => {
+                  if (err) return rejHop(new Error(`ForwardOut failed on Hop ${i + 1} (${hop.server.name}): ${err.message}`));
+                  currentStream = stream;
+                  currentClient = hopClient;
+                  resHop();
+                });
+              });
+              hopClient.on('error', (err) => rejHop(new Error(`Bastion Hop ${i + 1} (${hop.server.name}) error: ${err.message}`)));
+              hopClient.connect(hopCfg);
+            });
           }
         }
-        connectConfig.privateKey = key.privateKey;
-        if (needPassphrase && key.passphrase) {
-          connectConfig.passphrase = key.passphrase;
+
+        // Final Destination SSH Client
+        const finalClient = new Client();
+        const { config: finalCfg, error: finalErr } = this.buildConnectConfig(server, key);
+        if (finalErr) return resolve({ success: false, error: finalErr });
+
+        if (currentStream) {
+          finalCfg.sock = currentStream;
         }
-      } else if (server.password) {
-        connectConfig.password = server.password;
-      }
 
-      // Handle PAM / Keyboard-Interactive Authentication (Required for Ubuntu/Debian/CentOS OpenSSH)
-      client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-        finish(prompts.map(() => server.password || ''));
-      });
-
-      client.on('ready', () => {
-        client.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
-          if (err) {
-            client.end();
-            return resolve({ success: false, error: err.message });
-          }
-
-          this.activeSessions.set(sessionId, { client, stream });
-
-          stream.on('data', (data: Buffer) => {
-            if (!window.isDestroyed()) {
-              window.webContents.send('ssh:data', { sessionId, data: data.toString('utf8') });
-            }
-          });
-
-          stream.on('close', () => {
-            this.activeSessions.delete(sessionId);
-            if (!window.isDestroyed()) {
-              window.webContents.send('ssh:closed', { sessionId });
-            }
-          });
-
-          stream.stderr.on('data', (data: Buffer) => {
-            if (!window.isDestroyed()) {
-              window.webContents.send('ssh:data', { sessionId, data: data.toString('utf8') });
-            }
-          });
-
-          resolve({ success: true });
+        finalClient.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+          finish(prompts.map(() => server.password || ''));
         });
-      });
 
-      client.on('error', (err) => {
-        this.activeSessions.delete(sessionId);
-        resolve({ success: false, error: err.message });
-      });
+        finalClient.on('ready', () => {
+          finalClient.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
+            if (err) {
+              finalClient.end();
+              return resolve({ success: false, error: err.message });
+            }
 
-      client.connect(connectConfig);
+            this.activeSessions.set(sessionId, { client: finalClient, stream });
+
+            stream.on('data', (data: Buffer) => {
+              if (!window.isDestroyed()) {
+                window.webContents.send('ssh:data', { sessionId, data: data.toString('utf8') });
+              }
+            });
+
+            stream.on('close', () => {
+              this.activeSessions.delete(sessionId);
+              clientsToClean.forEach((c) => { try { c.end(); } catch (e) {} });
+              if (!window.isDestroyed()) {
+                window.webContents.send('ssh:closed', { sessionId });
+              }
+            });
+
+            stream.stderr.on('data', (data: Buffer) => {
+              if (!window.isDestroyed()) {
+                window.webContents.send('ssh:data', { sessionId, data: data.toString('utf8') });
+              }
+            });
+
+            resolve({ success: true });
+          });
+        });
+
+        finalClient.on('error', (err) => {
+          this.activeSessions.delete(sessionId);
+          clientsToClean.forEach((c) => { try { c.end(); } catch (e) {} });
+          resolve({ success: false, error: err.message });
+        });
+
+        finalClient.connect(finalCfg);
+      } catch (err: any) {
+        resolve({ success: false, error: err.message || 'Bastion Jump Host connection failed' });
+      }
     });
   }
 

@@ -9,6 +9,7 @@ interface ServerModalProps {
   onSave: (server: Partial<ServerConfig>) => void;
   editingServer?: ServerConfig | null;
   keys: SSHKey[];
+  availableServers?: ServerConfig[];
   settings?: TerminalSettings;
 }
 
@@ -18,6 +19,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   onSave,
   editingServer,
   keys,
+  availableServers = [],
   settings
 }) => {
   const { t } = useTranslation(settings);
@@ -35,6 +37,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   const [dbName, setDbName] = useState('');
   const [environment, setEnvironment] = useState<Environment>('DEV');
   const [tagsInput, setTagsInput] = useState('');
+  const [jumpHostIds, setJumpHostIds] = useState<string[]>([]);
 
   // Vault secret test preview state
   const [testSecretStatus, setTestSecretStatus] = useState<{ testing: boolean; success?: boolean; message?: string }>({ testing: false });
@@ -55,6 +58,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       setDbName(editingServer.dbName || '');
       setEnvironment(editingServer.environment);
       setTagsInput(editingServer.tags ? editingServer.tags.join(', ') : '');
+      setJumpHostIds(editingServer.jumpHostIds || []);
     } else {
       setName('');
       setHost('');
@@ -70,6 +74,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       setDbName('');
       setEnvironment('DEV');
       setTagsInput('');
+      setJumpHostIds([]);
     }
   }, [editingServer, isOpen]);
 
@@ -131,6 +136,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       vaultKeyName: authType === 'hashicorpVault' ? vaultKeyName : undefined,
       dbType: protocol === 'DATABASE' ? dbType : undefined,
       dbName: protocol === 'DATABASE' ? dbName : undefined,
+      jumpHostIds: protocol === 'SSH' || protocol === 'SFTP' ? jumpHostIds : undefined,
       environment,
       tags
     });
@@ -430,6 +436,56 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Bastion Host / Jump Host Chain Configuration */}
+            {(protocol === 'SSH' || protocol === 'SFTP') && (
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
+                  🌉 Cấu Hình Jump Host / Bastion Server (Multi-hop Tunnel 1-3 lớp)
+                </label>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  Chọn 1 đến 3 máy chủ Bastion trung gian để tạo đường hầm SSH nhảy cóc tự động vào máy chủ trong mạng nội bộ Private Subnet.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[0, 1, 2].map((hopIndex) => {
+                    const currentHopId = jumpHostIds[hopIndex] || '';
+                    const candidateServers = availableServers.filter(
+                      (s) => s.id !== editingServer?.id && (s.protocol === 'SSH' || s.protocol === 'SFTP')
+                    );
+
+                    return (
+                      <div key={hopIndex} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-primary)', width: '85px' }}>
+                          Hop {hopIndex + 1}:
+                        </span>
+                        <select
+                          className="input-field"
+                          value={currentHopId}
+                          onChange={(e) => {
+                            const newIds = [...jumpHostIds];
+                            if (e.target.value) {
+                              newIds[hopIndex] = e.target.value;
+                            } else {
+                              newIds.splice(hopIndex, 1);
+                            }
+                            setJumpHostIds(newIds.filter(Boolean));
+                          }}
+                          style={{ height: '34px', fontSize: '0.8rem', flex: 1 }}
+                        >
+                          <option value="">-- Không sử dụng Hop {hopIndex + 1} --</option>
+                          {candidateServers.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.username}@{s.host}:{s.port})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Environment Selection */}
             <div>

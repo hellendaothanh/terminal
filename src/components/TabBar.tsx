@@ -1,5 +1,4 @@
-import React from 'react';
-import { Terminal, FolderOpen, Monitor, Key, Settings, X, Plus, Database, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Terminal, FolderOpen, Monitor, Key, Settings, X, Plus, Database, PanelLeftClose, PanelLeftOpen, Box, Cloud } from 'lucide-react';
 import { TabItem, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -40,6 +39,14 @@ export const TabBar: React.FC<TabBarProps> = ({
         return <Key size={14} style={{ color: 'var(--accent-warning)' }} />;
       case 'SETTINGS':
         return <Settings size={14} style={{ color: 'var(--text-muted)' }} />;
+      case 'ERD_SCHEMA_DIFF':
+      case 'VISUAL_QUERY_BUILDER':
+      case 'DATA_PUMP':
+        return <Database size={14} style={{ color: '#c084fc' }} />;
+      case 'DOCKER_K8S':
+        return <Box size={14} style={{ color: 'var(--env-dev)' }} />;
+      case 'CLOUD_EXPLORER':
+        return <Cloud size={14} style={{ color: 'var(--accent-primary)' }} />;
       default:
         return <Terminal size={14} />;
     }

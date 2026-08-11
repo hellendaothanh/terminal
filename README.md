@@ -65,10 +65,31 @@
 * **High-Risk Command Detection:** Real-time auditing for SQL queries and SSH commands with automatic risk scoring (CRITICAL / HIGH risk warnings for `rm -rf`, `DROP TABLE`, `chmod 777`).
 * **Log Export Options:** Export audit trails to `.cast` or `.txt` log reports with timestamp integrity.
 
-### 12. ⚡ Multi-Tab Workspace & Docked AI Side Panel
-* **Persistent Tab Sessions:** Active SSH, SFTP, RDP, Database, Password Manager, and OTP sessions persist in DOM memory when switching tabs.
-* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Toggle server list sidebar into a 50px compact mini-bar to maximize workspace real estate.
-* **Docked AI Side Panel:** The AI Assistant operates as a docked flex panel alongside the terminal without covering or obscuring terminal text.
+### 13. 📊 Real-Time Server Metrics Dashboard (Agentless)
+* **Real-Time Monitoring:** Track remote server CPU (%), RAM (%), Disk (/), and Network I/O (KB/s download/upload) dynamically via lightweight SSH commands without installing any server agents.
+* **Compact Header Badge & Detailed View:** Switch between a compact status bar badge and an expanded progress bar visualizer with color-coded overload alerts (Green -> Amber -> Red).
+
+### 14. 🌉 Bastion Jump Host Support (1-3 Hops Multi-Hop Tunneling)
+* **Private Subnet Access:** Seamlessly route SSH and SFTP connections through up to 3 layers of Bastion/Jump hosts into isolated internal networks.
+* **Automatic Tunnel Chaining:** Built-in `ssh2` `forwardOut` stream handling handles multi-hop SSH authentication automatically.
+
+### 15. 💡 Shell Smart Assistant & Log Anomaly Detection
+* **Intelligent Auto-Completion:** Dynamic command recommendations bar built from shell command history, environment variables, and Linux/Kubernetes/Docker CLI templates.
+* **Log Anomaly Detection:** Real-time stream monitor flags critical error keywords (`OutOfMemory`, `OOMKilled`, `Connection Refused`, `Segmentation Fault`, `FATAL ERROR`) with immediate red alert banners.
+
+### 16. 🗄️ Visual ERD, Schema Diff & Visual Query Builder
+* **Visual ERD Diagram:** View interactive database schema relationships, Primary Keys (PK), Foreign Keys (FK), and column data types.
+* **Environment Schema Diff & Migration Generator:** Compare database schemas between 2 environments (e.g. Dev vs Staging) and automatically generate SQL migration scripts.
+* **Visual SQL Query Builder:** Drag-and-drop table selection, column pickers, JOIN links, and WHERE filter builders generate standardized SQL queries without typing SQL by hand.
+
+### 17. 📦 Advanced Data Pump & Cloud/Container Ecosystem
+* **Streaming Dump & Restore:** High-performance database dump and restore supporting SQL DDL/DML, JSON, and Parquet columnar formats with optional AES-256 stream encryption.
+* **Docker & Kubernetes Panel:** View running Docker containers and Kubernetes Pods, inspect real-time logs, and launch 1-click `docker exec` / `kubectl exec` interactive shell terminals.
+* **Cloud Infrastructure Explorer:** Connect AWS, GCP, and Azure APIs to view Virtual Machines/Instances and connect via 1-click SSH/RDP.
+
+### 18. 🛡️ Command Guard & Tamper-Evident Audit Logs (ISO 27001 / SOC 2)
+* **Command Guard Approval Workflow:** Requires Master Passphrase or 6-digit TOTP authentication before executing destructive commands (`DROP DATABASE`, `systemctl stop`, `rm -rf`).
+* **Tamper-Evident Audit Logs:** Compute SHA-256 HMAC checksums for every audit log entry to ensure tamper resistance and compliance readiness.
 
 ---
 

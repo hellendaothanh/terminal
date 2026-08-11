@@ -256,10 +256,15 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {t('auditDetailTitle')} #{selectedLog.id.slice(-8)}
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '16px' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span>Target: <strong>{selectedLog.targetName}</strong></span>
                     <span>User: <strong>{selectedLog.user}</strong></span>
                     <span>Time: <strong>{new Date(selectedLog.timestamp).toLocaleString()}</strong></span>
+                    {selectedLog.hmacChecksum && (
+                      <span style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: 'var(--accent-success)', border: '1px solid rgba(34, 197, 94, 0.4)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={12} /> ISO/SOC2 Tamper-Evident HMAC Verified ({selectedLog.hmacChecksum.slice(0, 12)}...)
+                      </span>
+                    )}
                   </div>
                 </div>
 

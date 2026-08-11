@@ -39,6 +39,9 @@ export interface ServerConfig {
   dbType?: DBType;
   dbName?: string;
 
+  // Jump Host / Bastion Host chain (supports multi-hop 1-3 layers)
+  jumpHostIds?: string[];
+
   environment: Environment;
   tags: string[];
   rdpWidth?: number;
@@ -146,13 +149,15 @@ export interface AuditLogEntry {
   executionTimeMs?: number;
   timestamp: number;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  hmacChecksum?: string; // SHA-256 HMAC Checksum for tamper protection (ISO 27001 / SOC 2)
+  isTamperEvident?: boolean;
   castData?: Array<[number, string, string]>; // asciinema v2 frames: [time_offset, 'o'|'i', data]
 }
 
 export interface TabItem {
   id: string;
   title: string;
-  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER' | 'AUDIT_LOG_MANAGER';
+  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER' | 'AUDIT_LOG_MANAGER' | 'ERD_SCHEMA_DIFF' | 'VISUAL_QUERY_BUILDER' | 'DATA_PUMP' | 'DOCKER_K8S' | 'CLOUD_EXPLORER';
   serverId?: string;
   server?: ServerConfig;
 }

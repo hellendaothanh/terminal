@@ -48,19 +48,40 @@ export class AuditLogService {
     return 'LOW';
   }
 
+  private calculateHMAC(payload: string): string {
+    const crypto = require('crypto');
+    const secretKey = 'OMNI_TERMINAL_AUDIT_LOG_TAMPER_KEY';
+    return crypto.createHmac('sha256', secretKey).update(payload).digest('hex');
+  }
+
   public logEntry(entry: Partial<AuditLogEntry>): AuditLogEntry {
+    const id = entry.id || 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const timestamp = entry.timestamp || Date.now();
+    const commandOrQuery = entry.commandOrQuery || '';
+    const user = entry.user || 'root';
+    const targetName = entry.targetName || 'Unknown Target';
+    const protocol = entry.protocol || 'SSH';
+    const status = entry.status || 'SUCCESS';
+    const executionTimeMs = entry.executionTimeMs || 0;
+    const riskLevel = entry.riskLevel || this.calculateRiskLevel(commandOrQuery);
+
+    const payload = `${id}:${timestamp}:${protocol}:${targetName}:${user}:${commandOrQuery}:${status}`;
+    const hmacChecksum = this.calculateHMAC(payload);
+
     const fullEntry: AuditLogEntry = {
-      id: entry.id || 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      id,
       sessionId: entry.sessionId || 'session_' + Date.now(),
       targetId: entry.targetId,
-      targetName: entry.targetName || 'Unknown Target',
-      protocol: entry.protocol || 'SSH',
-      user: entry.user || 'root',
-      commandOrQuery: entry.commandOrQuery || '',
-      status: entry.status || 'SUCCESS',
-      executionTimeMs: entry.executionTimeMs || 0,
-      timestamp: entry.timestamp || Date.now(),
-      riskLevel: entry.riskLevel || this.calculateRiskLevel(entry.commandOrQuery || '')
+      targetName,
+      protocol,
+      user,
+      commandOrQuery,
+      status,
+      executionTimeMs,
+      timestamp,
+      riskLevel,
+      hmacChecksum,
+      isTamperEvident: true
     };
 
     this.memoryLogs.unshift(fullEntry);

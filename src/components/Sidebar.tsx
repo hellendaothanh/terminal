@@ -19,7 +19,9 @@ import {
   Shield,
   Network,
   Code2,
-  ShieldAlert
+  ShieldAlert,
+  Box,
+  Cloud
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -43,6 +45,11 @@ interface SidebarProps {
   onOpenTunnels?: () => void;
   onOpenMultiExec?: () => void;
   onOpenAuditLogs?: () => void;
+  onOpenErdDiff?: () => void;
+  onOpenVisualQueryBuilder?: () => void;
+  onOpenDataPump?: () => void;
+  onOpenDockerK8s?: () => void;
+  onOpenCloudExplorer?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -63,7 +70,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenOTPs,
   onOpenTunnels,
   onOpenMultiExec,
-  onOpenAuditLogs
+  onOpenAuditLogs,
+  onOpenErdDiff,
+  onOpenVisualQueryBuilder,
+  onOpenDataPump,
+  onOpenDockerK8s,
+  onOpenCloudExplorer
 }) => {
   const { t } = useTranslation(settings);
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
@@ -655,6 +667,121 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <ShieldAlert size={16} style={{ color: 'var(--accent-danger)' }} />
             <span>{t('auditLogs')}</span>
+          </button>
+
+          <button
+            onClick={onOpenErdDiff}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Database size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>ERD & Schema Diff</span>
+          </button>
+
+          <button
+            onClick={onOpenVisualQueryBuilder}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Database size={16} style={{ color: '#c084fc' }} />
+            <span>Visual Query Builder</span>
+          </button>
+
+          <button
+            onClick={onOpenDataPump}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Database size={16} style={{ color: 'var(--env-dev)' }} />
+            <span>Data Pump Stream</span>
+          </button>
+
+          <button
+            onClick={onOpenDockerK8s}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Box size={16} style={{ color: 'var(--env-dev)' }} />
+            <span>Docker & K8s Panel</span>
+          </button>
+
+          <button
+            onClick={onOpenCloudExplorer}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Cloud size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>Cloud Explorer</span>
           </button>
         </div>
       )}

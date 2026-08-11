@@ -65,10 +65,31 @@
 * **Phát Hiện & Cảnh Báo Lệnh Nguy Hiểm:** Kiểm toán thời gian thực các câu lệnh SQL và SSH với bộ đánh giá rủi ro tự động (Cảnh báo màu đỏ cho `rm -rf`, `DROP TABLE`, `chmod 777`).
 * **Xuất Báo Cáo Nhật Ký:** Cho phép xuất dữ liệu kiểm toán ra file định dạng `.cast` hoặc file báo cáo `.txt`.
 
-### 12. ⚡ Workspace Đa Tab & Docked Side Panel
-* **Persistent Tab Sessions:** Các tab SSH, SFTP, RDP, Database, Password Manager và OTP duy trì kết nối liên tục trong bộ nhớ khi chuyển tab.
-* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Nút thu gọn Sidebar danh sách máy chủ về dạng Mini-bar (50px) để tối đa hóa không gian màn hình làm việc.
-* **Docked AI Side Panel:** Khung Trợ Lý AI đính kèm cạnh bên dạng Docked Panel giúp xem Terminal và hỏi đáp AI song song không lo bị che khuất.
+### 13. 📊 Giám Sát Tài Nguyên Máy Chủ Real-time (Agentless Server Metrics)
+* **Theo Dõi Thời Gian Thực:** Giám sát dung lượng CPU (%), RAM (%), Ổ đĩa (/) và Băng thông mạng Network I/O (KB/s Download/Upload) của máy chủ từ xa thông qua kết nối SSH nhẹ nhàng không cần cài agent.
+* **Thanh Trạng Thái Linh Hoạt:** Chuyển đổi giữa định dạng thu gọn trên thanh tiêu đề và bảng điều khiển mở rộng với màu sắc cảnh báo rủi ro quá tải (Xanh -> Vàng -> Đỏ).
+
+### 14. 🌉 Quản Lý Bastion Jump Host (Đường Hầm Nhảy Cóc 1-3 Lớp)
+* **Truy Cập Mạng Nội Bộ (Private Subnet):** Cho phép kết nối an toàn qua 1 đến 3 máy chủ Bastion/Jump trung gian để truy cập máy chủ nằm sâu trong mạng nội bộ.
+* **Xử Lý Chuỗi Kết Nối Tự Động:** Tích hợp luồng `forwardOut` của `ssh2` tự động hóa chuỗi xác thực qua nhiều Hop.
+
+### 15. 💡 Shell Smart Assistant & Tự Động Phát Hiện Sự Cố Log
+* **Thanh Gợi Ý Lệnh Thông Minh:** Tự động đưa ra gợi ý câu lệnh dựa trên lịch sử gõ, biến môi trường và mẫu CLI Linux/Kubernetes/Docker phổ biến.
+* **Cảnh Báo Lỗi Log Thời Gian Thực:** Tự động phát hiện các từ khóa lỗi nghiêm trọng (`OutOfMemory`, `OOMKilled`, `Connection Refused`, `Segmentation Fault`, `FATAL ERROR`) và hiển thị banner cảnh báo lập tức.
+
+### 16. 🗄️ Visual ERD, Schema Diff & Visual Query Builder
+* **Sơ Đồ Quan Hệ ERD Trực Quan:** Hiển thị cây liên kết bảng, Khóa chính (PK), Khóa ngoại (FK) và kiểu dữ liệu từng cột.
+* **So Sánh Cấu Trúc (Schema Diff) & Sinh Migration:** So sánh cấu trúc CSDL giữa 2 môi trường (ví dụ Dev vs Staging) và tự động tạo script SQL Migration.
+* **Visual SQL Query Builder:** Tự động sinh câu lệnh SQL bằng thao tác chọn bảng, chọn cột, thiết lập điều kiện JOIN và WHERE mà không cần gõ SQL thủ công.
+
+### 17. 📦 Export/Import Data Pump Stream & Hệ Sinh Thái Cloud/Container
+* **Streaming Dump & Restore Dữ Liệu Lớn:** Sao lưu/khôi phục CSDL dung lượng lớn hỗ trợ định dạng SQL DDL/DML, JSON, Parquet kèm tùy chọn mã hóa stream AES-256.
+* **Docker & Kubernetes Panel:** Xem danh sách Containers và K8s Pods, theo dõi log thời gian thực và mở Terminal `docker exec` / `kubectl exec` 1-click.
+* **Cloud Infrastructure Explorer:** Kết nối API AWS, GCP, Azure hiển thị danh sách Instance/VM và mở kết nối SSH/RDP 1-click.
+
+### 18. 🛡️ Command Guard Phê Duyệt Lệnh & Tamper-Evident Audit Logs (ISO 27001 / SOC 2)
+* **Quy Trình Phê Duyệt Lệnh Nguy Hiểm (Command Guard):** Yêu cầu xác thực Master Passphrase hoặc mã OTP (6 chữ số) trước khi chạy các lệnh nguy hiểm (`DROP DATABASE`, `systemctl stop`, `rm -rf`).
+* **Audit Log Chống Sửa Đổi (Tamper-Evident):** Tự động tính toán mã băm SHA-256 HMAC cho từng bản ghi nhật ký kiểm toán đảm bảo tuân thủ tiêu chuẩn an toàn ISO 27001 / SOC 2.
 
 ---
 

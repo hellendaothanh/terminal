@@ -19,6 +19,11 @@ import { OTPManager } from './components/OTPManager';
 import { SSHTunnelManager } from './components/SSHTunnelManager';
 import { MultiExecManager } from './components/MultiExecManager';
 import { AuditLogManager } from './components/AuditLogManager';
+import { ERDAndSchemaDiff } from './components/ERDAndSchemaDiff';
+import { VisualQueryBuilder } from './components/VisualQueryBuilder';
+import { DataPump } from './components/DataPump';
+import { DockerK8sPanel } from './components/DockerK8sPanel';
+import { CloudExplorer } from './components/CloudExplorer';
 
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
@@ -370,6 +375,56 @@ export const App: React.FC = () => {
               setActiveTabId(newTabId);
             }
           }}
+          onOpenErdDiff={() => {
+            const exists = tabs.find((t) => t.type === 'ERD_SCHEMA_DIFF');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'ERD & Schema Diff', type: 'ERD_SCHEMA_DIFF' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenVisualQueryBuilder={() => {
+            const exists = tabs.find((t) => t.type === 'VISUAL_QUERY_BUILDER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Visual Query Builder', type: 'VISUAL_QUERY_BUILDER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenDataPump={() => {
+            const exists = tabs.find((t) => t.type === 'DATA_PUMP');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Data Pump Stream', type: 'DATA_PUMP' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenDockerK8s={() => {
+            const exists = tabs.find((t) => t.type === 'DOCKER_K8S');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Docker & K8s Panel', type: 'DOCKER_K8S' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenCloudExplorer={() => {
+            const exists = tabs.find((t) => t.type === 'CLOUD_EXPLORER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Cloud Explorer', type: 'CLOUD_EXPLORER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
         />
 
         {/* Central Active Viewport Container */}
@@ -409,7 +464,7 @@ export const App: React.FC = () => {
             {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER') return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER' && tab.type !== 'ERD_SCHEMA_DIFF' && tab.type !== 'VISUAL_QUERY_BUILDER' && tab.type !== 'DATA_PUMP' && tab.type !== 'DOCKER_K8S' && tab.type !== 'CLOUD_EXPLORER') return null;
 
               return (
                 <div
@@ -425,6 +480,8 @@ export const App: React.FC = () => {
                       sessionId={tab.id}
                       server={tab.server}
                       keyObj={vaultData.keys.find((k) => k.id === tab.server?.privateKeyId)}
+                      availableServers={vaultData.servers}
+                      keys={vaultData.keys}
                       settings={settings}
                       onUpdateServerPassword={handleUpdateServerPassword}
                     />
@@ -505,6 +562,39 @@ export const App: React.FC = () => {
                     />
                   ) : tab.type === 'AUDIT_LOG_MANAGER' ? (
                     <AuditLogManager settings={settings} />
+                  ) : tab.type === 'ERD_SCHEMA_DIFF' ? (
+                    <ERDAndSchemaDiff servers={vaultData.servers || []} settings={settings} />
+                  ) : tab.type === 'VISUAL_QUERY_BUILDER' ? (
+                    <VisualQueryBuilder servers={vaultData.servers || []} settings={settings} />
+                  ) : tab.type === 'DATA_PUMP' ? (
+                    <DataPump servers={vaultData.servers || []} settings={settings} />
+                  ) : tab.type === 'DOCKER_K8S' ? (
+                    <DockerK8sPanel
+                      servers={vaultData.servers || []}
+                      settings={settings}
+                      onOpenExecTerminal={(server, execCmd) => {
+                        const tabId = `ssh_${server.id}_${Date.now()}`;
+                        const newTab: TabItem = {
+                          id: tabId,
+                          title: `Exec: ${server.name}`,
+                          type: 'SSH',
+                          serverId: server.id,
+                          server
+                        };
+                        setTabs((prev) => [...prev, newTab]);
+                        setActiveTabId(tabId);
+                      }}
+                    />
+                  ) : tab.type === 'CLOUD_EXPLORER' ? (
+                    <CloudExplorer
+                      settings={settings}
+                      onImportCloudInstanceAsServer={(serverData) => {
+                        handleSaveServer(serverData);
+                      }}
+                      onConnectServer={(server, protocol) => {
+                        handleConnect(server, protocol);
+                      }}
+                    />
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}
@@ -535,6 +625,7 @@ export const App: React.FC = () => {
         onSave={handleSaveServer}
         editingServer={editingServer}
         keys={vaultData.keys}
+        availableServers={vaultData.servers}
         settings={settings}
       />
 

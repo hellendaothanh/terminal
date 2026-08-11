@@ -6,11 +6,16 @@ import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
 import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
+import { ServerMetricsDashboard } from './ServerMetricsDashboard';
+import { ShellSmartAssistant } from './ShellSmartAssistant';
+import { CommandGuardApprovalModal } from './CommandGuardApprovalModal';
 
 interface SSHTerminalProps {
   sessionId: string;
   server: ServerConfig;
   keyObj?: SSHKey;
+  availableServers?: ServerConfig[];
+  keys?: SSHKey[];
   settings: TerminalSettings;
   onUpdateServerPassword?: (serverId: string, newPassword: string) => void;
 }
@@ -64,6 +69,8 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   sessionId,
   server: initialServer,
   keyObj,
+  availableServers = [],
+  keys = [],
   settings,
   onUpdateServerPassword
 }) => {
@@ -77,6 +84,45 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(settings.fontSize || 14);
   const [isReAuthOpen, setIsReAuthOpen] = useState(false);
+
+  const [guardModalOpen, setGuardModalOpen] = useState<boolean>(false);
+  const [pendingCommand, setPendingCommand] = useState<{ command: string; risk: 'HIGH' | 'MEDIUM' } | null>(null);
+
+  const [currentInput, setCurrentInput] = useState<string>('');
+  const [historyCommands, setHistoryCommands] = useState<string[]>([]);
+  const [anomalyAlert, setAnomalyAlert] = useState<string | null>(null);
+
+  const HIGH_RISK_COMMANDS = ['rm -rf', 'drop database', 'drop table', 'truncate', 'chmod 777', 'mkfs', 'dd if=', 'shutdown', 'reboot', 'systemctl stop'];
+
+  const checkDangerousCommand = (cmd: string): 'HIGH' | 'MEDIUM' | null => {
+    const lower = cmd.toLowerCase();
+    if (HIGH_RISK_COMMANDS.some((kw) => lower.includes(kw))) return 'HIGH';
+    return null;
+  };
+
+  const ANOMALY_KEYWORDS = [
+    'OutOfMemory',
+    'Out of memory',
+    'OOMKilled',
+    'Connection Refused',
+    'Connection refused',
+    'Segmentation Fault',
+    'segmentation fault',
+    'Permission denied',
+    'FATAL ERROR',
+    'Panic: ',
+    'SyntaxError',
+    'Uncaught Exception'
+  ];
+
+  const checkAnomalyLogs = (text: string) => {
+    for (const kw of ANOMALY_KEYWORDS) {
+      if (text.includes(kw)) {
+        setAnomalyAlert(`Phát hiện lỗi nghiêm trọng trong log: "${kw}"`);
+        break;
+      }
+    }
+  };
 
   // Copy / Paste Toast Notification Feedback State
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'empty' | 'pasted'>('idle');
@@ -102,6 +148,21 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
       fitAddonRef.current.fit();
     }
 
+    // Resolve Bastion / Jump Host Chain
+    const jumpChain: { server: ServerConfig; key?: SSHKey }[] = [];
+    if (targetServer.jumpHostIds && targetServer.jumpHostIds.length > 0) {
+      for (const jumpId of targetServer.jumpHostIds) {
+        const jumpSrv = availableServers.find((s) => s.id === jumpId);
+        if (jumpSrv) {
+          const jumpKey = keys.find((k) => k.id === jumpSrv.privateKeyId);
+          jumpChain.push({ server: jumpSrv, key: jumpKey });
+        }
+      }
+    }
+
+    if (jumpChain.length > 0) {
+      term.writeln(`\x1b[33m[Bastion Jump Chain] Routing through ${jumpChain.length} Jump Host(s): ${jumpChain.map((j) => j.server.name).join(' -> ')}...\x1b[0m`);
+    }
     term.writeln(`\x1b[36mConnecting to ${targetServer.username}@${targetServer.host}:${targetServer.port} via SSH...\x1b[0m\r\n`);
 
     window.api
@@ -109,6 +170,7 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
         sessionId,
         server: targetServer,
         key: targetServer.authType === 'privateKey' ? keyObj : undefined,
+        jumpChain: jumpChain.length > 0 ? jumpChain : undefined,
         vaultConfig: settings.hashicorpVault,
         cols: term.cols,
         rows: term.rows
@@ -159,13 +221,30 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
 
+    let lineBuf = '';
     const dataListener = term.onData((data) => {
       window.api.sshWrite(sessionId, data);
+
+      if (data === '\r' || data === '\n') {
+        const trimmed = lineBuf.trim();
+        if (trimmed) {
+          setHistoryCommands((prev) => [...prev, trimmed]);
+        }
+        lineBuf = '';
+        setCurrentInput('');
+      } else if (data === '\x7f' || data === '\b') {
+        lineBuf = lineBuf.slice(0, -1);
+        setCurrentInput(lineBuf);
+      } else if (data.length === 1 && data >= ' ') {
+        lineBuf += data;
+        setCurrentInput(lineBuf);
+      }
     });
 
     const removeSshDataListener = window.api.onSshData((_, payload) => {
       if (payload.sessionId === sessionId) {
         term.write(payload.data);
+        checkAnomalyLogs(payload.data);
       }
     });
 
@@ -322,6 +401,9 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
           )}
         </div>
 
+        {/* Real-time Server Metrics Widget */}
+        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} />
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Reconnect Button */}
           <button
@@ -437,6 +519,43 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
           overflow: 'hidden'
         }}
       />
+
+      {/* Shell Smart Assistant: Auto-completion & Log Anomaly Alert Banner */}
+      <ShellSmartAssistant
+        currentInput={currentInput}
+        historyCommands={historyCommands}
+        anomalyAlert={anomalyAlert}
+        onClearAnomalyAlert={() => setAnomalyAlert(null)}
+        onSelectSuggestion={(suggestion) => {
+          if (terminalRef.current) {
+            window.api.sshWrite(sessionId, suggestion);
+            setCurrentInput(suggestion);
+          }
+        }}
+      />
+
+      {/* Command Guard Approval Modal */}
+      {pendingCommand && (
+        <CommandGuardApprovalModal
+          isOpen={guardModalOpen}
+          commandOrQuery={pendingCommand.command}
+          riskLevel={pendingCommand.risk}
+          onApprove={() => {
+            if (terminalRef.current) {
+              window.api.sshWrite(sessionId, pendingCommand.command + '\r');
+            }
+            setGuardModalOpen(false);
+            setPendingCommand(null);
+          }}
+          onCancel={() => {
+            if (terminalRef.current) {
+              terminalRef.current.write('\r\n\x1b[31m[Lệnh nguy hiểm bị hủy bởi Command Guard]\x1b[0m\r\n');
+            }
+            setGuardModalOpen(false);
+            setPendingCommand(null);
+          }}
+        />
+      )}
 
       {/* ReAuth Password Modal */}
       <ReAuthModal
