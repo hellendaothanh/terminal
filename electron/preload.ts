@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('api', {
   vaultGetData: () => ipcRenderer.invoke('vault:get-data'),
   vaultSaveData: (data: any) => ipcRenderer.invoke('vault:save-data', data),
   vaultLock: () => ipcRenderer.invoke('vault:lock'),
+  vaultExportEncrypted: (vaultData: any, passphrase: string) => ipcRenderer.invoke('vault:export-encrypted', { vaultData, passphrase }),
+  vaultImportEncrypted: (fileContent: string, passphrase?: string) => ipcRenderer.invoke('vault:import-encrypted', { fileContent, passphrase }),
   vaultGenerateKey: (type: 'RSA-4096' | 'Ed25519') => ipcRenderer.invoke('vault:generate-key', type),
   vaultDerivePublicKey: (privateKey: string, passphrase?: string) => ipcRenderer.invoke('vault:derive-public-key', { privateKey, passphrase }),
   hashicorpVaultTest: (config: any) => ipcRenderer.invoke('vault:hashicorp-test', config),

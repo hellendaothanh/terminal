@@ -123,7 +123,7 @@ export const translations = {
     ed25519Tip: 'Ed25519 là chuẩn mới bảo mật tốt và sinh khóa nhanh tức thì.',
 
     // Import / Export Modal
-    importExportTitle: 'Nhập & Xuất Dữ Liệu Vault',
+    importExportTitle: 'Sao Lưu & Phục Hồi Kho Dữ Liệu Mã Hóa (Vault Backup)',
     exportData: 'Xuất File Mã Hóa (.json)',
     exportDesc: 'Xuất toàn bộ cấu hình máy chủ dưới dạng mã hóa an toàn.',
     importData: 'Nhập File Dữ Liệu (.json)',
@@ -259,6 +259,24 @@ export const translations = {
     tunnelCreateErrorPrefix: 'Không thể tạo SSH Tunnel:',
     exportSuccessMsg: 'Đã xuất nhật ký thành công tại:',
     exportErrorMsg: 'Lỗi xuất file:',
+
+    // Encrypted Import/Export Modal
+    tabExportEncrypted: 'Xuất Backup (Mã hóa)',
+    tabImportEncrypted: 'Phục Hồi Backup',
+    exportPassphraseLabel: 'Nhập Passphrase Bảo Vệ File Backup',
+    confirmExportPassphraseLabel: 'Xác Nhận Passphrase Bảo Vệ',
+    exportPassphrasePlaceholder: 'Tối thiểu 6 ký tự...',
+    exportBtn: 'Mã Hóa AES-256 & Xuất File Backup',
+    selectBackupFileLabel: 'Chọn File Backup (.json)',
+    browseFileBtn: 'Chọn Tệp',
+    importPassphraseLabel: 'Nhập Passphrase Giải Mã File Backup',
+    importPassphrasePlaceholder: 'Nhập mật khẩu đã dùng khi Export file này...',
+    importDecryptBtn: 'Giải Mã AES-256 & Import Dữ Liệu',
+    alertPassphraseMismatch: 'Passphrase xác nhận không trùng khớp!',
+    alertPassphraseTooShort: 'Passphrase bảo vệ file phải có tối thiểu 6 ký tự!',
+    alertSelectFileFirst: 'Vui lòng chọn file backup .json!',
+    exportEncryptedSuccessAlert: 'Đã mã hóa và xuất file backup an toàn!',
+    importEncryptedSuccessAlert: 'Giải mã và phục hồi dữ liệu kho Vault thành công!',
 
     // Audit Log Manager
     auditTitle: 'Ghi Vết & Nhật Ký Kiểm Toán Phiên Làm Việc (Session Recording & Audit Logs)',
@@ -538,6 +556,24 @@ export const translations = {
     tunnelCreateErrorPrefix: 'Failed to create SSH Tunnel:',
     exportSuccessMsg: 'Audit log exported successfully to:',
     exportErrorMsg: 'Export error:',
+
+    // Encrypted Import/Export Modal
+    tabExportEncrypted: 'Export Backup (Encrypted)',
+    tabImportEncrypted: 'Restore Backup',
+    exportPassphraseLabel: 'Enter Backup File Passphrase',
+    confirmExportPassphraseLabel: 'Confirm File Passphrase',
+    exportPassphrasePlaceholder: 'At least 6 characters...',
+    exportBtn: 'Encrypt AES-256 & Export Backup File',
+    selectBackupFileLabel: 'Select Backup File (.json)',
+    browseFileBtn: 'Browse File',
+    importPassphraseLabel: 'Enter Backup File Decryption Passphrase',
+    importPassphrasePlaceholder: 'Enter the passphrase used when exporting this file...',
+    importDecryptBtn: 'Decrypt AES-256 & Import Vault Data',
+    alertPassphraseMismatch: 'Confirm passphrase does not match!',
+    alertPassphraseTooShort: 'Backup file passphrase must be at least 6 characters!',
+    alertSelectFileFirst: 'Please select a .json backup file first!',
+    exportEncryptedSuccessAlert: 'Vault data encrypted and exported safely!',
+    importEncryptedSuccessAlert: 'Vault data decrypted and restored successfully!',
 
     // Audit Log Manager
     auditTitle: 'Session Recording & Security Audit Logs',

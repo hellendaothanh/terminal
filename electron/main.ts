@@ -96,6 +96,19 @@ function setupIpcHandlers() {
     return { success: true };
   });
 
+  ipcMain.handle('vault:export-encrypted', async (_, { vaultData, passphrase }) => {
+    try {
+      const encryptedJson = vaultService.exportEncryptedVault(vaultData, passphrase);
+      return { success: true, jsonContent: encryptedJson };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('vault:import-encrypted', async (_, { fileContent, passphrase }) => {
+    return vaultService.importEncryptedVault(fileContent, passphrase);
+  });
+
   ipcMain.handle('vault:generate-key', (_, type: 'RSA-4096' | 'Ed25519') => {
     return vaultService.generateKeyPair(type);
   });

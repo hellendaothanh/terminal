@@ -5,6 +5,8 @@ export interface ElectronAPI {
   vaultGetData: () => Promise<any>;
   vaultSaveData: (data: any) => Promise<{ success: boolean; error?: string }>;
   vaultLock: () => Promise<{ success: boolean }>;
+  vaultExportEncrypted: (vaultData: any, passphrase: string) => Promise<{ success: boolean; jsonContent?: string; error?: string }>;
+  vaultImportEncrypted: (fileContent: string, passphrase?: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   vaultGenerateKey: (type: 'RSA-4096' | 'Ed25519') => Promise<{ publicKey: string; privateKey: string }>;
   vaultDerivePublicKey: (privateKey: string, passphrase?: string) => Promise<{ publicKey: string; privateKey: string; type: 'RSA-4096' | 'Ed25519' }>;
   hashicorpVaultTest: (config: any) => Promise<{ success: boolean; version?: string; error?: string }>;

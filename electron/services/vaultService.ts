@@ -358,5 +358,62 @@ export class VaultService {
     }
     return data;
   }
+
+  public exportEncryptedVault(vaultData: VaultData, exportPassphrase: string): string {
+    const salt = crypto.randomBytes(16);
+    const derivedKey = crypto.pbkdf2Sync(exportPassphrase, salt, ITERATIONS, KEY_LEN, 'sha256');
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv(ALGORITHM, derivedKey, iv);
+
+    const jsonStr = JSON.stringify(vaultData);
+    let encrypted = cipher.update(jsonStr, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag();
+
+    const payload = {
+      version: '1.1.0',
+      encrypted: true,
+      algorithm: ALGORITHM,
+      kdf: 'PBKDF2-SHA256',
+      iterations: ITERATIONS,
+      salt: salt.toString('hex'),
+      iv: iv.toString('hex'),
+      authTag: authTag.toString('hex'),
+      data: encrypted
+    };
+
+    return JSON.stringify(payload, null, 2);
+  }
+
+  public importEncryptedVault(fileContent: string, importPassphrase?: string): { success: boolean; data?: VaultData; error?: string } {
+    try {
+      const parsed = JSON.parse(fileContent);
+      if (!parsed.encrypted) {
+        // Plain text vault json (legacy format fallback)
+        return { success: true, data: this.migrateKeysToOpenSSH(parsed) };
+      }
+
+      if (!importPassphrase) {
+        return { success: false, error: 'FILE_ENCRYPTED' };
+      }
+
+      const salt = Buffer.from(parsed.salt, 'hex');
+      const iv = Buffer.from(parsed.iv, 'hex');
+      const authTag = Buffer.from(parsed.authTag, 'hex');
+      const encryptedData = parsed.data;
+
+      const derivedKey = crypto.pbkdf2Sync(importPassphrase, salt, parsed.iterations || ITERATIONS, KEY_LEN, 'sha256');
+      const decipher = crypto.createDecipheriv(ALGORITHM, derivedKey, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      const data: VaultData = JSON.parse(decrypted);
+      return { success: true, data: this.migrateKeysToOpenSSH(data) };
+    } catch (e: any) {
+      return { success: false, error: 'Passphrase giải mã không chính xác hoặc tệp bị hỏng.' };
+    }
+  }
 }
 
