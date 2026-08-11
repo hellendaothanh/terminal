@@ -42,7 +42,10 @@ export class DatabaseService {
           user,
           password,
           database: database || 'postgres',
-          connectionTimeoutMillis: 10000
+          connectionTimeoutMillis: 10000,
+          ssl: {
+            rejectUnauthorized: false
+          }
         });
         await client.connect();
         this.activePG.set(sessionId, client);
