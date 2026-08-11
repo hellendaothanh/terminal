@@ -95,9 +95,9 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
     if (!selectedLog) return;
     const res = await window.api.auditExport(selectedLog.id, format);
     if (res.success) {
-      alert(`Đã xuất nhật ký thành công tại: ${res.path}`);
-    } else if (res.error && res.error !== 'Đã hủy thao tác lưu.') {
-      alert(`Lỗi xuất file: ${res.error}`);
+      alert(`${t('exportSuccessMsg')} ${res.path}`);
+    } else if (res.error && res.error !== 'Đã hủy thao tác lưu.' && res.error !== 'Save operation cancelled.') {
+      alert(`${t('exportErrorMsg')} ${res.error}`);
     }
   };
 

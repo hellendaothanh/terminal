@@ -113,11 +113,11 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
 
   const handleExecuteMulti = async () => {
     if (selectedServerIds.length === 0) {
-      alert('Vui lòng chọn ít nhất một máy chủ / CSDL.');
+      alert(t('alertSelectTarget'));
       return;
     }
     if (!commandContent.trim()) {
-      alert('Vui lòng nhập lệnh cần chạy.');
+      alert(t('alertEnterCommand'));
       return;
     }
 
@@ -130,7 +130,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
       targetName: s.name,
       hostOrDb: execType === 'SSH' ? `${s.username}@${s.host}:${s.port}` : `${s.dbType}://${s.host}:${s.port}`,
       status: 'RUNNING',
-      output: 'Đang kết nối và thực thi...',
+      output: t('connectingExecStatus'),
       executionTimeMs: 0
     }));
     setExecResults(initialResults);
@@ -144,7 +144,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
       }
       setExecResults(results);
     } catch (e: any) {
-      alert(`Lỗi thực thi hàng loạt: ${e.message}`);
+      alert(`${t('execErrorPrefix')} ${e.message}`);
     } finally {
       setIsRunning(false);
     }

@@ -252,6 +252,13 @@ export const translations = {
     snippetDescLabel: 'Mô tả thêm',
     saveSnippetBtn: 'Lưu Snippet',
     confirmDeleteSnippet: 'Xóa Snippet này?',
+    alertSelectTarget: 'Vui lòng chọn ít nhất một máy chủ / CSDL.',
+    alertEnterCommand: 'Vui lòng nhập lệnh cần chạy.',
+    connectingExecStatus: 'Đang kết nối và thực thi...',
+    execErrorPrefix: 'Lỗi thực thi hàng loạt:',
+    tunnelCreateErrorPrefix: 'Không thể tạo SSH Tunnel:',
+    exportSuccessMsg: 'Đã xuất nhật ký thành công tại:',
+    exportErrorMsg: 'Lỗi xuất file:',
 
     // Audit Log Manager
     auditTitle: 'Ghi Vết & Nhật Ký Kiểm Toán Phiên Làm Việc (Session Recording & Audit Logs)',
@@ -524,6 +531,13 @@ export const translations = {
     snippetDescLabel: 'Description',
     saveSnippetBtn: 'Save Snippet',
     confirmDeleteSnippet: 'Delete this snippet?',
+    alertSelectTarget: 'Please select at least one server / database.',
+    alertEnterCommand: 'Please enter a command to execute.',
+    connectingExecStatus: 'Connecting and executing...',
+    execErrorPrefix: 'Multi-Exec Error:',
+    tunnelCreateErrorPrefix: 'Failed to create SSH Tunnel:',
+    exportSuccessMsg: 'Audit log exported successfully to:',
+    exportErrorMsg: 'Export error:',
 
     // Audit Log Manager
     auditTitle: 'Session Recording & Security Audit Logs',

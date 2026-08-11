@@ -116,7 +116,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
       const keyObj = keys.find((k) => k.id === server.privateKeyId);
       const res = await window.api.tunnelStart(tunnel, server, keyObj);
       if (!res.success) {
-        alert(`Không thể tạo SSH Tunnel: ${res.error}`);
+        alert(`${t('tunnelCreateErrorPrefix')} ${res.error}`);
       }
     }
   };
