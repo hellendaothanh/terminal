@@ -15,6 +15,7 @@
 
 ### 2. 🛡️ Tích Hợp HashiCorp Vault (Bảo Mật Doanh Nghiệp)
 * **Kết Nối Vault REST API:** Hỗ trợ kết nối máy chủ HashiCorp Vault qua **Vault Token** hoặc **AppRole (Role ID + Secret ID)**, hỗ trợ Namespace cho môi trường doanh nghiệp.
+* **Hỗ Trợ Chứng Chỉ SSL Tự Ký & Cụm Cluster HA Standby:** Hỗ trợ kết nối mượt mà tới các cụm máy chủ Vault nội bộ dùng SSL/TLS tự ký và tự nhận diện phản hồi HTTP 429 chuẩn của Standby Node trong cụm High-Availability.
 * **Truy Xuất Secret Động (Dynamic Secret Fetching):** Tự động truy xuất mật khẩu máy chủ/CSDL trực tiếp từ HashiCorp Vault thời gian thực ngay trước khi mở phiên kết nối SSH, SFTP, RDP hoặc Database.
 
 ### 3. 💻 SSH Terminal Hiệu Năng Cao

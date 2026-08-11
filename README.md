@@ -15,6 +15,7 @@
 
 ### 2. 🛡️ HashiCorp Vault Enterprise Integration
 * **Vault REST API Support:** Seamlessly connect to HashiCorp Vault clusters via **Vault Token** or **AppRole (Role ID + Secret ID)**, including namespace support for enterprise environments.
+* **Self-Signed SSL & Cluster HA Standby Support:** Native support for internal Vault servers with self-signed SSL/TLS certificates and automatic handling of High-Availability (HA) Standby Nodes (HTTP 429 status response).
 * **Real-time Dynamic Secret Fetching:** Automatically retrieve server & database credentials on-the-fly from HashiCorp Vault right before initializing SSH, SFTP, RDP, or Database connections.
 
 ### 3. 💻 High-Performance SSH Terminal
