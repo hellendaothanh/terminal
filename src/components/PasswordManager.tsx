@@ -172,7 +172,7 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
                 <button className="btn-secondary" onClick={() => handleOpenModal(pw)} style={{ padding: '6px' }} title="Sửa">
                   <Edit2 size={16} />
                 </button>
-                <button className="btn-secondary" onClick={() => { if(confirm('Xóa mật khẩu này?')) onDeletePassword(pw.id); }} style={{ padding: '6px', color: 'var(--accent-danger)' }} title="Xóa">
+                <button className="btn-secondary" onClick={() => { if(confirm(t('confirmDeletePassword'))) onDeletePassword(pw.id); }} style={{ padding: '6px', color: 'var(--accent-danger)' }} title={t('deleteServer')}>
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -186,26 +186,26 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
           <div style={{ width: '480px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {editingId ? 'Sửa Mật Khẩu' : 'Thêm Mật Khẩu'}
+                {editingId ? t('editPassword') : t('addPassword')}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: '70vh' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tiêu đề <span style={{color: 'var(--accent-danger)'}}>*</span></label>
-                <input type="text" className="input-field" placeholder="VD: Github, Facebook" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('titleLabel')} <span style={{color: 'var(--accent-danger)'}}>*</span></label>
+                <input type="text" className="input-field" placeholder="Ex: Github, Facebook" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
               </div>
               
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tên đăng nhập / Email <span style={{color: 'var(--accent-danger)'}}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('usernameLabel')} <span style={{color: 'var(--accent-danger)'}}>*</span></label>
                 <input type="text" className="input-field" placeholder="admin@domain.com" value={formData.username || ''} onChange={(e) => setFormData({...formData, username: e.target.value})} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Mật khẩu <span style={{color: 'var(--accent-danger)'}}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('password')} <span style={{color: 'var(--accent-danger)'}}>*</span></label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type={showPasswordMap['modal'] ? 'text' : 'password'} className="input-field" placeholder="Mật khẩu" value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} style={{ flex: 1 }} />
+                  <input type={showPasswordMap['modal'] ? 'text' : 'password'} className="input-field" placeholder={t('password')} value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} style={{ flex: 1 }} />
                   <button className="btn-secondary" onClick={() => setShowPasswordMap(prev => ({ ...prev, 'modal': !prev['modal'] }))} style={{ padding: '0 12px' }}>
                     {showPasswordMap['modal'] ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -214,35 +214,35 @@ export const PasswordManager: React.FC<PasswordManagerProps> = ({ passwords, onS
 
               {/* Password Generator Section */}
               <div style={{ padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px', color: 'var(--text-main)' }}>Trình Sinh Mật Khẩu</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px', color: 'var(--text-main)' }}>{t('passwordGeneratorTitle')}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', minWidth: '60px' }}>Độ dài: {genLength}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', minWidth: '60px' }}>{t('pwLength')}: {genLength}</span>
                   <input type="range" min="8" max="64" value={genLength} onChange={(e) => setGenLength(parseInt(e.target.value))} style={{ flex: 1 }} />
                 </div>
                 <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '12px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genUppercase} onChange={(e) => setGenUppercase(e.target.checked)} /> A-Z</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genNumbers} onChange={(e) => setGenNumbers(e.target.checked)} /> 0-9</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genSymbols} onChange={(e) => setGenSymbols(e.target.checked)} /> @#$</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genUppercase} onChange={(e) => setGenUppercase(e.target.checked)} /> {t('includeUppercase')}</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genNumbers} onChange={(e) => setGenNumbers(e.target.checked)} /> {t('includeNumbers')}</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><input type="checkbox" checked={genSymbols} onChange={(e) => setGenSymbols(e.target.checked)} /> {t('includeSymbols')}</label>
                 </div>
                 <button className="btn-secondary" onClick={generatePassword} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <RefreshCw size={14} /> Sinh mật khẩu tự động
+                  <RefreshCw size={14} /> {t('autoGenBtn')}
                 </button>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Đường dẫn (URL)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('urlLabel')}</label>
                 <input type="text" className="input-field" placeholder="https://" value={formData.url || ''} onChange={(e) => setFormData({...formData, url: e.target.value})} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Ghi chú</label>
-                <textarea className="input-field" placeholder="Ghi chú thêm..." value={formData.notes || ''} onChange={(e) => setFormData({...formData, notes: e.target.value})} style={{ minHeight: '80px', resize: 'vertical' }} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('notesLabel')}</label>
+                <textarea className="input-field" placeholder="..." value={formData.notes || ''} onChange={(e) => setFormData({...formData, notes: e.target.value})} style={{ minHeight: '80px', resize: 'vertical' }} />
               </div>
             </div>
 
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--bg-tertiary)' }}>
-              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Hủy</button>
-              <button className="btn-primary" onClick={handleSave}>Lưu Mật Khẩu</button>
+              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>{t('cancel')}</button>
+              <button className="btn-primary" onClick={handleSave}>{t('savePasswordBtn')}</button>
             </div>
           </div>
         </div>

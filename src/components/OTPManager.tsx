@@ -154,10 +154,10 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
                   </div>
                   
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <button className="btn-secondary" onClick={() => handleOpenModal(otp)} style={{ padding: '4px' }} title="Sửa">
+                    <button className="btn-secondary" onClick={() => handleOpenModal(otp)} style={{ padding: '4px' }} title={t('editServer')}>
                       <Edit2 size={14} />
                     </button>
-                    <button className="btn-secondary" onClick={() => { if(confirm('Xóa mã OTP này?')) onDeleteOTP(otp.id); }} style={{ padding: '4px', color: 'var(--accent-danger)' }} title="Xóa">
+                    <button className="btn-secondary" onClick={() => { if(confirm(t('confirmDeleteOtp'))) onDeleteOTP(otp.id); }} style={{ padding: '4px', color: 'var(--accent-danger)' }} title={t('deleteServer')}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -176,7 +176,7 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
                       alignItems: 'center',
                       gap: '8px'
                     }}
-                    title="Click để Copy"
+                    title="Click to Copy"
                   >
                     {code.slice(0,3)} {code.slice(3)}
                     {copiedId === otp.id && <Check size={20} style={{ color: 'var(--accent-success)' }} />}
@@ -206,34 +206,34 @@ export const OTPManager: React.FC<OTPManagerProps> = ({ otps, onSaveOTP, onDelet
           <div style={{ width: '420px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {editingId ? 'Sửa OTP' : 'Thêm OTP'}
+                {editingId ? t('editOtp') : t('addOtp')}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tên dịch vụ (Issuer)</label>
-                <input type="text" className="input-field" placeholder="VD: Github, AWS" value={formData.issuer || ''} onChange={(e) => setFormData({...formData, issuer: e.target.value})} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('issuerLabel')}</label>
+                <input type="text" className="input-field" placeholder="Ex: Github, AWS" value={formData.issuer || ''} onChange={(e) => setFormData({...formData, issuer: e.target.value})} />
               </div>
               
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tên tài khoản (Account) <span style={{color: 'var(--accent-danger)'}}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('accountLabel')} <span style={{color: 'var(--accent-danger)'}}>*</span></label>
                 <input type="text" className="input-field" placeholder="admin@domain.com" value={formData.accountName || ''} onChange={(e) => setFormData({...formData, accountName: e.target.value})} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Secret Key <span style={{color: 'var(--accent-danger)'}}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('secretKeyLabel')} <span style={{color: 'var(--accent-danger)'}}>*</span></label>
                 <input type="text" className="input-field" placeholder="ABCD EFGH IJKL MNOP" value={formData.secretKey || ''} onChange={(e) => setFormData({...formData, secretKey: e.target.value})} />
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '6px' }}>
-                  Secret Key thường được cung cấp dưới dạng chuỗi chữ và số (Base32).
+                  {t('secretKeyHelp')}
                 </div>
               </div>
             </div>
 
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--bg-tertiary)' }}>
-              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Hủy</button>
-              <button className="btn-primary" onClick={handleSave}>Lưu OTP</button>
+              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>{t('cancel')}</button>
+              <button className="btn-primary" onClick={handleSave}>{t('saveOtpBtn')}</button>
             </div>
           </div>
         </div>

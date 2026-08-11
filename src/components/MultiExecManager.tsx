@@ -221,7 +221,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               <input
                 type="text"
                 className="input-field"
-                placeholder="Tìm kiếm đoạn script..."
+                placeholder={t('searchSnippetsPlaceholder')}
                 value={searchSnippet}
                 onChange={(e) => setSearchSnippet(e.target.value)}
                 style={{ paddingLeft: '34px' }}
@@ -230,14 +230,14 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
             </div>
 
             <button className="btn-primary" onClick={() => handleOpenSnippetModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Plus size={16} /> Thêm Snippet Mới
+              <Plus size={16} /> {t('addSnippet')}
             </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
             {filteredSnippets.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                Chưa có Snippet nào trong thư viện.
+                {t('noSnippetsFound')}
               </div>
             ) : (
               filteredSnippets.map((sn) => (
@@ -297,14 +297,14 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
                       onClick={() => handleRunSnippetMultiExec(sn)}
                       style={{ padding: '4px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <Play size={12} /> Chạy Lệnh Hàng Loạt
+                      <Play size={12} /> {t('tabMultiExec')}
                     </button>
 
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <button className="btn-secondary" onClick={() => handleOpenSnippetModal(sn)} style={{ padding: '4px' }}>
                         <Edit2 size={14} />
                       </button>
-                      <button className="btn-secondary" onClick={() => { if (confirm('Xóa Snippet này?')) onDeleteSnippet(sn.id); }} style={{ padding: '4px', color: 'var(--accent-danger)' }}>
+                      <button className="btn-secondary" onClick={() => { if (confirm(t('confirmDeleteSnippet'))) onDeleteSnippet(sn.id); }} style={{ padding: '4px', color: 'var(--accent-danger)' }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -320,7 +320,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
           {/* Left Column: Target Server/DB Selector */}
           <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: '16px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>Chọn Mục Tiêu</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('selectTargets')}</span>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   onClick={() => { setExecType('SSH'); setSelectedServerIds([]); }}
@@ -361,16 +361,16 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
                 style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 {selectedServerIds.length === filteredServers.length && filteredServers.length > 0 ? <CheckSquare size={14} /> : <Square size={14} />}
-                <span>Chọn tất cả ({filteredServers.length})</span>
+                <span>{t('selectAll')} ({filteredServers.length})</span>
               </button>
 
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Đã chọn: {selectedServerIds.length}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{t('selectedCount')} {selectedServerIds.length}</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {filteredServers.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  Không có mục tiêu phù hợp.
+                  {t('noTargetsMatch')}
                 </div>
               ) : (
                 filteredServers.map((s) => {
@@ -412,7 +412,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {execType === 'SSH' ? <Terminal size={16} style={{ color: 'var(--accent-primary)' }} /> : <Database size={16} style={{ color: '#c084fc' }} />}
-                  Nội Dung Câu Lệnh ({execType})
+                  {t('commandContentTitle')} ({execType})
                 </span>
 
                 <button
@@ -421,13 +421,13 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
                   disabled={isRunning}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 16px', opacity: isRunning ? 0.6 : 1 }}
                 >
-                  <Play size={14} /> {isRunning ? 'Đang Chạy Đồng Thời...' : 'Thực Thi Song Song'}
+                  <Play size={14} /> {isRunning ? t('executing') : t('executeParallel')}
                 </button>
               </div>
 
               <textarea
                 className="input-field"
-                placeholder={execType === 'SSH' ? 'VD: uptime && uname -a' : 'VD: SELECT CURRENT_TIMESTAMP;'}
+                placeholder={execType === 'SSH' ? 'Ex: uptime && uname -a' : 'Ex: SELECT CURRENT_TIMESTAMP;'}
                 value={commandContent}
                 onChange={(e) => setCommandContent(e.target.value)}
                 style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', minHeight: '90px', resize: 'vertical', backgroundColor: 'var(--bg-primary)' }}
@@ -438,15 +438,15 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
             <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>Kết Quả Thực Thi Song Song</span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('parallelResults')}</span>
                   {execResults.length > 0 && (
                     <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', fontWeight: 600 }}>
                       <span style={{ color: 'var(--accent-success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle2 size={13} /> {successCount} Thành công
+                        <CheckCircle2 size={13} /> {successCount} {t('successCountLabel')}
                       </span>
                       {errorCount > 0 && (
                         <span style={{ color: 'var(--accent-danger)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <XCircle size={13} /> {errorCount} Thất bại
+                          <XCircle size={13} /> {errorCount} {t('errorCountLabel')}
                         </span>
                       )}
                     </div>
@@ -454,36 +454,41 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
                 </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '12px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '12px', minHeight: 0 }}>
                 {execResults.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    Chọn mục tiêu và nhấn "Thực Thi Song Song" để xem kết quả đồng thời.
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    {t('noParallelResults')}
                   </div>
                 ) : (
                   execResults.map((res) => (
                     <div
                       key={res.targetId}
                       style={{
-                        backgroundColor: 'var(--bg-primary)',
+                        backgroundColor: 'var(--bg-tertiary)',
                         borderRadius: 'var(--radius-md)',
-                        border: res.status === 'ERROR' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-subtle)',
+                        border:
+                          res.status === 'SUCCESS'
+                            ? '1px solid rgba(16, 185, 129, 0.4)'
+                            : res.status === 'ERROR'
+                            ? '1px solid rgba(239, 68, 68, 0.4)'
+                            : '1px solid var(--border-subtle)',
                         padding: '12px',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between',
                         gap: '8px'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-main)' }}>{res.targetName}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{res.hostOrDb}</div>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>{res.targetName}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.hostOrDb}</div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <Clock size={11} /> {res.executionTimeMs}ms
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Clock size={11} /> {res.executionTimeMs} ms
                           </span>
+
                           <span
                             style={{
                               fontSize: '0.68rem',
@@ -511,7 +516,7 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
 
                       <div
                         style={{
-                          backgroundColor: 'var(--bg-secondary)',
+                          backgroundColor: 'var(--bg-primary)',
                           padding: '10px',
                           borderRadius: 'var(--radius-sm)',
                           fontFamily: 'var(--font-mono)',
@@ -557,18 +562,18 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ width: '480px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{editingSnippetId ? 'Sửa Snippet' : 'Thêm Snippet Mới'}</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{editingSnippetId ? t('editSnippet') : t('addSnippet')}</h3>
               <button onClick={() => setIsSnippetModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tiêu đề Snippet <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
-                <input type="text" className="input-field" placeholder="VD: Check Uptime & RAM, Clean Logs" value={snippetFormData.title || ''} onChange={(e) => setSnippetFormData({ ...snippetFormData, title: e.target.value })} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('snippetTitleLabel')} <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
+                <input type="text" className="input-field" placeholder="Ex: Check Uptime & RAM, Clean Logs" value={snippetFormData.title || ''} onChange={(e) => setSnippetFormData({ ...snippetFormData, title: e.target.value })} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Loại Snippet</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('snippetTypeLabel')}</label>
                 <select className="input-field" value={snippetFormData.type || 'SSH'} onChange={(e) => setSnippetFormData({ ...snippetFormData, type: e.target.value as any })}>
                   <option value="SSH">SSH Shell Command</option>
                   <option value="DATABASE">Database SQL Query</option>
@@ -576,10 +581,10 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Nội dung đoạn lệnh <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('snippetContentLabel')} <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
                 <textarea
                   className="input-field"
-                  placeholder="Nhập nội dung script / SQL..."
+                  placeholder="..."
                   value={snippetFormData.content || ''}
                   onChange={(e) => setSnippetFormData({ ...snippetFormData, content: e.target.value })}
                   style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', minHeight: '120px', resize: 'vertical' }}
@@ -587,14 +592,14 @@ export const MultiExecManager: React.FC<MultiExecManagerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Mô tả thêm</label>
-                <input type="text" className="input-field" placeholder="Mô tả công dụng của snippet này..." value={snippetFormData.description || ''} onChange={(e) => setSnippetFormData({ ...snippetFormData, description: e.target.value })} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('snippetDescLabel')}</label>
+                <input type="text" className="input-field" placeholder="..." value={snippetFormData.description || ''} onChange={(e) => setSnippetFormData({ ...snippetFormData, description: e.target.value })} />
               </div>
             </div>
 
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--bg-tertiary)' }}>
-              <button className="btn-secondary" onClick={() => setIsSnippetModalOpen(false)}>Hủy</button>
-              <button className="btn-primary" onClick={handleSaveSnippet}>Lưu Snippet</button>
+              <button className="btn-secondary" onClick={() => setIsSnippetModalOpen(false)}>{t('cancel')}</button>
+              <button className="btn-primary" onClick={handleSaveSnippet}>{t('saveSnippetBtn')}</button>
             </div>
           </div>
         </div>

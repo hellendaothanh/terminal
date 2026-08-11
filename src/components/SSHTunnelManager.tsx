@@ -168,10 +168,10 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
             <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-dim)' }} />
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredTunnels.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                Chưa có SSH Tunnel nào.
+                {t('noTunnelsFound')}
               </div>
             ) : (
               filteredTunnels.map((tunnel) => {
@@ -269,7 +269,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm('Xóa đường hầm này?')) onDeleteTunnel(tunnel.id);
+                            if (confirm(t('confirmDeleteTunnel'))) onDeleteTunnel(tunnel.id);
                           }}
                           style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '4px' }}
                         >
@@ -291,16 +291,16 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Sơ Đồ Luồng Kết Nối: {selectedTunnel.name}
+                    {t('flowDiagramTitle')} {selectedTunnel.name}
                   </h3>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Máy chủ Bastion: {selectedServer ? `${selectedServer.name} (${selectedServer.host})` : 'Chưa gắn máy chủ'}
+                    {t('bastionServerLabel')} {selectedServer ? `${selectedServer.name} (${selectedServer.host})` : t('noServerAttached')}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Tốc độ hiện tại</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{t('speedLabel')}</div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 700, color: isSelectedActive ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
                       {selectedStat?.speedKbps || 0} KB/s
                     </div>
@@ -349,32 +349,26 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
                   </div>
                 </div>
 
-                {/* Animated Connection Arrow 1 */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', padding: '0 10px' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 600 }}>
-                    {selectedTunnel.mode === 'LOCAL' ? 'Encrypted SSH' : selectedTunnel.mode === 'REMOTE' ? 'Reverse Tunnel' : 'SOCKS5 Proxy'}
-                  </div>
-                  <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--border-subtle)', position: 'relative', borderRadius: '2px' }}>
-                    {isSelectedActive && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          height: '100%',
-                          width: '40%',
-                          backgroundColor: 'var(--accent-primary)',
-                          borderRadius: '2px',
-                          boxShadow: '0 0 10px var(--accent-primary)',
-                          animation: 'pulseFlow 1.5s infinite linear'
-                        }}
-                      />
-                    )}
-                  </div>
+                {/* Animated Connection Pipeline 1 */}
+                <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border-subtle)', margin: '0 20px', position: 'relative', borderRadius: '2px' }}>
+                  {isSelectedActive && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '-3px',
+                        width: '40px',
+                        height: '10px',
+                        borderRadius: '5px',
+                        backgroundColor: 'var(--accent-primary)',
+                        boxShadow: '0 0 10px var(--accent-primary)',
+                        animation: 'pulseFlow 2s infinite linear'
+                      }}
+                    />
+                  )}
                 </div>
 
-                {/* Node 2: Bastion SSH Server */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '160px', zIndex: 2 }}>
+                {/* Node 2: SSH Bastion Server */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '150px', zIndex: 2 }}>
                   <div
                     style={{
                       width: '64px',
@@ -392,82 +386,80 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
                     <Server size={30} />
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>SSH Bastion</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{selectedServer?.name || 'SSH Bastion'}</div>
                     <div style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 500 }}>
-                      {selectedServer ? `${selectedServer.host}:${selectedServer.port}` : 'SSH Host'}
+                      {selectedServer ? `${selectedServer.host}:${selectedServer.port}` : 'SSH Server'}
                     </div>
                   </div>
                 </div>
 
-                {/* Animated Connection Arrow 2 */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', padding: '0 10px' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 600 }}>
-                    {selectedTunnel.mode === 'DYNAMIC' ? 'Dynamic Traffic' : 'Internal Forward'}
-                  </div>
-                  <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--border-subtle)', position: 'relative', borderRadius: '2px' }}>
-                    {isSelectedActive && (
+                {/* Animated Connection Pipeline 2 (Only if NOT Dynamic) */}
+                {selectedTunnel.mode !== 'DYNAMIC' && (
+                  <>
+                    <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border-subtle)', margin: '0 20px', position: 'relative', borderRadius: '2px' }}>
+                      {isSelectedActive && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '-3px',
+                            width: '40px',
+                            height: '10px',
+                            borderRadius: '5px',
+                            backgroundColor: 'var(--accent-success)',
+                            boxShadow: '0 0 10px var(--accent-success)',
+                            animation: 'pulseFlow 2s infinite linear 0.5s'
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Node 3: Target Resource */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '150px', zIndex: 2 }}>
                       <div
                         style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          height: '100%',
-                          width: '40%',
-                          backgroundColor: 'var(--accent-success)',
-                          borderRadius: '2px',
-                          boxShadow: '0 0 10px var(--accent-success)',
-                          animation: 'pulseFlow 1.5s infinite linear'
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '16px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          border: '2px solid var(--accent-success)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--accent-success)',
+                          boxShadow: isSelectedActive ? '0 0 20px rgba(16, 185, 129, 0.4)' : 'none'
                         }}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Node 3: Target Destination */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '150px', zIndex: 2 }}>
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '16px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      border: '2px solid var(--accent-success)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--accent-success)',
-                      boxShadow: isSelectedActive ? '0 0 20px rgba(16, 185, 129, 0.4)' : 'none'
-                    }}
-                  >
-                    <Globe size={30} />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>Target Destination</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--accent-success)', fontWeight: 500 }}>
-                      {selectedTunnel.mode === 'DYNAMIC' ? 'Any Web/Host' : `${selectedTunnel.dstHost}:${selectedTunnel.dstPort}`}
+                      >
+                        <Globe size={30} />
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>Target Resource</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--accent-success)', fontWeight: 500 }}>
+                          {selectedTunnel.dstHost}:{selectedTunnel.dstPort}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               {/* Bottom Real-time Traffic Counters Card */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '20px' }}>
                 <div style={{ backgroundColor: 'var(--bg-primary)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>Active Connections</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('activeConnections')}</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     {selectedStat?.activeConnections || 0}
                   </div>
                 </div>
 
                 <div style={{ backgroundColor: 'var(--bg-primary)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>Received (Download)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('bytesReceived')}</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
                     {formatBytes(selectedStat?.bytesRead || 0)}
                   </div>
                 </div>
 
                 <div style={{ backgroundColor: 'var(--bg-primary)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>Transferred (Upload)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('bytesTransferred')}</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-success)' }}>
                     {formatBytes(selectedStat?.bytesWritten || 0)}
                   </div>
@@ -476,7 +468,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              Chọn một SSH Tunnel để xem sơ đồ luồng kết nối.
+              {t('selectTunnelPrompt')}
             </div>
           )}
         </div>
@@ -487,18 +479,18 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ width: '460px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{editingId ? 'Sửa Đường Hầm SSH' : 'Tạo Đường Hầm SSH Mới'}</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{editingId ? t('editTunnel') : t('createTunnelModalTitle')}</h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Tên đường hầm <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
-                <input type="text" className="input-field" placeholder="VD: Forward Local MySQL, SOCKS5 VPN" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('tunnelNameLabel')} <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
+                <input type="text" className="input-field" placeholder="Ex: Forward Local MySQL, SOCKS5 VPN" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Chọn Máy Chủ Bastion (SSH Server) <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('selectBastionLabel')} <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
                 <select className="input-field" value={formData.serverId || ''} onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}>
                   {servers.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} ({s.host})</option>
@@ -507,7 +499,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Chế độ Forwarding</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('forwardingModeLabel')}</label>
                 <select className="input-field" value={formData.mode || 'LOCAL'} onChange={(e) => setFormData({ ...formData, mode: e.target.value as any })}>
                   <option value="LOCAL">Local Forwarding (-L local_port:dst_host:dst_port)</option>
                   <option value="REMOTE">Remote Forwarding (-R remote_port:local_host:local_port)</option>
@@ -516,28 +508,28 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Cổng Local (Local Port) <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
-                <input type="number" className="input-field" placeholder="VD: 8080, 1080" value={formData.localPort || ''} onChange={(e) => setFormData({ ...formData, localPort: Number(e.target.value) })} />
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('localPortLabel')} <span style={{ color: 'var(--accent-danger)' }}>*</span></label>
+                <input type="number" className="input-field" placeholder="Ex: 8080, 1080" value={formData.localPort || ''} onChange={(e) => setFormData({ ...formData, localPort: Number(e.target.value) })} />
               </div>
 
               {formData.mode !== 'DYNAMIC' && (
                 <>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Target Host (Đích đến)</label>
-                    <input type="text" className="input-field" placeholder="127.0.0.1 hoặc 192.168.1.100" value={formData.dstHost || ''} onChange={(e) => setFormData({ ...formData, dstHost: e.target.value })} />
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('targetHostLabel')}</label>
+                    <input type="text" className="input-field" placeholder="127.0.0.1 or 192.168.1.100" value={formData.dstHost || ''} onChange={(e) => setFormData({ ...formData, dstHost: e.target.value })} />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>Target Port (Cổng đích)</label>
-                    <input type="number" className="input-field" placeholder="VD: 3306, 80" value={formData.dstPort || ''} onChange={(e) => setFormData({ ...formData, dstPort: Number(e.target.value) })} />
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '6px' }}>{t('targetPortLabel')}</label>
+                    <input type="number" className="input-field" placeholder="Ex: 3306, 80" value={formData.dstPort || ''} onChange={(e) => setFormData({ ...formData, dstPort: Number(e.target.value) })} />
                   </div>
                 </>
               )}
             </div>
 
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--bg-tertiary)' }}>
-              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Hủy</button>
-              <button className="btn-primary" onClick={handleSave}>Lưu Đường Hầm</button>
+              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>{t('cancel')}</button>
+              <button className="btn-primary" onClick={handleSave}>{t('saveTunnelBtn')}</button>
             </div>
           </div>
         </div>
