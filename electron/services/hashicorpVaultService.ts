@@ -1,29 +1,74 @@
 import { HashiCorpVaultConfig } from '../../src/types';
+import http from 'http';
+import https from 'https';
+import { URL } from 'url';
 
 export class HashiCorpVaultService {
   private async makeRequest(
-    url: string,
+    urlStr: string,
     options: {
       method?: string;
       headers?: Record<string, string>;
       body?: any;
     }
   ): Promise<any> {
-    const response = await fetch(url, {
-      method: options.method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined
+    return new Promise((resolve, reject) => {
+      try {
+        const parsedUrl = new URL(urlStr);
+        const isHttps = parsedUrl.protocol === 'https:';
+        const client = isHttps ? https : http;
+
+        const requestBody = options.body ? JSON.stringify(options.body) : undefined;
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        };
+
+        if (requestBody) {
+          headers['Content-Length'] = String(Buffer.byteLength(requestBody));
+        }
+
+        const req = client.request(
+          parsedUrl,
+          {
+            method: options.method || 'GET',
+            headers,
+            rejectUnauthorized: false // Allow self-signed certificates in dev/local environments
+          },
+          (res) => {
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+
+            res.on('end', () => {
+              if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const json = JSON.parse(data);
+                  resolve(json);
+                } catch (e) {
+                  resolve(data);
+                }
+              } else {
+                reject(new Error(`HashiCorp Vault API Error (${res.statusCode}): ${data}`));
+              }
+            });
+          }
+        );
+
+        req.on('error', (err) => {
+          reject(new Error(`Không thể kết nối đến máy chủ HashiCorp Vault: ${err.message}`));
+        });
+
+        if (requestBody) {
+          req.write(requestBody);
+        }
+
+        req.end();
+      } catch (err: any) {
+        reject(new Error(`Lỗi địa chỉ URL HashiCorp Vault: ${err.message}`));
+      }
     });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`HashiCorp Vault API Error (${response.status}): ${errText}`);
-    }
-
-    return response.json();
   }
 
   public async testConnection(
