@@ -33,8 +33,8 @@
 * **Auto Resolution Fit:** Tự tính toán độ phân giải màn hình RDP khớp chuẩn với tab hiện tại.
 
 ### 6. 🗄️ Quản Lý Cơ Sở Dữ Liệu Natively (Database Management System)
-* **Đa CSDL:** Kết nối trực tiếp **MySQL / MariaDB**, **PostgreSQL**, **Redis Cache** và **MongoDB**.
-* **Tree View:** Duyệt danh sách Databases, Schemas, Bảng (Tables) và Keys.
+* **Đa CSDL:** Kết nối trực tiếp **MySQL / MariaDB**, **PostgreSQL** (Hỗ trợ kết nối SSL & quét đa Schema), **Redis Cache** và **MongoDB**.
+* **Tree View & Tự Động Chuyển DB:** Duyệt danh sách Databases, Custom Schemas, Bảng (Tables) và Keys với tính năng tự chuyển vùng kết nối Database linh hoạt.
 * **Query Console & SQL Editor:** Soạn thảo SQL linh hoạt, phím tắt `Ctrl + Enter` (hoặc `Cmd + Enter`) để thực thi.
 * **Data Grid & Export CSV:** Hiển thị kết quả dưới dạng bảng tối màu chuẩn đẹp, đo thời gian thực thi (ms) và xuất dữ liệu nhanh ra file `.csv`.
 

@@ -33,8 +33,8 @@
 * **Auto Resolution Calculation:** Dynamically calculates client viewport bounds to fit RDP sessions.
 
 ### 6. 🗄️ Native Database Management System
-* **Multi-Engine Support:** Native driver support for **MySQL / MariaDB**, **PostgreSQL**, **Redis Cache**, and **MongoDB**.
-* **Database & Table Tree Browser:** View databases, schemas, tables, and Redis keys in an organized sidebar hierarchy.
+* **Multi-Engine Support:** Native driver support for **MySQL / MariaDB**, **PostgreSQL** (with SSL mode & multi-schema support), **Redis Cache**, and **MongoDB**.
+* **Database & Table Tree Browser:** View databases, custom schemas, tables, and Redis keys in an organized sidebar hierarchy with dynamic database switching.
 * **SQL Query Console:** Interactive SQL editor with `Ctrl + Enter` (or `Cmd + Enter`) execution shortcut.
 * **Data Grid & CSV Export:** Styled dark-mode data table view with row count breakdown, execution time measurement (ms), and one-click CSV export.
 
