@@ -99,6 +99,18 @@
 
 ---
 
+## 🔮 Roadmap & Future Features
+
+We are constantly expanding OmniTerminal. Here are the major features planned for upcoming releases:
+
+* **☁️ S3 / Cloud Object Storage Explorer:** Expanding our SFTP file manager to natively support AWS S3, Google Cloud Storage, MinIO, and Azure Blob Storage for direct cloud storage manipulation.
+* **🚇 SSH Tunnel & Port Forwarding Manager:** A visual manager for Local, Remote, and Dynamic SOCKS5 Port Forwarding to easily connect to internal databases/services behind Jump Hosts.
+* **📊 Multi-Log Tail & Centralized Log Aggregator:** Group and stream real-time logs (`tail -f`) from multiple servers on a single dashboard, complete with regex filtering and color-coded alerts.
+* **🤝 Team Collaboration & Encrypted Vault Sharing:** Securely sync, export, and share workspaces, connection lists, and command snippets with your team using end-to-end encrypted storage channels.
+* **🔌 Plugin System & Custom Connectors:** A lightweight JavaScript/TypeScript hooks mechanism allowing the community to build custom connectors for databases and tools like Elasticsearch, ClickHouse, Apache Kafka, and RabbitMQ.
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Core Framework:** Electron + React 18 + TypeScript + Vite
