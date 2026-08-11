@@ -164,7 +164,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
               </select>
 
               <select className="input-field" value={filterRisk} onChange={(e) => setFilterRisk(e.target.value as any)} style={{ fontSize: '0.78rem', flex: 1 }}>
-                <option value="ALL">Mọi Mức Rủi Ro</option>
+                <option value="ALL">{t('allRisks')}</option>
                 <option value="HIGH">CRITICAL / HIGH</option>
                 <option value="MEDIUM">MEDIUM</option>
                 <option value="LOW">LOW</option>
@@ -176,7 +176,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredLogs.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                Không có nhật ký kiểm toán nào.
+                {t('noAuditLogsFound')}
               </div>
             ) : (
               filteredLogs.map((log) => {
@@ -254,7 +254,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '14px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Chi Tiết Nhật Ký Audit #{selectedLog.id.slice(-8)}
+                    {t('auditDetailTitle')} #{selectedLog.id.slice(-8)}
                   </h3>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '16px' }}>
                     <span>Target: <strong>{selectedLog.targetName}</strong></span>
@@ -280,7 +280,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
                 <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-danger)' }}>
                   <AlertTriangle size={20} />
                   <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                    CẢNH BÁO KIỂM TOÁN: Phát hiện câu lệnh có khả năng gây rủi ro cao cho hệ thống!
+                    {t('highRiskWarning')}
                   </div>
                 </div>
               )}
@@ -291,7 +291,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Play size={14} style={{ color: 'var(--accent-primary)' }} />
-                      Trình Phát Lại Asciinema Session Player (.cast)
+                      {t('asciinemaPlayerTitle')}
                     </span>
 
                     {castData && (
@@ -337,10 +337,10 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
                     }}
                   >
                     {castData ? (
-                      renderTerminalOutputUntilFrame() || '(Chưa có dữ liệu frame ghi lại)'
+                      renderTerminalOutputUntilFrame() || t('noCastFrameData')
                     ) : (
                       <div style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: '40px' }}>
-                        Không tìm thấy file .cast ghi lại cho phiên SSH này.
+                        {t('noCastFileFound')}
                       </div>
                     )}
                   </div>
@@ -370,7 +370,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ backgroundColor: 'var(--bg-primary)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>Câu Lệnh Thực Thi (SQL / Command)</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('executedCommandTitle')}</span>
                       <button
                         onClick={() => handleCopyCommand(selectedLog.commandOrQuery, selectedLog.id)}
                         style={{ background: 'none', border: 'none', color: copiedId === selectedLog.id ? 'var(--accent-success)' : 'var(--accent-primary)', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -386,14 +386,14 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                     <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Thời gian thực thi</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{t('execTimeMsLabel')}</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '4px' }}>
                         {selectedLog.executionTimeMs || 0} ms
                       </div>
                     </div>
 
                     <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Trạng thái</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{t('statusLabel')}</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 700, color: selectedLog.status === 'SUCCESS' ? 'var(--accent-success)' : 'var(--accent-danger)', marginTop: '4px' }}>
                         {selectedLog.status}
                       </div>
@@ -404,7 +404,7 @@ export const AuditLogManager: React.FC<AuditLogManagerProps> = ({ settings }) =>
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              Chọn một nhật ký kiểm toán ở danh sách bên trái để xem chi tiết.
+              {t('selectAuditLogPrompt')}
             </div>
           )}
         </div>

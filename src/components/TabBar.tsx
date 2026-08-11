@@ -105,7 +105,11 @@ export const TabBar: React.FC<TabBarProps> = ({
             >
               {getTabIcon(tab.type)}
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {tab.title}
+                {tab.type === 'PASSWORD_MANAGER' ? t('passwords') :
+                 tab.type === 'OTP_MANAGER' ? t('otpAuth') :
+                 tab.type === 'TUNNEL_MANAGER' ? t('sshTunnels') :
+                 tab.type === 'MULTI_EXEC_MANAGER' ? t('multiExec') :
+                 tab.type === 'AUDIT_LOG_MANAGER' ? t('auditLogs') : tab.title}
               </span>
               <button
                 onClick={(e) => {

@@ -225,6 +225,13 @@ export const translations = {
     noAuditLogsFound: 'Không có nhật ký kiểm toán nào.',
     highRiskWarning: 'CẢNH BÁO KIỂM TOÁN: Phát hiện câu lệnh có khả năng gây rủi ro cao cho hệ thống!',
     asciinemaPlayerTitle: 'Trình Phát Lại Asciinema Session Player (.cast)',
+    auditDetailTitle: 'Chi Tiết Nhật Ký Audit',
+    noCastFrameData: '(Chưa có dữ liệu frame ghi lại)',
+    noCastFileFound: 'Không tìm thấy file .cast ghi lại cho phiên SSH này.',
+    executedCommandTitle: 'Câu Lệnh Thực Thi (SQL / Command)',
+    execTimeMsLabel: 'Thời gian thực thi',
+    statusLabel: 'Trạng thái',
+    selectAuditLogPrompt: 'Chọn một nhật ký kiểm toán ở danh sách bên trái để xem chi tiết.',
 
     quickStart: 'Thao Tác Nhanh'
   },
@@ -452,6 +459,13 @@ export const translations = {
     noAuditLogsFound: 'No audit logs recorded.',
     highRiskWarning: 'SECURITY AUDIT ALERT: High-risk system command detected!',
     asciinemaPlayerTitle: 'Asciinema Session Player (.cast)',
+    auditDetailTitle: 'Audit Log Details',
+    noCastFrameData: '(No frame data recorded)',
+    noCastFileFound: 'No .cast recording file found for this SSH session.',
+    executedCommandTitle: 'Executed Command / Query',
+    execTimeMsLabel: 'Execution Time',
+    statusLabel: 'Status',
+    selectAuditLogPrompt: 'Select an audit log entry from the left list to view details.',
 
     quickStart: 'Quick Actions'
   }

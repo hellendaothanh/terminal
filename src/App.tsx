@@ -326,7 +326,7 @@ export const App: React.FC = () => {
               setActiveTabId(exists.id);
             } else {
               const newTabId = 'tab_' + Date.now();
-              setTabs([...tabs, { id: newTabId, title: 'Quản lý Mật khẩu', type: 'PASSWORD_MANAGER' }]);
+              setTabs([...tabs, { id: newTabId, title: 'Password Manager', type: 'PASSWORD_MANAGER' }]);
               setActiveTabId(newTabId);
             }
           }}
@@ -336,7 +336,7 @@ export const App: React.FC = () => {
               setActiveTabId(exists.id);
             } else {
               const newTabId = 'tab_' + Date.now();
-              setTabs([...tabs, { id: newTabId, title: 'Mã Xác Thực (OTP)', type: 'OTP_MANAGER' }]);
+              setTabs([...tabs, { id: newTabId, title: '2FA Authenticator (OTP)', type: 'OTP_MANAGER' }]);
               setActiveTabId(newTabId);
             }
           }}
