@@ -68,3 +68,6 @@ Thumbs.db
 # Local Vault & User Settings Test Data
 vault-data.json
 .vault-pass
+
+# Antigravity CLI configs
+.antigravitycli/
