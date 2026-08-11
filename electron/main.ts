@@ -8,6 +8,7 @@ import { RDPService } from './services/rdpService';
 import { HashiCorpVaultService } from './services/hashicorpVaultService';
 import { DatabaseService } from './services/databaseService';
 import { AIService } from './services/aiService';
+import { SSHTunnelService } from './services/SSHTunnelService';
 
 let mainWindow: BrowserWindow | null = null;
 const vaultService = new VaultService();
@@ -17,6 +18,7 @@ const rdpService = new RDPService();
 const hashicorpVaultService = new HashiCorpVaultService();
 const databaseService = new DatabaseService();
 const aiService = new AIService();
+const tunnelService = new SSHTunnelService();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -117,6 +119,97 @@ function setupIpcHandlers() {
     } catch (e) {
       return 30;
     }
+  });
+
+  /* ================= SSH Tunnel Handlers ================= */
+  ipcMain.handle('tunnel:start', async (_, { config, server, key }) => {
+    return tunnelService.startTunnel(config, server, key);
+  });
+
+  ipcMain.handle('tunnel:stop', async (_, tunnelId: string) => {
+    return tunnelService.stopTunnel(tunnelId);
+  });
+
+  ipcMain.handle('tunnel:get-stats', async () => {
+    return tunnelService.getStats();
+  });
+
+  /* ================= Multi-Exec Handlers ================= */
+  ipcMain.handle('multi-exec:ssh', async (_, { targetServers, commandStr, keys }) => {
+    const promises = targetServers.map(async (server: any) => {
+      const keyObj = keys.find((k: any) => k.id === server.privateKeyId);
+      const startTime = Date.now();
+      try {
+        const res = await sshService.executeCommand(server, commandStr, keyObj);
+        return {
+          targetId: server.id,
+          targetName: server.name,
+          hostOrDb: `${server.username}@${server.host}:${server.port}`,
+          status: res.success ? 'SUCCESS' : 'ERROR',
+          output: res.output || res.error || '',
+          executionTimeMs: Date.now() - startTime,
+          error: res.error
+        };
+      } catch (e: any) {
+        return {
+          targetId: server.id,
+          targetName: server.name,
+          hostOrDb: `${server.username}@${server.host}:${server.port}`,
+          status: 'ERROR',
+          output: e.message,
+          executionTimeMs: Date.now() - startTime,
+          error: e.message
+        };
+      }
+    });
+    return Promise.all(promises);
+  });
+
+  ipcMain.handle('multi-exec:db', async (_, { targetServers, queryStr }) => {
+    const promises = targetServers.map(async (server: any) => {
+      const startTime = Date.now();
+      const sessionId = 'multiexec_' + server.id + '_' + Date.now();
+      try {
+        const connRes = await databaseService.connect({ sessionId, server });
+        if (!connRes.success) {
+          return {
+            targetId: server.id,
+            targetName: server.name,
+            hostOrDb: `${server.dbType}://${server.host}:${server.port}/${server.dbName || ''}`,
+            status: 'ERROR',
+            output: `Lỗi kết nối CSDL: ${connRes.error}`,
+            executionTimeMs: Date.now() - startTime,
+            error: connRes.error
+          };
+        }
+
+        const queryRes = await databaseService.executeQuery(sessionId, server.dbType, queryStr, server.dbName);
+        await databaseService.disconnect(sessionId);
+
+        return {
+          targetId: server.id,
+          targetName: server.name,
+          hostOrDb: `${server.dbType}://${server.host}:${server.port}/${server.dbName || ''}`,
+          status: queryRes.error ? 'ERROR' : 'SUCCESS',
+          output: queryRes.error
+            ? queryRes.error
+            : `Rows (${queryRes.rowCount}):\n` + JSON.stringify(queryRes.rows || [], null, 2),
+          executionTimeMs: Date.now() - startTime,
+          error: queryRes.error
+        };
+      } catch (e: any) {
+        return {
+          targetId: server.id,
+          targetName: server.name,
+          hostOrDb: `${server.dbType}://${server.host}:${server.port}/${server.dbName || ''}`,
+          status: 'ERROR',
+          output: e.message,
+          executionTimeMs: Date.now() - startTime,
+          error: e.message
+        };
+      }
+    });
+    return Promise.all(promises);
   });
 
   /* ================= HashiCorp Vault Handlers ================= */

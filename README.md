@@ -53,7 +53,12 @@
 * **Live 30-Second Countdown:** Interactive visual timer counting down remaining seconds before rotating 6-digit codes.
 * **One-Tap Code Copying:** Large, spaced digit display (e.g. `123 456`) with quick clipboard copying.
 
-### 10. ⚡ Multi-Tab Workspace & Docked AI Side Panel
+### 10. ⚡ Parallel Multi-Exec & Snippet Library
+* **Command Snippet Storage:** Store reusable Shell scripts and SQL queries categorized by tags with one-click multi-exec triggers.
+* **Parallel Execution Engine:** Execute an SSH command or SQL query simultaneously across multiple selected servers or databases asynchronously.
+* **Side-by-Side Output Visualizer:** Multi-card grid layout comparing stdout, stderr, execution times (ms), and success/error badges per host in real time.
+
+### 11. ⚡ Multi-Tab Workspace & Docked AI Side Panel
 * **Persistent Tab Sessions:** Active SSH, SFTP, RDP, Database, Password Manager, and OTP sessions persist in DOM memory when switching tabs.
 * **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Toggle server list sidebar into a 50px compact mini-bar to maximize workspace real estate.
 * **Docked AI Side Panel:** The AI Assistant operates as a docked flex panel alongside the terminal without covering or obscuring terminal text.

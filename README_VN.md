@@ -53,7 +53,12 @@
 * **Đồng Hồ Đếm Ngược 30 Giây:** Hiển thị thời gian còn lại đếm ngược trực quan trước khi tự động đổi mã 6 chữ số mới.
 * **Sao Chép Mã Một Chạm:** Định dạng chuỗi số thoáng (ví dụ `123 456`) dễ nhìn cùng nút copy tiện lợi.
 
-### 10. ⚡ Workspace Đa Tab & Docked Side Panel
+### 10. ⚡ Thư Viện Script & Chạy Lệnh Hàng Loạt (Multi-Exec)
+* **Quản Lý Snippet Snippets:** Lưu trữ các đoạn mã Shell/Bash và câu lệnh SQL tái sử dụng với tính năng tìm kiếm và kích hoạt chạy hàng loạt 1-click.
+* **Bộ Thực Thi Song Song (Parallel Execution Engine):** Chạy đồng thời một câu lệnh SSH hoặc SQL trên hàng loạt máy chủ/CSDL bất đồng bộ.
+* **Hiển Thị Kết Quả Song Song:** Giao diện lưới dạng card hiển thị log stdout, stderr, đo thời gian thực thi (ms) và trạng thái thành công/thất bại theo thời gian thực.
+
+### 11. ⚡ Workspace Đa Tab & Docked Side Panel
 * **Persistent Tab Sessions:** Các tab SSH, SFTP, RDP, Database, Password Manager và OTP duy trì kết nối liên tục trong bộ nhớ khi chuyển tab.
 * **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Nút thu gọn Sidebar danh sách máy chủ về dạng Mini-bar (50px) để tối đa hóa không gian màn hình làm việc.
 * **Docked AI Side Panel:** Khung Trợ Lý AI đính kèm cạnh bên dạng Docked Panel giúp xem Terminal và hỏi đáp AI song song không lo bị che khuất.

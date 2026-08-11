@@ -21,6 +21,15 @@ contextBridge.exposeInMainWorld('api', {
   otpGenerate: (secretKey: string) => ipcRenderer.invoke('otp:generate', secretKey),
   otpTimeRemaining: () => ipcRenderer.invoke('otp:time-remaining'),
 
+  /* SSH Tunnel APIs */
+  tunnelStart: (config: any, server: any, keyObj?: any) => ipcRenderer.invoke('tunnel:start', { config, server, key: keyObj }),
+  tunnelStop: (tunnelId: string) => ipcRenderer.invoke('tunnel:stop', tunnelId),
+  tunnelGetStats: () => ipcRenderer.invoke('tunnel:get-stats'),
+
+  /* Multi-Exec Parallel APIs */
+  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[]) => ipcRenderer.invoke('multi-exec:ssh', { targetServers, commandStr, keys }),
+  multiExecDb: (targetServers: any[], queryStr: string) => ipcRenderer.invoke('multi-exec:db', { targetServers, queryStr }),
+
   /* AI APIs */
   aiTestKey: (settings: any) => ipcRenderer.invoke('ai:test-key', settings),
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => ipcRenderer.invoke('ai:chat', { settings, userPrompt, history, contextSnippet }),

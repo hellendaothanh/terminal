@@ -14,6 +14,13 @@ export interface ElectronAPI {
   otpGenerate: (secretKey: string) => Promise<{ success: boolean; code?: string; error?: string }>;
   otpTimeRemaining: () => Promise<number>;
 
+  tunnelStart: (config: any, server: any, keyObj?: any) => Promise<{ success: boolean; error?: string }>;
+  tunnelStop: (tunnelId: string) => Promise<{ success: boolean }>;
+  tunnelGetStats: () => Promise<Record<string, any>>;
+
+  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[]) => Promise<any[]>;
+  multiExecDb: (targetServers: any[], queryStr: string) => Promise<any[]>;
+
   aiTestKey: (settings: any) => Promise<{ success: boolean; message?: string; error?: string }>;
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => Promise<{ success: boolean; reply?: string; error?: string }>;
   aiSendMessage: (prompt: string, aiConfig: any) => Promise<string>;

@@ -20,7 +20,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['ssh2', 'ssh2-sftp-client'],
+              external: ['ssh2', 'ssh2-sftp-client', 'socksv5'],
               output: {
                 format: 'cjs',
                 entryFileNames: '[name].cjs'

@@ -16,7 +16,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   KeyRound,
-  Shield
+  Shield,
+  Network,
+  Code2
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -37,6 +39,8 @@ interface SidebarProps {
   settings?: TerminalSettings;
   onOpenPasswords?: () => void;
   onOpenOTPs?: () => void;
+  onOpenTunnels?: () => void;
+  onOpenMultiExec?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -54,7 +58,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   settings,
   onOpenPasswords,
-  onOpenOTPs
+  onOpenOTPs,
+  onOpenTunnels,
+  onOpenMultiExec
 }) => {
   const { t } = useTranslation(settings);
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
@@ -577,6 +583,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Shield size={16} style={{ color: 'var(--accent-success)' }} />
             <span>Mã Xác Thực (OTP)</span>
+          </button>
+
+          <button
+            onClick={onOpenTunnels}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Network size={16} style={{ color: '#c084fc' }} />
+            <span>SSH Tunnels & Forwarding</span>
+          </button>
+
+          <button
+            onClick={onOpenMultiExec}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>Multi-Exec & Snippets</span>
           </button>
         </div>
       )}

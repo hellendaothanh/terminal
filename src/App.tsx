@@ -16,6 +16,8 @@ import { ImportExportModal } from './components/ImportExportModal';
 import { SettingsModal } from './components/SettingsModal';
 import { PasswordManager } from './components/PasswordManager';
 import { OTPManager } from './components/OTPManager';
+import { SSHTunnelManager } from './components/SSHTunnelManager';
+import { MultiExecManager } from './components/MultiExecManager';
 
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
@@ -23,7 +25,7 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Vault State
-  const [vaultData, setVaultData] = useState<VaultData>({ servers: [], keys: [], passwords: [], otps: [] });
+  const [vaultData, setVaultData] = useState<VaultData>({ servers: [], keys: [], passwords: [], otps: [], tunnels: [], snippets: [] });
 
   // Navigation & Search State
   const [selectedEnv, setSelectedEnv] = useState<Environment | 'ALL'>('ALL');
@@ -86,7 +88,9 @@ export const App: React.FC = () => {
         servers: data?.servers || [],
         keys: data?.keys || [],
         passwords: data?.passwords || [],
-        otps: data?.otps || []
+        otps: data?.otps || [],
+        tunnels: data?.tunnels || [],
+        snippets: data?.snippets || []
       });
     } catch (e) {
       console.error('Lỗi khi tải kho dữ liệu:', e);
@@ -335,6 +339,26 @@ export const App: React.FC = () => {
               setActiveTabId(newTabId);
             }
           }}
+          onOpenTunnels={() => {
+            const exists = tabs.find((t) => t.type === 'TUNNEL_MANAGER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'SSH Tunnels', type: 'TUNNEL_MANAGER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenMultiExec={() => {
+            const exists = tabs.find((t) => t.type === 'MULTI_EXEC_MANAGER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Multi-Exec & Snippets', type: 'MULTI_EXEC_MANAGER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
         />
 
         {/* Central Active Viewport Container */}
@@ -374,7 +398,7 @@ export const App: React.FC = () => {
             {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER') return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER') return null;
 
               return (
                 <div
@@ -432,6 +456,36 @@ export const App: React.FC = () => {
                       onDeleteOTP={(id) => {
                         const newOTPs = vaultData.otps?.filter((o) => o.id !== id) || [];
                         saveVaultData({ ...vaultData, otps: newOTPs });
+                      }}
+                    />
+                  ) : tab.type === 'TUNNEL_MANAGER' ? (
+                    <SSHTunnelManager
+                      tunnels={vaultData.tunnels || []}
+                      servers={vaultData.servers || []}
+                      keys={vaultData.keys || []}
+                      onSaveTunnel={(tn) => {
+                        const newTns = vaultData.tunnels?.filter((t) => t.id !== tn.id) || [];
+                        newTns.push(tn);
+                        saveVaultData({ ...vaultData, tunnels: newTns });
+                      }}
+                      onDeleteTunnel={(id) => {
+                        const newTns = vaultData.tunnels?.filter((t) => t.id !== id) || [];
+                        saveVaultData({ ...vaultData, tunnels: newTns });
+                      }}
+                    />
+                  ) : tab.type === 'MULTI_EXEC_MANAGER' ? (
+                    <MultiExecManager
+                      snippets={vaultData.snippets || []}
+                      servers={vaultData.servers || []}
+                      keys={vaultData.keys || []}
+                      onSaveSnippet={(sn) => {
+                        const newSns = vaultData.snippets?.filter((s) => s.id !== sn.id) || [];
+                        newSns.push(sn);
+                        saveVaultData({ ...vaultData, snippets: newSns });
+                      }}
+                      onDeleteSnippet={(id) => {
+                        const newSns = vaultData.snippets?.filter((s) => s.id !== id) || [];
+                        saveVaultData({ ...vaultData, snippets: newSns });
                       }}
                     />
                   ) : tab.server ? (

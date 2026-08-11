@@ -148,4 +148,87 @@ export class SSHService {
       this.disconnect(sessionId);
     }
   }
+
+  public executeCommand(
+    server: ServerConfig,
+    command: string,
+    key?: SSHKey
+  ): Promise<{ success: boolean; output?: string; error?: string }> {
+    return new Promise((resolve) => {
+      const client = new Client();
+      const connectConfig: ConnectConfig = {
+        host: server.host,
+        port: server.port || 22,
+        username: server.username,
+        readyTimeout: 15000,
+        keepaliveInterval: 10000,
+        tryKeyboard: true
+      };
+
+      if (server.authType === 'privateKey' && key) {
+        let needPassphrase = false;
+        try {
+          const parsed = utils.parseKey(key.privateKey);
+          if (parsed instanceof Error) throw parsed;
+        } catch (e) {
+          if (key.passphrase) {
+            try {
+              const parsed = utils.parseKey(key.privateKey, key.passphrase);
+              if (parsed instanceof Error) throw parsed;
+              needPassphrase = true;
+            } catch (err: any) {
+              return resolve({ success: false, error: 'Cannot parse privateKey: ' + err.message });
+            }
+          } else {
+            return resolve({ success: false, error: 'Khóa SSH yêu cầu Passphrase.' });
+          }
+        }
+        connectConfig.privateKey = key.privateKey;
+        if (needPassphrase && key.passphrase) {
+          connectConfig.passphrase = key.passphrase;
+        }
+      } else if (server.password) {
+        connectConfig.password = server.password;
+      }
+
+      client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+        finish(prompts.map(() => server.password || ''));
+      });
+
+      client.on('error', (err) => {
+        resolve({ success: false, error: err.message });
+      });
+
+      client.on('ready', () => {
+        client.exec(command, (err, stream) => {
+          if (err) {
+            client.end();
+            return resolve({ success: false, error: err.message });
+          }
+
+          let output = '';
+          let errorOutput = '';
+
+          stream.on('data', (data: Buffer) => {
+            output += data.toString('utf8');
+          });
+
+          stream.stderr.on('data', (data: Buffer) => {
+            errorOutput += data.toString('utf8');
+          });
+
+          stream.on('close', (code: number) => {
+            client.end();
+            if (code === 0) {
+              resolve({ success: true, output: output || 'Executing command finished with exit code 0.' });
+            } else {
+              resolve({ success: false, output: output, error: errorOutput || `Process exited with code ${code}` });
+            }
+          });
+        });
+      });
+
+      client.connect(connectConfig);
+    });
+  }
 }

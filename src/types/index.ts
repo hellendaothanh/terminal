@@ -80,18 +80,64 @@ export interface OTPEntry {
   createdAt: number;
 }
 
+export interface SSHTunnelConfig {
+  id: string;
+  name: string;
+  serverId: string;
+  mode: 'LOCAL' | 'REMOTE' | 'DYNAMIC';
+  localHost?: string;
+  localPort: number;
+  dstHost?: string;
+  dstPort?: number;
+  autoStart?: boolean;
+  createdAt: number;
+}
+
+export interface TunnelTrafficStats {
+  tunnelId: string;
+  status: 'ACTIVE' | 'CONNECTING' | 'ERROR' | 'STOPPED';
+  bytesRead: number; // Download / Received
+  bytesWritten: number; // Upload / Transferred
+  speedKbps: number;
+  activeConnections: number;
+  error?: string;
+}
+
+export interface CommandSnippet {
+  id: string;
+  title: string;
+  type: 'SSH' | 'DATABASE';
+  content: string;
+  description?: string;
+  tags?: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface MultiExecResult {
+  targetId: string;
+  targetName: string;
+  hostOrDb: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'ERROR';
+  output: string;
+  executionTimeMs: number;
+  error?: string;
+}
+
 export interface VaultData {
   servers: ServerConfig[];
   keys: SSHKey[];
   passwords?: PasswordEntry[];
   otps?: OTPEntry[];
+  tunnels?: SSHTunnelConfig[];
+  snippets?: CommandSnippet[];
   hashicorpVault?: HashiCorpVaultConfig;
 }
 
 export interface TabItem {
   id: string;
   title: string;
-  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER';
+  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER';
   serverId?: string;
   server?: ServerConfig;
 }
