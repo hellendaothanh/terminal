@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, ChevronDown, Globe, Edit2, Trash2, Database, Monitor, Terminal, Folder, Copy } from 'lucide-react';
+import { ChevronRight, ChevronDown, Globe, Edit2, Trash2, Database, Monitor, Terminal, Folder, Copy, Cloud } from 'lucide-react';
 import { ServerConfig, Environment, Protocol } from '../../types';
 
 interface ServerListSectionProps {
@@ -167,6 +167,28 @@ export const ServerListSection: React.FC<ServerListSectionProps> = ({
                           >
                             <Monitor size={12} />
                             <span>RDP</span>
+                          </button>
+                        ) : server.protocol === 'S3' ? (
+                          <button
+                            onClick={() => onConnect(server, 'S3')}
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              fontSize: '0.75rem',
+                              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                              color: 'var(--accent-warning)',
+                              border: '1px solid rgba(234, 179, 8, 0.3)',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                            title={t('connectS3')}
+                          >
+                            <Cloud size={12} />
+                            <span>S3</span>
                           </button>
                         ) : (
                           <>

@@ -4,23 +4,31 @@ import fs from 'fs';
 import { VaultService } from './services/vaultService';
 import { SSHService } from './services/sshService';
 import { SFTPService } from './services/sftpService';
+import { S3Service } from './services/s3Service';
 import { RDPService } from './services/rdpService';
 import { HashiCorpVaultService } from './services/hashicorpVaultService';
 import { DatabaseService } from './services/databaseService';
 import { AIService } from './services/aiService';
 import { SSHTunnelService } from './services/SSHTunnelService';
 import { AuditLogService } from './services/AuditLogService';
+import { LogTailService } from './services/logTailService';
+import { TeamSyncService } from './services/teamSyncService';
+import { PluginService } from './services/pluginService';
 
 let mainWindow: BrowserWindow | null = null;
 const vaultService = new VaultService();
 const sshService = new SSHService();
 const sftpService = new SFTPService();
+const s3Service = new S3Service();
 const rdpService = new RDPService();
 const hashicorpVaultService = new HashiCorpVaultService();
 const databaseService = new DatabaseService();
 const aiService = new AIService();
 const tunnelService = new SSHTunnelService();
 const auditLogService = new AuditLogService();
+const logTailService = new LogTailService();
+const teamSyncService = new TeamSyncService();
+const pluginService = new PluginService();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -137,8 +145,8 @@ function setupIpcHandlers() {
   });
 
   /* ================= SSH Tunnel Handlers ================= */
-  ipcMain.handle('tunnel:start', async (_, { config, server, key }) => {
-    return tunnelService.startTunnel(config, server, key);
+  ipcMain.handle('tunnel:start', async (_, { config, serverChain, keyChain }) => {
+    return tunnelService.startTunnel(config, serverChain, keyChain);
   });
 
   ipcMain.handle('tunnel:stop', async (_, tunnelId: string) => {
@@ -147,6 +155,41 @@ function setupIpcHandlers() {
 
   ipcMain.handle('tunnel:get-stats', async () => {
     return tunnelService.getStats();
+  });
+
+  /* ================= Log Aggregator Handlers ================= */
+  ipcMain.handle('log:start', async (event, { streamId, serverChain, keyChain, filePath }) => {
+    return logTailService.startStream(streamId, serverChain, keyChain, filePath, event.sender);
+  });
+
+  ipcMain.handle('log:stop', async (_, streamId: string) => {
+    return logTailService.stopStream(streamId);
+  });
+
+  /* ================= Team Sync Handlers ================= */
+  ipcMain.handle('sync:push', async (_, { config, encryptedPayload }) => {
+    return teamSyncService.push(config, encryptedPayload);
+  });
+
+  ipcMain.handle('sync:pull', async (_, config) => {
+    return teamSyncService.pull(config);
+  });
+
+  /* ================= Plugin System Handlers ================= */
+  ipcMain.handle('plugin:list', async () => {
+    return pluginService.listPlugins();
+  });
+
+  ipcMain.handle('plugin:install', async (_, filePath: string) => {
+    return pluginService.installPlugin(filePath);
+  });
+
+  ipcMain.handle('plugin:uninstall', async (_, pluginId: string) => {
+    return pluginService.uninstallPlugin(pluginId);
+  });
+
+  ipcMain.handle('plugin:invoke', async (_, { pluginId, action, args }) => {
+    return pluginService.invokePlugin(pluginId, action, args);
   });
 
   /* ================= Multi-Exec Handlers ================= */
@@ -358,6 +401,47 @@ function setupIpcHandlers() {
 
   ipcMain.handle('sftp:disconnect', async (_, sessionId: string) => {
     return sftpService.disconnect(sessionId);
+  });
+
+  // --- S3 ---
+  ipcMain.handle('s3:connect', async (event, { sessionId, options }) => {
+    return s3Service.connect(sessionId, options);
+  });
+
+  ipcMain.handle('s3:list', async (event, { sessionId, remotePath }) => {
+    return s3Service.list(sessionId, remotePath);
+  });
+
+  ipcMain.handle('s3:download', async (event, { sessionId, remotePath, localPath }) => {
+    return s3Service.download(sessionId, remotePath, localPath, (transferred, total) => {
+      let percentage = 0;
+      if (total > 0) percentage = Math.round((transferred / total) * 100);
+      if (mainWindow) {
+        mainWindow.webContents.send('s3:progress', { sessionId, type: 'download', fileName: path.basename(remotePath), transferred, total, percentage });
+      }
+    });
+  });
+
+  ipcMain.handle('s3:upload', async (event, { sessionId, localPath, remotePath }) => {
+    return s3Service.upload(sessionId, localPath, remotePath, (transferred, total) => {
+      let percentage = 0;
+      if (total > 0) percentage = Math.round((transferred / total) * 100);
+      if (mainWindow) {
+        mainWindow.webContents.send('s3:progress', { sessionId, type: 'upload', fileName: path.basename(localPath), transferred, total, percentage });
+      }
+    });
+  });
+
+  ipcMain.handle('s3:mkdir', async (event, { sessionId, remotePath }) => {
+    return s3Service.mkdir(sessionId, remotePath);
+  });
+
+  ipcMain.handle('s3:delete', async (event, { sessionId, remotePath, isDir }) => {
+    return s3Service.delete(sessionId, remotePath, isDir);
+  });
+
+  ipcMain.handle('s3:disconnect', async (event, sessionId) => {
+    return s3Service.disconnect(sessionId);
   });
 
   /* ================= RDP Protocol Handlers ================= */

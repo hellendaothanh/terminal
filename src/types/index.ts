@@ -1,5 +1,5 @@
 export type Environment = 'DEV' | 'STAGING' | 'PRODUCTION';
-export type Protocol = 'SSH' | 'SFTP' | 'RDP' | 'DATABASE';
+export type Protocol = 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'S3';
 export type DBType = 'MySQL' | 'PostgreSQL' | 'Redis' | 'MongoDB';
 export type AuthType = 'password' | 'privateKey' | 'hashicorpVault';
 export type AIProvider = 'gemini' | 'openai' | 'custom';
@@ -41,6 +41,15 @@ export interface ServerConfig {
 
   // Jump Host / Bastion Host chain (supports multi-hop 1-3 layers)
   jumpHostIds?: string[];
+
+  // S3 Specific Fields
+  s3Options?: {
+    region: string;
+    endpoint?: string;
+    forcePathStyle?: boolean;
+    accessKeyId?: string;
+    secretAccessKey?: string;
+  };
 
   environment: Environment;
   tags: string[];
@@ -142,7 +151,7 @@ export interface AuditLogEntry {
   sessionId: string;
   targetId?: string;
   targetName: string;
-  protocol: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE';
+  protocol: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'S3';
   user: string;
   commandOrQuery: string;
   status: 'SUCCESS' | 'ERROR';
@@ -157,9 +166,38 @@ export interface AuditLogEntry {
 export interface TabItem {
   id: string;
   title: string;
-  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER' | 'AUDIT_LOG_MANAGER' | 'ERD_SCHEMA_DIFF' | 'VISUAL_QUERY_BUILDER' | 'DATA_PUMP' | 'DOCKER_K8S' | 'CLOUD_EXPLORER';
+  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'S3_EXPLORER' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER' | 'TUNNEL_MANAGER' | 'MULTI_EXEC_MANAGER' | 'AUDIT_LOG_MANAGER' | 'ERD_SCHEMA_DIFF' | 'VISUAL_QUERY_BUILDER' | 'DATA_PUMP' | 'DOCKER_K8S' | 'CLOUD_EXPLORER' | 'LOG_AGGREGATOR' | 'CUSTOM_CONNECTOR';
   serverId?: string;
   server?: ServerConfig;
+}
+
+export interface TeamSyncConfig {
+  provider: 'GIST' | 'S3';
+  gistId?: string;
+  gistToken?: string;
+  s3Endpoint?: string;
+  s3Region?: string;
+  s3Bucket?: string;
+  s3AccessKey?: string;
+  s3SecretKey?: string;
+  s3Path?: string;
+}
+
+export interface PluginField {
+  name: string;
+  label: string;
+  type: 'text' | 'password' | 'number' | 'boolean';
+  required?: boolean;
+  default?: any;
+}
+
+export interface PluginMetadata {
+  id: string;
+  name: string;
+  version: string;
+  author?: string;
+  description?: string;
+  fields: PluginField[];
 }
 
 export interface TerminalSettings {
@@ -169,6 +207,7 @@ export interface TerminalSettings {
   cursorBlink: boolean;
   scrollback: number;
   language?: 'vi' | 'en';
+  teamSync?: TeamSyncConfig;
   hashicorpVault?: HashiCorpVaultConfig;
   ai?: AISettings;
 }

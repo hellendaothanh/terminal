@@ -23,6 +23,29 @@ contextBridge.exposeInMainWorld('api', {
   otpGenerate: (secretKey: string) => ipcRenderer.invoke('otp:generate', secretKey),
   otpTimeRemaining: () => ipcRenderer.invoke('otp:time-remaining'),
 
+  /* Log Aggregator APIs */
+  logStartStream: (streamId: string, serverChain: any[], keyChain: any[], filePath: string) => ipcRenderer.invoke('log:start', { streamId, serverChain, keyChain, filePath }),
+  logStopStream: (streamId: string) => ipcRenderer.invoke('log:stop', streamId),
+  onLogData: (callback: (streamId: string, data: string) => void) => {
+    const wrapper = (_event: any, payload: { streamId: string, data: string }) => callback(payload.streamId, payload.data);
+    ipcRenderer.on('log-stream-data', wrapper);
+  },
+  removeLogDataListener: (callback: (streamId: string, data: string) => void) => {
+    // Note: To properly remove listeners in Electron, the wrapper reference must match,
+    // but typically we can just clear all listeners for the component on unmount.
+    ipcRenderer.removeAllListeners('log-stream-data');
+  },
+
+  /* Team Sync APIs */
+  syncPush: (config: any, encryptedPayload: string) => ipcRenderer.invoke('sync:push', { config, encryptedPayload }),
+  syncPull: (config: any) => ipcRenderer.invoke('sync:pull', config),
+
+  /* Plugin APIs */
+  pluginList: () => ipcRenderer.invoke('plugin:list'),
+  pluginInstall: (filePath: string) => ipcRenderer.invoke('plugin:install', filePath),
+  pluginUninstall: (pluginId: string) => ipcRenderer.invoke('plugin:uninstall', pluginId),
+  pluginInvoke: (pluginId: string, action: string, args: any) => ipcRenderer.invoke('plugin:invoke', { pluginId, action, args }),
+
   /* SSH Tunnel APIs */
   tunnelStart: (config: any, server: any, keyObj?: any) => ipcRenderer.invoke('tunnel:start', { config, server, key: keyObj }),
   tunnelStop: (tunnelId: string) => ipcRenderer.invoke('tunnel:stop', tunnelId),
@@ -78,6 +101,19 @@ contextBridge.exposeInMainWorld('api', {
   onSftpProgress: (callback: (event: any, payload: { sessionId: string; type: 'upload' | 'download'; fileName: string; transferred: number; total: number; percentage: number }) => void) => {
     ipcRenderer.on('sftp:progress', callback);
     return () => ipcRenderer.removeListener('sftp:progress', callback);
+  },
+
+  /* S3 APIs */
+  s3Connect: (sessionId: string, options: any) => ipcRenderer.invoke('s3:connect', { sessionId, options }),
+  s3List: (sessionId: string, remotePath: string) => ipcRenderer.invoke('s3:list', { sessionId, remotePath }),
+  s3Download: (sessionId: string, remotePath: string, localPath: string) => ipcRenderer.invoke('s3:download', { sessionId, remotePath, localPath }),
+  s3Upload: (sessionId: string, localPath: string, remotePath: string) => ipcRenderer.invoke('s3:upload', { sessionId, localPath, remotePath }),
+  s3Mkdir: (sessionId: string, remotePath: string) => ipcRenderer.invoke('s3:mkdir', { sessionId, remotePath }),
+  s3Delete: (sessionId: string, remotePath: string, isDir: boolean) => ipcRenderer.invoke('s3:delete', { sessionId, remotePath, isDir }),
+  s3Disconnect: (sessionId: string) => ipcRenderer.invoke('s3:disconnect', sessionId),
+  onS3Progress: (callback: (event: any, payload: { sessionId: string; type: 'upload' | 'download'; fileName: string; transferred: number; total: number; percentage: number }) => void) => {
+    ipcRenderer.on('s3:progress', callback);
+    return () => ipcRenderer.removeListener('s3:progress', callback);
   },
 
   /* RDP APIs */

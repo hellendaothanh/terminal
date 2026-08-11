@@ -13,10 +13,26 @@ export interface ElectronAPI {
   hashicorpVaultFetchSecret: (config: any, secretPath: string, keyName?: string) => Promise<{ success: boolean; secret?: string; error?: string }>;
   hashicorpGetSecret: (secretPath: string, keyName?: string) => Promise<string | null>;
 
+  logStartStream: (streamId: string, serverChain: any[], keyChain: any[], filePath: string) => Promise<{ success: boolean; error?: string }>;
+  logStopStream: (streamId: string) => Promise<{ success: boolean }>;
+  onLogData: (callback: (streamId: string, data: string) => void) => void;
+  removeLogDataListener: (callback: (streamId: string, data: string) => void) => void;
+
+  // Team Sync
+  syncPush: (config: any, encryptedPayload: string) => Promise<{ success: boolean; error?: string }>;
+  syncPull: (config: any) => Promise<{ success: boolean; encryptedPayload?: string; error?: string }>;
+
+  // Plugins
+  pluginList: () => Promise<{ success: boolean; plugins?: any[]; error?: string }>;
+  pluginInstall: (filePath: string) => Promise<{ success: boolean; error?: string }>;
+  pluginUninstall: (pluginId: string) => Promise<{ success: boolean; error?: string }>;
+  pluginInvoke: (pluginId: string, action: string, args: any) => Promise<{ success: boolean; data?: any; error?: string }>;
+
+  toggleTheme: () => void;
   otpGenerate: (secretKey: string) => Promise<{ success: boolean; code?: string; error?: string }>;
   otpTimeRemaining: () => Promise<number>;
 
-  tunnelStart: (config: any, server: any, keyObj?: any) => Promise<{ success: boolean; error?: string }>;
+  tunnelStart: (config: any, serverChain: any[], keyChain: any[]) => Promise<{ success: boolean; error?: string }>;
   tunnelStop: (tunnelId: string) => Promise<{ success: boolean }>;
   tunnelGetStats: () => Promise<Record<string, any>>;
 
@@ -53,6 +69,15 @@ export interface ElectronAPI {
   sftpDelete: (sessionId: string, remotePath: string, isDir: boolean) => Promise<{ success: boolean; error?: string }>;
   sftpDisconnect: (sessionId: string) => Promise<void>;
   onSftpProgress: (callback: (event: any, payload: { sessionId: string; type: 'upload' | 'download'; fileName: string; transferred: number; total: number; percentage: number }) => void) => () => void;
+
+  s3Connect: (sessionId: string, options: any) => Promise<boolean>;
+  s3List: (sessionId: string, remotePath: string) => Promise<any[]>;
+  s3Download: (sessionId: string, remotePath: string, localPath: string) => Promise<boolean>;
+  s3Upload: (sessionId: string, localPath: string, remotePath: string) => Promise<boolean>;
+  s3Mkdir: (sessionId: string, remotePath: string) => Promise<boolean>;
+  s3Delete: (sessionId: string, remotePath: string, isDir: boolean) => Promise<boolean>;
+  s3Disconnect: (sessionId: string) => Promise<boolean>;
+  onS3Progress: (callback: (event: any, payload: { sessionId: string; type: 'upload' | 'download'; fileName: string; transferred: number; total: number; percentage: number }) => void) => () => void;
 
   rdpConnect: (options: any) => Promise<{ success: boolean; error?: string }>;
   rdpResize: (sessionId: string, width: number, height: number) => void;

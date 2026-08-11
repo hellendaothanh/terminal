@@ -38,6 +38,11 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   const [environment, setEnvironment] = useState<Environment>('DEV');
   const [tagsInput, setTagsInput] = useState('');
   const [jumpHostIds, setJumpHostIds] = useState<string[]>([]);
+  
+  // S3 Specific Options
+  const [s3Region, setS3Region] = useState('us-east-1');
+  const [s3Endpoint, setS3Endpoint] = useState('');
+  const [s3ForcePathStyle, setS3ForcePathStyle] = useState(false);
 
   // Vault secret test preview state
   const [testSecretStatus, setTestSecretStatus] = useState<{ testing: boolean; success?: boolean; message?: string }>({ testing: false });
@@ -59,6 +64,12 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       setEnvironment(editingServer.environment);
       setTagsInput(editingServer.tags ? editingServer.tags.join(', ') : '');
       setJumpHostIds(editingServer.jumpHostIds || []);
+      
+      if (editingServer.s3Options) {
+        setS3Region(editingServer.s3Options.region || 'us-east-1');
+        setS3Endpoint(editingServer.s3Options.endpoint || '');
+        setS3ForcePathStyle(editingServer.s3Options.forcePathStyle || false);
+      }
     } else {
       setName('');
       setHost('');
@@ -75,6 +86,9 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       setEnvironment('DEV');
       setTagsInput('');
       setJumpHostIds([]);
+      setS3Region('us-east-1');
+      setS3Endpoint('');
+      setS3ForcePathStyle(false);
     }
   }, [editingServer, isOpen]);
 
@@ -137,6 +151,11 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       dbType: protocol === 'DATABASE' ? dbType : undefined,
       dbName: protocol === 'DATABASE' ? dbName : undefined,
       jumpHostIds: protocol === 'SSH' || protocol === 'SFTP' ? jumpHostIds : undefined,
+      s3Options: protocol === 'S3' ? {
+        region: s3Region,
+        endpoint: s3Endpoint || undefined,
+        forcePathStyle: s3ForcePathStyle
+      } : undefined,
       environment,
       tags
     });
@@ -166,8 +185,8 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                 {t('connectionProtocol')}
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                {(['SSH', 'SFTP', 'RDP', 'DATABASE'] as Protocol[]).map((p) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                {(['SSH', 'SFTP', 'RDP', 'DATABASE', 'S3'] as Protocol[]).map((p) => (
                   <button
                     key={p}
                     type="button"
@@ -183,7 +202,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                       color: protocol === p ? 'var(--accent-primary)' : 'var(--text-muted)'
                     }}
                   >
-                    {p === 'DATABASE' ? '🗄️ Database' : p}
+                    {p === 'DATABASE' ? '🗄️ Database' : p === 'S3' ? '☁️ S3' : p}
                   </button>
                 ))}
               </div>
@@ -229,60 +248,108 @@ export const ServerModal: React.FC<ServerModalProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  {t('serverName')}
+                  {protocol === 'S3' ? 'Access Key ID' : t('serverName')}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="e.g. Web Server Production"
+                  placeholder={protocol === 'S3' ? 'AKIA...' : 'e.g. Web Server Production'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  {t('hostIp')}
-                </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="192.168.1.100 or domain.com"
-                  value={host}
-                  onChange={(e) => setHost(e.target.value)}
-                  required
-                />
-              </div>
+              {protocol !== 'S3' && (
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    {t('hostIp')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="192.168.1.100 or domain.com"
+                    value={host}
+                    onChange={(e) => setHost(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
 
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                  {t('port')}
-                </label>
-                <input
-                  type="number"
-                  className="input-field"
-                  value={port}
-                  onChange={(e) => setPort(parseInt(e.target.value) || 22)}
-                  required
-                />
-              </div>
+              {protocol !== 'S3' && (
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    {t('port')}
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    value={port}
+                    onChange={(e) => setPort(parseInt(e.target.value) || 22)}
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {/* Username */}
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                {t('username')}
+                {protocol === 'S3' ? 'Access Key ID' : t('username')}
               </label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="root, ubuntu, Administrator, postgres..."
+                placeholder={protocol === 'S3' ? "AKIA..." : "root, ubuntu, Administrator, postgres..."}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
+
+            {protocol === 'S3' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    S3 Region
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={s3Region}
+                    onChange={(e) => setS3Region(e.target.value)}
+                    placeholder="us-east-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                    Endpoint (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={s3Endpoint}
+                    onChange={(e) => setS3Endpoint(e.target.value)}
+                    placeholder="https://s3.us-east-1.amazonaws.com"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {protocol === 'S3' && (
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={s3ForcePathStyle}
+                    onChange={(e) => setS3ForcePathStyle(e.target.checked)}
+                    style={{ accentColor: 'var(--accent-primary)' }}
+                  />
+                  Use Force Path Style (Required for MinIO)
+                </label>
+              </div>
+            )}
 
             {/* Authentication Method Options */}
             <div>
@@ -346,7 +413,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               {authType === 'password' && (
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                    {t('password')}
+                    {protocol === 'S3' ? 'Secret Access Key' : t('password')}
                   </label>
                   <input
                     type="password"

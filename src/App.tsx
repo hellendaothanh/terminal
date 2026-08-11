@@ -6,6 +6,7 @@ import { TopBar } from './components/TopBar';
 import { TabBar } from './components/TabBar';
 import { SSHTerminal } from './components/SSHTerminal';
 import { SFTPExplorer } from './components/SFTPExplorer';
+import { S3Explorer } from './components/S3Explorer';
 import { RDPViewer } from './components/RDPViewer';
 import { DatabaseExplorer } from './components/DatabaseExplorer';
 import { AIAssistantDrawer } from './components/AIAssistantDrawer';
@@ -18,8 +19,12 @@ import { PasswordManager } from './components/PasswordManager';
 import { OTPManager } from './components/OTPManager';
 import { SSHTunnelManager } from './components/SSHTunnelManager';
 import { MultiExecManager } from './components/MultiExecManager';
+import { LogAggregator } from './components/LogAggregator';
 import { AuditLogManager } from './components/AuditLogManager';
 import { ERDAndSchemaDiff } from './components/ERDAndSchemaDiff';
+import { TeamSyncModal } from './components/TeamSyncModal';
+import { PluginManagerModal } from './components/PluginManagerModal';
+import { CustomConnectorPanel } from './components/CustomConnectorPanel';
 import { VisualQueryBuilder } from './components/VisualQueryBuilder';
 import { DataPump } from './components/DataPump';
 import { DockerK8sPanel } from './components/DockerK8sPanel';
@@ -48,6 +53,9 @@ export const App: React.FC = () => {
   const [isKeyManagerOpen, setIsKeyManagerOpen] = useState<boolean>(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isDataPumpOpen, setIsDataPumpOpen] = useState(false);
+  const [isTeamSyncOpen, setIsTeamSyncOpen] = useState(false);
+  const [isPluginManagerOpen, setIsPluginManagerOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
@@ -108,6 +116,43 @@ export const App: React.FC = () => {
     await window.api.vaultSaveData(newData);
   };
 
+  const handleImportVaultData = async (importedData: VaultData) => {
+    const res = await window.api.vaultSaveData(importedData);
+    if (res.success) {
+      setVaultData(importedData);
+      setIsImportExportOpen(false);
+    }
+  };
+
+  const handleMergeVaultData = async (importedData: VaultData) => {
+    if (!vaultData) return;
+    
+    const newServers = [...(vaultData.servers || [])];
+    const newKeys = [...(vaultData.keys || [])];
+    
+    importedData.servers?.forEach(srv => {
+      const idx = newServers.findIndex(s => s.id === srv.id);
+      if (idx === -1) newServers.push(srv);
+      else newServers[idx] = srv; // overwrite if exists
+    });
+
+    importedData.keys?.forEach(k => {
+      const idx = newKeys.findIndex(key => key.id === k.id);
+      if (idx === -1) newKeys.push(k);
+      else newKeys[idx] = k;
+    });
+
+    const updatedData = { ...vaultData, servers: newServers, keys: newKeys };
+    const saved = await window.api.vaultSaveData(updatedData);
+    if (saved.success) {
+      setVaultData(updatedData);
+    }
+  };
+
+  const handleUpdateSettings = (newSettings: TerminalSettings) => {
+    setSettings(newSettings);
+  };
+
   const handleInitVault = async (passphrase: string): Promise<boolean> => {
     const res = await window.api.vaultInit(passphrase);
     if (res.success) {
@@ -147,10 +192,16 @@ export const App: React.FC = () => {
       : `${protocol}: ${server.name}`;
 
     const tabId = `${protocol.toLowerCase()}_${server.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    let tabType: TabItem['type'] = 'SSH';
+    if (protocol === 'SFTP') tabType = 'SFTP';
+    else if (protocol === 'RDP') tabType = 'RDP';
+    else if (protocol === 'DATABASE') tabType = 'DATABASE';
+    else if (protocol === 'S3') tabType = 'S3_EXPLORER';
+
     const newTab: TabItem = {
       id: tabId,
       title,
-      type: protocol,
+      type: tabType,
       serverId: server.id,
       server
     };
@@ -384,10 +435,11 @@ export const App: React.FC = () => {
               setActiveTabId(exists.id);
             } else {
               const newTabId = 'tab_' + Date.now();
-              setTabs([...tabs, { id: newTabId, title: 'Session Audit Logs', type: 'AUDIT_LOG_MANAGER' }]);
+              setTabs([...tabs, { id: newTabId, title: 'Audit Logs', type: 'AUDIT_LOG_MANAGER' }]);
               setActiveTabId(newTabId);
             }
           }}
+          onOpenTeamSync={() => setIsTeamSyncOpen(true)}
           onOpenErdDiff={() => {
             const exists = tabs.find((t) => t.type === 'ERD_SCHEMA_DIFF');
             if (exists) {
@@ -408,6 +460,7 @@ export const App: React.FC = () => {
               setActiveTabId(newTabId);
             }
           }}
+
           onOpenDataPump={() => {
             const exists = tabs.find((t) => t.type === 'DATA_PUMP');
             if (exists) {
@@ -434,7 +487,28 @@ export const App: React.FC = () => {
               setActiveTabId(exists.id);
             } else {
               const newTabId = 'tab_' + Date.now();
-              setTabs([...tabs, { id: newTabId, title: 'Cloud Explorer', type: 'CLOUD_EXPLORER' }]);
+              setTabs([...tabs, { id: newTabId, title: 'S3 Explorer', type: 'CLOUD_EXPLORER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenPluginManager={() => setIsPluginManagerOpen(true)}
+          onOpenCustomConnector={() => {
+            const exists = tabs.find((t) => t.type === 'CUSTOM_CONNECTOR');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Custom Connectors', type: 'CUSTOM_CONNECTOR' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenLogAggregator={() => {
+            const exists = tabs.find((t) => t.type === 'LOG_AGGREGATOR');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Log Aggregator', type: 'LOG_AGGREGATOR' }]);
               setActiveTabId(newTabId);
             }
           }}
@@ -478,7 +552,7 @@ export const App: React.FC = () => {
             {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER' && tab.type !== 'ERD_SCHEMA_DIFF' && tab.type !== 'VISUAL_QUERY_BUILDER' && tab.type !== 'DATA_PUMP' && tab.type !== 'DOCKER_K8S' && tab.type !== 'CLOUD_EXPLORER') return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER' && tab.type !== 'ERD_SCHEMA_DIFF' && tab.type !== 'VISUAL_QUERY_BUILDER' && tab.type !== 'DATA_PUMP' && tab.type !== 'DOCKER_K8S' && tab.type !== 'CLOUD_EXPLORER' && tab.type !== 'CUSTOM_CONNECTOR') return null;
 
               return (
                 <div
@@ -609,6 +683,8 @@ export const App: React.FC = () => {
                         handleConnect(server, protocol);
                       }}
                     />
+                  ) : tab.type === 'LOG_AGGREGATOR' ? (
+                    <LogAggregator servers={vaultData.servers || []} keys={vaultData.keys || []} />
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}
@@ -656,8 +732,22 @@ export const App: React.FC = () => {
         isOpen={isImportExportOpen}
         onClose={() => setIsImportExportOpen(false)}
         vaultData={vaultData}
-        onImportVaultData={(imported) => saveVaultData(imported)}
+        onImportVaultData={handleImportVaultData}
         settings={settings}
+      />
+
+      <TeamSyncModal
+        isOpen={isTeamSyncOpen}
+        onClose={() => setIsTeamSyncOpen(false)}
+        vaultData={vaultData}
+        settings={settings}
+        onSaveSettings={handleUpdateSettings}
+        onMergeVaultData={handleMergeVaultData}
+      />
+
+      <PluginManagerModal
+        isOpen={isPluginManagerOpen}
+        onClose={() => setIsPluginManagerOpen(false)}
       />
 
       <SettingsModal

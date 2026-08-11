@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Server, Layers, Tag, Shield, Database, TerminalSquare, 
   Key, FileKey2, FileClock, Network, SplitSquareHorizontal, 
-  DatabaseBackup, Activity, Cloud, LayoutGrid
+  DatabaseBackup, Activity, Cloud, LayoutGrid, Table2, Blocks, Container
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -33,6 +33,10 @@ interface SidebarProps {
   onOpenDataPump?: () => void;
   onOpenDockerK8s?: () => void;
   onOpenCloudExplorer?: () => void;
+  onOpenLogAggregator?: () => void;
+  onOpenTeamSync?: () => void;
+  onOpenPluginManager?: () => void;
+  onOpenCustomConnector?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -59,7 +63,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenVisualQueryBuilder,
   onOpenDataPump,
   onOpenDockerK8s,
-  onOpenCloudExplorer
+  onOpenCloudExplorer,
+  onOpenLogAggregator,
+  onOpenTeamSync,
+  onOpenPluginManager,
+  onOpenCustomConnector
 }) => {
   const { t } = useTranslation(settings);
   const [activePane, setActivePane] = useState<'SERVERS' | 'SECURITY' | 'DATABASES' | 'DEVOPS'>('SERVERS');
@@ -279,7 +287,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div>
                 <ToolButton icon={Key} label="Password Manager" onClick={onOpenPasswords} />
                 <ToolButton icon={FileKey2} label="2FA (OTP) Manager" onClick={onOpenOTPs} />
-                <ToolButton icon={FileClock} label="Session Audit Logs" onClick={onOpenAuditLogs} />
+                <ToolButton icon={Table2} label="ERD & Schema Diff" onClick={onOpenErdDiff} />
+                <ToolButton icon={Activity} label="Data Pump" onClick={onOpenDataPump} />
+                <ToolButton icon={Blocks} label="Custom Connectors (Plugins)" onClick={onOpenCustomConnector} />
               </div>
             )}
 
@@ -293,10 +303,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {activePane === 'DEVOPS' && (
               <div>
-                <ToolButton icon={Activity} label="Docker & K8s Panel" onClick={onOpenDockerK8s} />
-                <ToolButton icon={Cloud} label="Cloud Explorer (AWS/DO)" onClick={onOpenCloudExplorer} />
-                <ToolButton icon={TerminalSquare} label="Multi-Exec & Snippets" onClick={onOpenMultiExec} />
-                <ToolButton icon={Network} label="SSH Tunnels Manager" onClick={onOpenTunnels} />
+                <ToolButton icon={Container} label="Docker & K8s Explorer" onClick={onOpenDockerK8s} />
+                <ToolButton icon={Cloud} label="S3 Cloud Explorer" onClick={onOpenCloudExplorer} />
+                <ToolButton icon={Activity} label="Multi-Log Tail" onClick={onOpenLogAggregator} />
+                <ToolButton icon={Blocks} label="Plugin Manager" onClick={onOpenPluginManager} />
               </div>
             )}
           </div>

@@ -97,17 +97,26 @@
 * **Modern Aesthetic & Glassmorphism:** Deep dark theme with beautiful frosted glass (`backdrop-filter`) top bars and modern browser-style tab management.
 * **Quick Server Cloning:** One-click "Clone Server" functionality instantly duplicates configurations for rapid infrastructure deployment.
 
+### 20. ☁️ S3 / Cloud Object Storage Explorer
+* **Native S3 Integration:** Extending our file manager to natively support AWS S3, Google Cloud Storage, MinIO, and DigitalOcean Spaces for direct object storage manipulation.
+
+### 21. 🚇 SSH Tunnel & Port Forwarding Manager
+* **Visual Tunnel Manager:** A visual manager for Local, Remote, and Dynamic SOCKS5 Port Forwarding to seamlessly connect to internal databases/services behind Jump Hosts.
+
+### 22. 📊 Multi-Log Tail & Centralized Log Aggregator
+* **Real-time Log Streaming:** Group and stream real-time logs (`tail -f`) from multiple SSH servers simultaneously on a single dashboard, complete with regex filtering and color-coded alerts.
+
+### 23. 🤝 Team Collaboration & Encrypted Vault Sharing
+* **E2EE Team Cloud Sync:** Securely sync, export, and share workspaces, connection lists, and command snippets with your team via GitHub Gist or Amazon S3 using end-to-end encrypted channels.
+
+### 24. 🔌 Plugin System & Custom Connectors
+* **Dynamic Node.js Plugin Hooks:** A lightweight JavaScript/TypeScript hooks mechanism allowing the community to build and load custom connectors for anything, like Elasticsearch, ClickHouse, Apache Kafka, or custom proprietary internal tools.
+
 ---
 
 ## 🔮 Roadmap & Future Features
 
-We are constantly expanding OmniTerminal. Here are the major features planned for upcoming releases:
-
-* **☁️ S3 / Cloud Object Storage Explorer:** Expanding our SFTP file manager to natively support AWS S3, Google Cloud Storage, MinIO, and Azure Blob Storage for direct cloud storage manipulation.
-* **🚇 SSH Tunnel & Port Forwarding Manager:** A visual manager for Local, Remote, and Dynamic SOCKS5 Port Forwarding to easily connect to internal databases/services behind Jump Hosts.
-* **📊 Multi-Log Tail & Centralized Log Aggregator:** Group and stream real-time logs (`tail -f`) from multiple servers on a single dashboard, complete with regex filtering and color-coded alerts.
-* **🤝 Team Collaboration & Encrypted Vault Sharing:** Securely sync, export, and share workspaces, connection lists, and command snippets with your team using end-to-end encrypted storage channels.
-* **🔌 Plugin System & Custom Connectors:** A lightweight JavaScript/TypeScript hooks mechanism allowing the community to build custom connectors for databases and tools like Elasticsearch, ClickHouse, Apache Kafka, and RabbitMQ.
+We are constantly expanding OmniTerminal. Stay tuned for upcoming features!
 
 ---
 

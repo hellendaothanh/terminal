@@ -5,7 +5,7 @@ import { ServerConfig, SSHKey, SSHTunnelConfig, TunnelTrafficStats } from '../..
 
 interface ActiveTunnel {
   config: SSHTunnelConfig;
-  client: Client;
+  clients: Client[];
   localServer?: net.Server;
   socksServer?: any;
   bytesRead: number;
@@ -36,19 +36,17 @@ export class SSHTunnelService {
 
   public async startTunnel(
     config: SSHTunnelConfig,
-    server: ServerConfig,
-    key?: SSHKey
+    serverChain: ServerConfig[],
+    keyChain: SSHKey[]
   ): Promise<{ success: boolean; error?: string }> {
     if (this.activeTunnels.has(config.id)) {
       await this.stopTunnel(config.id);
     }
 
-    return new Promise((resolve) => {
-      const client = new Client();
-
+    return new Promise(async (resolve) => {
       const activeTunnel: ActiveTunnel = {
         config,
-        client,
+        clients: [],
         bytesRead: 0,
         bytesWritten: 0,
         lastBytesRead: 0,
@@ -60,58 +58,83 @@ export class SSHTunnelService {
 
       this.activeTunnels.set(config.id, activeTunnel);
 
-      const connectConfig: any = {
-        host: server.host,
-        port: server.port || 22,
-        username: server.username,
-        readyTimeout: 20000,
-        keepaliveInterval: 10000,
-        tryKeyboard: true
-      };
+      try {
+        let previousClient: Client | null = null;
+        let previousStream: any = null;
 
-      if (server.authType === 'privateKey' && key) {
-        let needPassphrase = false;
-        try {
-          const parsed = utils.parseKey(key.privateKey);
-          if (parsed instanceof Error) throw parsed;
-        } catch (e) {
-          if (key.passphrase) {
+        for (let i = 0; i < serverChain.length; i++) {
+          const server = serverChain[i];
+          const key = keyChain[i];
+          
+          const connectConfig: any = {
+            host: server.host,
+            port: server.port || 22,
+            username: server.username,
+            readyTimeout: 20000,
+            keepaliveInterval: 10000,
+            tryKeyboard: true,
+            sock: previousStream
+          };
+
+          if (server.authType === 'privateKey' && key) {
+            let needPassphrase = false;
             try {
-              const parsed = utils.parseKey(key.privateKey, key.passphrase);
+              const parsed = utils.parseKey(key.privateKey);
               if (parsed instanceof Error) throw parsed;
-              needPassphrase = true;
-            } catch (err: any) {
-              activeTunnel.status = 'ERROR';
-              activeTunnel.error = err.message;
-              return resolve({ success: false, error: 'Cannot parse privateKey: ' + err.message });
+            } catch (e) {
+              if (key.passphrase) {
+                try {
+                  const parsed = utils.parseKey(key.privateKey, key.passphrase);
+                  if (parsed instanceof Error) throw parsed;
+                  needPassphrase = true;
+                } catch (err: any) {
+                  throw new Error('Cannot parse privateKey: ' + err.message);
+                }
+              } else {
+                throw new Error('Private Key yêu cầu Passphrase.');
+              }
             }
-          } else {
-            activeTunnel.status = 'ERROR';
-            activeTunnel.error = 'Key requires passphrase';
-            return resolve({ success: false, error: 'Private Key yêu cầu Passphrase.' });
+            connectConfig.privateKey = key.privateKey;
+            if (needPassphrase && key.passphrase) {
+              connectConfig.passphrase = key.passphrase;
+            }
+          } else if (server.password) {
+            connectConfig.password = server.password;
+          }
+
+          const client = new Client();
+          activeTunnel.clients.push(client);
+
+          await new Promise<void>((resolveStep, rejectStep) => {
+            client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+              finish(prompts.map(() => server.password || ''));
+            });
+
+            client.on('error', (err) => {
+              rejectStep(err);
+            });
+
+            client.on('ready', () => {
+              resolveStep();
+            });
+
+            client.connect(connectConfig);
+          });
+
+          // If this is not the last server in the chain, we forwardOut to the next server
+          if (i < serverChain.length - 1) {
+            const nextServer = serverChain[i + 1];
+            previousStream = await new Promise((resolveForward, rejectForward) => {
+              client.forwardOut('127.0.0.1', 0, nextServer.host, nextServer.port || 22, (err, stream) => {
+                if (err) return rejectForward(err);
+                resolveForward(stream);
+              });
+            });
           }
         }
-        connectConfig.privateKey = key.privateKey;
-        if (needPassphrase && key.passphrase) {
-          connectConfig.passphrase = key.passphrase;
-        }
-      } else if (server.password) {
-        connectConfig.password = server.password;
-      }
 
-      client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-        finish(prompts.map(() => server.password || ''));
-      });
-
-      client.on('error', (err) => {
-        activeTunnel.status = 'ERROR';
-        activeTunnel.error = err.message;
-        resolve({ success: false, error: err.message });
-      });
-
-      client.on('ready', () => {
+        // Entire chain is ready
         activeTunnel.status = 'ACTIVE';
-
         if (config.mode === 'LOCAL') {
           this.setupLocalForward(activeTunnel, resolve);
         } else if (config.mode === 'REMOTE') {
@@ -119,14 +142,19 @@ export class SSHTunnelService {
         } else if (config.mode === 'DYNAMIC') {
           this.setupDynamicForward(activeTunnel, resolve);
         }
-      });
-
-      client.connect(connectConfig);
+      } catch (err: any) {
+        activeTunnel.status = 'ERROR';
+        activeTunnel.error = err.message;
+        // Clean up any clients that were connected
+        activeTunnel.clients.forEach(c => c.end());
+        resolve({ success: false, error: err.message });
+      }
     });
   }
 
   private setupLocalForward(tunnel: ActiveTunnel, resolve: (res: any) => void) {
-    const { config, client } = tunnel;
+    const { config, clients } = tunnel;
+    const client = clients[clients.length - 1];
     const localHost = config.localHost || '127.0.0.1';
     const localPort = config.localPort;
     const dstHost = config.dstHost || '127.0.0.1';
@@ -183,7 +211,8 @@ export class SSHTunnelService {
   }
 
   private setupRemoteForward(tunnel: ActiveTunnel, resolve: (res: any) => void) {
-    const { config, client } = tunnel;
+    const { config, clients } = tunnel;
+    const client = clients[clients.length - 1];
     const remotePort = config.dstPort || config.localPort;
     const localHost = config.dstHost || config.localHost || '127.0.0.1';
     const localPort = config.localPort;
@@ -226,7 +255,8 @@ export class SSHTunnelService {
   }
 
   private setupDynamicForward(tunnel: ActiveTunnel, resolve: (res: any) => void) {
-    const { config, client } = tunnel;
+    const { config, clients } = tunnel;
+    const client = clients[clients.length - 1];
     const localHost = config.localHost || '127.0.0.1';
     const localPort = config.localPort;
 
@@ -299,7 +329,7 @@ export class SSHTunnelService {
     if (active.socksServer) {
       active.socksServer.close();
     }
-    active.client.end();
+    active.clients.forEach(c => c.end());
     active.status = 'STOPPED';
 
     this.activeTunnels.delete(tunnelId);

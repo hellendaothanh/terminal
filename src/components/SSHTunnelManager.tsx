@@ -108,13 +108,29 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
     if (isRunning) {
       await window.api.tunnelStop(tunnel.id);
     } else {
-      const server = servers.find((s) => s.id === tunnel.serverId);
-      if (!server) {
+      const serverChain: ServerConfig[] = [];
+      const keyChain: any[] = [];
+
+      const currentServer = servers.find((s) => s.id === tunnel.serverId);
+      if (!currentServer) {
         alert('Máy chủ không tồn tại.');
         return;
       }
-      const keyObj = keys.find((k) => k.id === server.privateKeyId);
-      const res = await window.api.tunnelStart(tunnel, server, keyObj);
+
+      if (currentServer.jumpHostIds && currentServer.jumpHostIds.length > 0) {
+        for (const jId of currentServer.jumpHostIds) {
+          const jSrv = servers.find(s => s.id === jId);
+          if (jSrv) {
+            serverChain.push(jSrv);
+            keyChain.push(keys.find(k => k.id === jSrv.privateKeyId));
+          }
+        }
+      }
+      
+      serverChain.push(currentServer);
+      keyChain.push(keys.find(k => k.id === currentServer.privateKeyId));
+
+      const res = await window.api.tunnelStart(tunnel, serverChain, keyChain);
       if (!res.success) {
         alert(`${t('tunnelCreateErrorPrefix')} ${res.error}`);
       }
@@ -130,7 +146,25 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
   };
 
   const selectedTunnel = tunnels.find((t) => t.id === selectedTunnelId) || filteredTunnels[0];
-  const selectedServer = servers.find((s) => s?.id === selectedTunnel?.serverId);
+
+  const buildServerChain = (tunnel: SSHTunnelConfig | null) => {
+    if (!tunnel) return [];
+    const chain: ServerConfig[] = [];
+    const currentServer = servers.find((s) => s.id === tunnel.serverId);
+    if (!currentServer) return [];
+    
+    if (currentServer.jumpHostIds && currentServer.jumpHostIds.length > 0) {
+      for (const jId of currentServer.jumpHostIds) {
+        const jSrv = servers.find(s => s.id === jId);
+        if (jSrv) chain.push(jSrv);
+      }
+    }
+    chain.push(currentServer);
+    return chain;
+  };
+
+  const serverChainForCanvas = buildServerChain(selectedTunnel);
+  const selectedServer = serverChainForCanvas[serverChainForCanvas.length - 1];
   const selectedStat = selectedTunnel ? stats[selectedTunnel.id] : null;
   const isSelectedActive = selectedStat?.status === 'ACTIVE';
 
@@ -349,49 +383,54 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
                   </div>
                 </div>
 
-                {/* Animated Connection Pipeline 1 */}
-                <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border-subtle)', margin: '0 20px', position: 'relative', borderRadius: '2px' }}>
-                  {isSelectedActive && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '-3px',
-                        width: '40px',
-                        height: '10px',
-                        borderRadius: '5px',
-                        backgroundColor: 'var(--accent-primary)',
-                        boxShadow: '0 0 10px var(--accent-primary)',
-                        animation: 'pulseFlow 2s infinite linear'
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Node 2: SSH Bastion Server */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '150px', zIndex: 2 }}>
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '16px',
-                      backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                      border: '2px solid #c084fc',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#c084fc',
-                      boxShadow: isSelectedActive ? '0 0 20px rgba(168, 85, 247, 0.4)' : 'none'
-                    }}
-                  >
-                    <Server size={30} />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{selectedServer?.name || 'SSH Bastion'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 500 }}>
-                      {selectedServer ? `${selectedServer.host}:${selectedServer.port}` : 'SSH Server'}
+                {/* Dynamically render jump hosts and bastion */}
+                {serverChainForCanvas.map((srv, idx) => (
+                  <React.Fragment key={srv.id + '_' + idx}>
+                    {/* Connection Pipeline (between Client/Previous Node and Current Node) */}
+                    <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border-subtle)', margin: '0 20px', position: 'relative', borderRadius: '2px' }}>
+                      {isSelectedActive && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '-3px',
+                            width: '40px',
+                            height: '10px',
+                            borderRadius: '5px',
+                            backgroundColor: 'var(--accent-primary)',
+                            boxShadow: '0 0 10px var(--accent-primary)',
+                            animation: `pulseFlow 2s infinite linear ${idx * 0.5}s`
+                          }}
+                        />
+                      )}
                     </div>
-                  </div>
-                </div>
+                    
+                    {/* Node */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '150px', zIndex: 2 }}>
+                      <div
+                        style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '16px',
+                          backgroundColor: idx < serverChainForCanvas.length - 1 ? 'rgba(234, 179, 8, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                          border: idx < serverChainForCanvas.length - 1 ? '2px solid #eab308' : '2px solid #c084fc',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: idx < serverChainForCanvas.length - 1 ? '#eab308' : '#c084fc',
+                          boxShadow: isSelectedActive ? (idx < serverChainForCanvas.length - 1 ? '0 0 20px rgba(234, 179, 8, 0.4)' : '0 0 20px rgba(168, 85, 247, 0.4)') : 'none'
+                        }}
+                      >
+                        {idx < serverChainForCanvas.length - 1 ? <ArrowRight size={30} /> : <Server size={30} />}
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{srv.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: idx < serverChainForCanvas.length - 1 ? '#eab308' : '#c084fc', fontWeight: 500 }}>
+                          {srv.host}:{srv.port || 22}
+                        </div>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
 
                 {/* Animated Connection Pipeline 2 (Only if NOT Dynamic) */}
                 {selectedTunnel.mode !== 'DYNAMIC' && (
@@ -407,7 +446,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
                             borderRadius: '5px',
                             backgroundColor: 'var(--accent-success)',
                             boxShadow: '0 0 10px var(--accent-success)',
-                            animation: 'pulseFlow 2s infinite linear 0.5s'
+                            animation: `pulseFlow 2s infinite linear ${serverChainForCanvas.length * 0.5}s`
                           }}
                         />
                       )}
