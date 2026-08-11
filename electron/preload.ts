@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld('api', {
     return res?.secret || null;
   },
 
+  /* OTP Helper APIs */
+  otpGenerate: (secretKey: string) => ipcRenderer.invoke('otp:generate', secretKey),
+  otpTimeRemaining: () => ipcRenderer.invoke('otp:time-remaining'),
+
   /* AI APIs */
   aiTestKey: (settings: any) => ipcRenderer.invoke('ai:test-key', settings),
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => ipcRenderer.invoke('ai:chat', { settings, userPrompt, history, contextSnippet }),

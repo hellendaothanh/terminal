@@ -43,9 +43,19 @@
 * **Auto-Capture Live Context:** One-click **"📥 Auto-Capture Live Terminal / DB Context"** button imports recent terminal lines, active SQL queries, and error stack traces directly into the AI prompt.
 * **Rich Markdown Formatter:** Clean HTML/Markdown renderer with syntax highlighting and one-click **"Paste to Terminal"** buttons.
 
-### 8. ⚡ Multi-Tab Workspace & Docked AI Side Panel
-* **Persistent Tab Sessions:** Active SSH, SFTP, RDP, and Database sessions persist in DOM memory when switching tabs.
-* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Toggle server list sidebar into a 50px compact mini-bar to maximize terminal screen real estate.
+### 8. 🔑 KeePass-style Password Manager
+* **Secure Vault Storage:** Encrypt and store unlimited login credentials (Title, Username, Password, URL, Notes) using AES-256-GCM.
+* **Built-in Password Generator:** Customize password length (8-64 chars) with toggleable Uppercase (A-Z), Numbers (0-9), and Symbols (@#$).
+* **Smart Clipboard Actions:** One-click copy for Username and Password with instant visual feedback and masked password toggling.
+
+### 9. 🛡️ Real-Time TOTP Authenticator (2FA)
+* **Standard TOTP Algorithm:** Compatible with Google Authenticator / Authy standards via `otplib`.
+* **Live 30-Second Countdown:** Interactive visual timer counting down remaining seconds before rotating 6-digit codes.
+* **One-Tap Code Copying:** Large, spaced digit display (e.g. `123 456`) with quick clipboard copying.
+
+### 10. ⚡ Multi-Tab Workspace & Docked AI Side Panel
+* **Persistent Tab Sessions:** Active SSH, SFTP, RDP, Database, Password Manager, and OTP sessions persist in DOM memory when switching tabs.
+* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Toggle server list sidebar into a 50px compact mini-bar to maximize workspace real estate.
 * **Docked AI Side Panel:** The AI Assistant operates as a docked flex panel alongside the terminal without covering or obscuring terminal text.
 
 ---
@@ -121,7 +131,9 @@ terminal/
 │   │   ├── SSHTerminal.tsx     # Xterm SSH Terminal Window
 │   │   ├── SFTPExplorer.tsx    # Dual-pane SFTP Browser
 │   │   ├── RDPViewer.tsx       # Remote Desktop Window
-│   │   ├── Sidebar.tsx         # Server list (supports 50px mini-bar mode)
+│   │   ├── PasswordManager.tsx # KeePass-style Password Manager
+│   │   ├── OTPManager.tsx      # Real-time TOTP 2FA Authenticator
+│   │   ├── Sidebar.tsx         # Server & Security list (supports 50px mini-bar mode)
 │   │   ├── TabBar.tsx          # Multi-process Tab Bar
 │   │   └── TopBar.tsx          # 80px padded header bar for macOS
 │   ├── types/                  # TypeScript Interfaces & API types

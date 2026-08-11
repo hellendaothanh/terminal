@@ -57,16 +57,41 @@ export interface SSHKey {
   createdAt: number;
 }
 
+export interface PasswordEntry {
+  id: string;
+  title: string;
+  username: string;
+  password: string;
+  url?: string;
+  notes?: string;
+  tags?: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface OTPEntry {
+  id: string;
+  issuer?: string;
+  accountName: string;
+  secretKey: string;
+  algorithm?: string;
+  digits?: number;
+  period?: number;
+  createdAt: number;
+}
+
 export interface VaultData {
   servers: ServerConfig[];
   keys: SSHKey[];
+  passwords?: PasswordEntry[];
+  otps?: OTPEntry[];
   hashicorpVault?: HashiCorpVaultConfig;
 }
 
 export interface TabItem {
   id: string;
   title: string;
-  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM';
+  type: 'SSH' | 'SFTP' | 'RDP' | 'DATABASE' | 'KEY_MANAGER' | 'SETTINGS' | 'SERVER_FORM' | 'PASSWORD_MANAGER' | 'OTP_MANAGER';
   serverId?: string;
   server?: ServerConfig;
 }

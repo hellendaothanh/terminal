@@ -14,7 +14,9 @@ import {
   Tag,
   Globe,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  KeyRound,
+  Shield
 } from 'lucide-react';
 import { ServerConfig, Environment, Protocol, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -33,6 +35,8 @@ interface SidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   settings?: TerminalSettings;
+  onOpenPasswords?: () => void;
+  onOpenOTPs?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -46,9 +50,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAddServer,
   onEditServer,
   onDeleteServer,
-  isCollapsed,
+  isCollapsed = false,
   onToggleCollapse,
-  settings
+  settings,
+  onOpenPasswords,
+  onOpenOTPs
 }) => {
   const { t } = useTranslation(settings);
   const [collapsedEnvs, setCollapsedEnvs] = useState<Record<string, boolean>>({});
@@ -519,6 +525,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })
         )}
       </div>
+
+      {/* Security Management Section (Expanded Only) */}
+      {!isCollapsed && (
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-subtle)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Shield size={14} />
+            <span>Bảo Mật (Security)</span>
+          </div>
+          <button
+            onClick={onOpenPasswords}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <KeyRound size={16} style={{ color: 'var(--accent-primary)' }} />
+            <span>Mật Khẩu (Passwords)</span>
+          </button>
+          
+          <button
+            onClick={onOpenOTPs}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+          >
+            <Shield size={16} style={{ color: 'var(--accent-success)' }} />
+            <span>Mã Xác Thực (OTP)</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

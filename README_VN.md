@@ -43,9 +43,19 @@
 * **Auto-Capture Live Context:** Nút **"📥 Nạp Tự Động Từ Màn Hình Terminal/CSDL"** tự nạp 40 dòng log Terminal màn hình hoặc câu lệnh/vết lỗi SQL thời gian thực cho AI phân tích.
 * **Định Dạng Markdown Chuẩn Đẹp:** Tự động format Markdown chỉn chu, có nút **"Dán Lệnh"** trực tiếp từ code AI vào SSH Terminal.
 
-### 8. ⚡ Workspace Đa Tab & Docked Side Panel
-* **Persistent Tab Sessions:** Các tab SSH, SFTP, RDP, Database duy trì kết nối liên tục trong bộ nhớ khi chuyển tab.
-* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Nút thu gọn Sidebar danh sách máy chủ về dạng Mini-bar (50px) để tối đa hóa không gian màn hình Terminal.
+### 8. 🔑 Quản Lý Mật Khẩu (Password Manager kiểu KeePass)
+* **Lưu Trữ Mã Hóa An Toàn:** Mã hóa và lưu trữ không giới hạn thông tin đăng nhập (Tiêu đề, Tên đăng nhập/Email, Mật khẩu, URL, Ghi chú) bằng AES-256-GCM.
+* **Trình Sinh Mật Khẩu Tự Động:** Tùy chỉnh độ dài (8-64 ký tự) với tùy chọn bật/tắt Chữ hoa (A-Z), Chữ số (0-9) và Ký tự đặc biệt (@#$).
+* **Thao Tác Clipboard Thông Minh:** Copy Tên đăng nhập và Mật khẩu 1-click với phản hồi giao diện trực quan và tính năng ẩn/hiện mật khẩu.
+
+### 9. 🛡️ Quản Lý Mã Xác Thực OTP Thời Gian Thực (2FA)
+* **Chuẩn Thuật Toán TOTP:** Tương thích hoàn toàn với Google Authenticator / Authy thông qua `otplib`.
+* **Đồng Hồ Đếm Ngược 30 Giây:** Hiển thị thời gian còn lại đếm ngược trực quan trước khi tự động đổi mã 6 chữ số mới.
+* **Sao Chép Mã Một Chạm:** Định dạng chuỗi số thoáng (ví dụ `123 456`) dễ nhìn cùng nút copy tiện lợi.
+
+### 10. ⚡ Workspace Đa Tab & Docked Side Panel
+* **Persistent Tab Sessions:** Các tab SSH, SFTP, RDP, Database, Password Manager và OTP duy trì kết nối liên tục trong bộ nhớ khi chuyển tab.
+* **Sidebar Collapse Mode (`Ctrl + B` / `Cmd + B`):** Nút thu gọn Sidebar danh sách máy chủ về dạng Mini-bar (50px) để tối đa hóa không gian màn hình làm việc.
 * **Docked AI Side Panel:** Khung Trợ Lý AI đính kèm cạnh bên dạng Docked Panel giúp xem Terminal và hỏi đáp AI song song không lo bị che khuất.
 
 ---
@@ -121,7 +131,9 @@ terminal/
 │   │   ├── SSHTerminal.tsx     # Cửa sổ SSH Terminal Xterm
 │   │   ├── SFTPExplorer.tsx    # Cửa sổ Duyệt File SFTP
 │   │   ├── RDPViewer.tsx       # Cửa sổ Remote Desktop
-│   │   ├── Sidebar.tsx         # Thanh danh sách Máy chủ (Hỗ trợ Mini-bar)
+│   │   ├── PasswordManager.tsx # Trình quản lý Mật khẩu kiểu KeePass
+│   │   ├── OTPManager.tsx      # Trình tạo mã OTP 2FA thời gian thực
+│   │   ├── Sidebar.tsx         # Thanh danh sách Máy chủ & Bảo mật (Hỗ trợ Mini-bar)
 │   │   ├── TabBar.tsx          # Thanh TabBar đa tiến trình
 │   │   └── TopBar.tsx          # Thanh Tiêu Đề lùi lề 80px cho macOS
 │   ├── types/                  # Khai báo TypeScript Interfaces & APIs

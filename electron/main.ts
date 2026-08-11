@@ -39,6 +39,7 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     sshService.disconnectAll();
@@ -97,6 +98,25 @@ function setupIpcHandlers() {
 
   ipcMain.handle('vault:derive-public-key', (_, { privateKey, passphrase }) => {
     return vaultService.derivePublicKey(privateKey, passphrase);
+  });
+
+  /* ================= OTP Handlers ================= */
+  ipcMain.handle('otp:generate', (_, secretKey: string) => {
+    try {
+      const { authenticator } = require('otplib');
+      return { success: true, code: authenticator.generate(secretKey) };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('otp:time-remaining', () => {
+    try {
+      const { authenticator } = require('otplib');
+      return authenticator.timeRemaining();
+    } catch (e) {
+      return 30;
+    }
   });
 
   /* ================= HashiCorp Vault Handlers ================= */

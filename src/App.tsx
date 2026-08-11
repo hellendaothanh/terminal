@@ -14,6 +14,8 @@ import { ServerModal } from './components/ServerModal';
 import { KeyManagerModal } from './components/KeyManagerModal';
 import { ImportExportModal } from './components/ImportExportModal';
 import { SettingsModal } from './components/SettingsModal';
+import { PasswordManager } from './components/PasswordManager';
+import { OTPManager } from './components/OTPManager';
 
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
@@ -21,7 +23,7 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Vault State
-  const [vaultData, setVaultData] = useState<VaultData>({ servers: [], keys: [] });
+  const [vaultData, setVaultData] = useState<VaultData>({ servers: [], keys: [], passwords: [], otps: [] });
 
   // Navigation & Search State
   const [selectedEnv, setSelectedEnv] = useState<Environment | 'ALL'>('ALL');
@@ -80,7 +82,12 @@ export const App: React.FC = () => {
   const loadVaultData = async () => {
     try {
       const data = await window.api.vaultGetData();
-      setVaultData(data || { servers: [], keys: [] });
+      setVaultData({
+        servers: data?.servers || [],
+        keys: data?.keys || [],
+        passwords: data?.passwords || [],
+        otps: data?.otps || []
+      });
     } catch (e) {
       console.error('Lỗi khi tải kho dữ liệu:', e);
     }
@@ -308,6 +315,26 @@ export const App: React.FC = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
           settings={settings}
+          onOpenPasswords={() => {
+            const exists = tabs.find((t) => t.type === 'PASSWORD_MANAGER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Quản lý Mật khẩu', type: 'PASSWORD_MANAGER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
+          onOpenOTPs={() => {
+            const exists = tabs.find((t) => t.type === 'OTP_MANAGER');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Mã Xác Thực (OTP)', type: 'OTP_MANAGER' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
         />
 
         {/* Central Active Viewport Container */}
@@ -344,10 +371,10 @@ export const App: React.FC = () => {
               />
             </div>
 
-            {/* Persistent Tab Views - Keeps SSH/SFTP/RDP sessions alive when switching tabs */}
+            {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server) return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER') return null;
 
               return (
                 <div
@@ -358,7 +385,7 @@ export const App: React.FC = () => {
                     width: '100%'
                   }}
                 >
-                  {tab.type === 'SSH' ? (
+                  {tab.type === 'SSH' && tab.server ? (
                     <SSHTerminal
                       sessionId={tab.id}
                       server={tab.server}
@@ -366,7 +393,7 @@ export const App: React.FC = () => {
                       settings={settings}
                       onUpdateServerPassword={handleUpdateServerPassword}
                     />
-                  ) : tab.type === 'SFTP' ? (
+                  ) : tab.type === 'SFTP' && tab.server ? (
                     <SFTPExplorer
                       sessionId={tab.id}
                       server={tab.server}
@@ -374,21 +401,47 @@ export const App: React.FC = () => {
                       settings={settings}
                       onUpdateServerPassword={handleUpdateServerPassword}
                     />
-                  ) : tab.type === 'DATABASE' ? (
+                  ) : tab.type === 'DATABASE' && tab.server ? (
                     <DatabaseExplorer
                       sessionId={tab.id}
                       server={tab.server}
                       settings={settings}
                       onUpdateServerPassword={handleUpdateServerPassword}
                     />
-                  ) : (
+                  ) : tab.type === 'PASSWORD_MANAGER' ? (
+                    <PasswordManager
+                      passwords={vaultData.passwords || []}
+                      onSavePassword={(pw) => {
+                        const newPws = vaultData.passwords?.filter((p) => p.id !== pw.id) || [];
+                        newPws.push(pw);
+                        saveVaultData({ ...vaultData, passwords: newPws });
+                      }}
+                      onDeletePassword={(id) => {
+                        const newPws = vaultData.passwords?.filter((p) => p.id !== id) || [];
+                        saveVaultData({ ...vaultData, passwords: newPws });
+                      }}
+                    />
+                  ) : tab.type === 'OTP_MANAGER' ? (
+                    <OTPManager
+                      otps={vaultData.otps || []}
+                      onSaveOTP={(otp) => {
+                        const newOTPs = vaultData.otps?.filter((o) => o.id !== otp.id) || [];
+                        newOTPs.push(otp);
+                        saveVaultData({ ...vaultData, otps: newOTPs });
+                      }}
+                      onDeleteOTP={(id) => {
+                        const newOTPs = vaultData.otps?.filter((o) => o.id !== id) || [];
+                        saveVaultData({ ...vaultData, otps: newOTPs });
+                      }}
+                    />
+                  ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}
                       server={tab.server}
                       settings={settings}
                       onUpdateServerPassword={handleUpdateServerPassword}
                     />
-                  )}
+                  ) : null}
                 </div>
               );
             })}
