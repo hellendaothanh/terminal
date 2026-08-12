@@ -302,3 +302,21 @@ input, button, select, textarea {
 .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.45) !important;
 }
+
+/* Custom scrollbar for AI assistant messages */
+.ai-assistant-messages::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.ai-assistant-messages::-webkit-scrollbar-track {
+  background: var(--bg-tertiary) !important;
+}
+
+.ai-assistant-messages::-webkit-scrollbar-thumb {
+  background: var(--text-dim) !important;
+  border-radius: 4px !important;
+}
+
+.ai-assistant-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted) !important;
+}

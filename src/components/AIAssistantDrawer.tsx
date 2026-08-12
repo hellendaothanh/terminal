@@ -66,14 +66,18 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
   const handleAutoCaptureContext = () => {
     if (!activeTabId) return;
 
-    // Check if active tab is Terminal (SSH) or Database Explorer
-    const captured = (window as any).__omni_active_tab_context?.();
+    // Check if active tab is registered in __activeBuffers
+    const getter = (window as any).__activeBuffers?.[activeTabId];
+    const captured = getter ? getter() : null;
 
     if (captured && captured.text) {
       setContextSnippet(captured.text);
-      setContextSourceInfo(captured.source || 'Tab Currently Active');
+      setContextSourceInfo(
+        captured.type === 'SSH'
+          ? `Terminal SSH (${captured.server})`
+          : `CSDL ${captured.dbType} (${captured.server})`
+      );
     } else {
-      // Fallback capture message
       setContextSnippet('');
       setContextSourceInfo('');
     }
@@ -432,7 +436,7 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
       )}
 
       {/* Chat Messages Log */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="ai-assistant-messages" style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {messages.map((m) => {
           const isUser = m.role === 'user';
 
