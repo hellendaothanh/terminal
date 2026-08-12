@@ -66,31 +66,57 @@
 * **Phát Hiện & Cảnh Báo Lệnh Nguy Hiểm:** Kiểm toán thời gian thực các câu lệnh SQL và SSH với bộ đánh giá rủi ro tự động (Cảnh báo màu đỏ cho `rm -rf`, `DROP TABLE`, `chmod 777`).
 * **Xuất Báo Cáo Nhật Ký:** Cho phép xuất dữ liệu kiểm toán ra file định dạng `.cast` hoặc file báo cáo `.txt`.
 
-### 13. 📊 Giám Sát Tài Nguyên Máy Chủ Real-time (Agentless Server Metrics)
+### 12. 📊 Giám Sát Tài Nguyên Máy Chủ Real-time (Agentless Server Metrics)
 * **Theo Dõi Thời Gian Thực:** Giám sát dung lượng CPU (%), RAM (%), Ổ đĩa (/) và Băng thông mạng Network I/O (KB/s Download/Upload) của máy chủ từ xa thông qua kết nối SSH nhẹ nhàng không cần cài agent.
 * **Thanh Trạng Thái Linh Hoạt:** Chuyển đổi giữa định dạng thu gọn trên thanh tiêu đề và bảng điều khiển mở rộng với màu sắc cảnh báo rủi ro quá tải (Xanh -> Vàng -> Đỏ).
 
-### 14. 🌉 Quản Lý Bastion Jump Host (Đường Hầm Nhảy Cóc 1-3 Lớp)
+### 13. 🌉 Quản Lý Bastion Jump Host (Đường Hầm Nhảy Cóc 1-3 Lớp)
 * **Truy Cập Mạng Nội Bộ (Private Subnet):** Cho phép kết nối an toàn qua 1 đến 3 máy chủ Bastion/Jump trung gian để truy cập máy chủ nằm sâu trong mạng nội bộ.
 * **Xử Lý Chuỗi Kết Nối Tự Động:** Tích hợp luồng `forwardOut` của `ssh2` tự động hóa chuỗi xác thực qua nhiều Hop.
 
-### 15. 💡 Shell Smart Assistant & Tự Động Phát Hiện Sự Cố Log
+### 14. 💡 Shell Smart Assistant & Tự Động Phát Hiện Sự Cố Log
 * **Thanh Gợi Ý Lệnh Thông Minh:** Tự động đưa ra gợi ý câu lệnh dựa trên lịch sử gõ, biến môi trường và mẫu CLI Linux/Kubernetes/Docker phổ biến.
 * **Cảnh Báo Lỗi Log Thời Gian Thực:** Tự động phát hiện các từ khóa lỗi nghiêm trọng (`OutOfMemory`, `OOMKilled`, `Connection Refused`, `Segmentation Fault`, `FATAL ERROR`) và hiển thị banner cảnh báo lập tức.
 
-### 16. 🗄️ Visual ERD, Schema Diff & Visual Query Builder
+### 15. 🗄️ Visual ERD, Schema Diff & Visual Query Builder
 * **Sơ Đồ Quan Hệ ERD Trực Quan:** Hiển thị cây liên kết bảng, Khóa chính (PK), Khóa ngoại (FK) và kiểu dữ liệu từng cột.
 * **So Sánh Cấu Trúc (Schema Diff) & Sinh Migration:** So sánh cấu trúc CSDL giữa 2 môi trường (ví dụ Dev vs Staging) và tự động tạo script SQL Migration.
 * **Visual SQL Query Builder:** Tự động sinh câu lệnh SQL bằng thao tác chọn bảng, chọn cột, thiết lập điều kiện JOIN và WHERE mà không cần gõ SQL thủ công.
 
-### 17. 📦 Export/Import Data Pump Stream & Hệ Sinh Thái Cloud/Container
+### 16. 📦 Export/Import Data Pump Stream & Hệ Sinh Thái Cloud/Container
 * **Streaming Dump & Restore Dữ Liệu Lớn:** Sao lưu/khôi phục CSDL dung lượng lớn hỗ trợ định dạng SQL DDL/DML, JSON, Parquet kèm tùy chọn mã hóa stream AES-256.
 * **Docker & Kubernetes Panel:** Xem danh sách Containers và K8s Pods, theo dõi log thời gian thực và mở Terminal `docker exec` / `kubectl exec` 1-click.
 * **Cloud Infrastructure Explorer:** Kết nối API AWS, GCP, Azure hiển thị danh sách Instance/VM và mở kết nối SSH/RDP 1-click.
 
-### 18. 🛡️ Command Guard Phê Duyệt Lệnh & Tamper-Evident Audit Logs (ISO 27001 / SOC 2)
+### 17. 🛡️ Command Guard Phê Duyệt Lệnh & Tamper-Evident Audit Logs (ISO 27001 / SOC 2)
 * **Quy Trình Phê Duyệt Lệnh Nguy Hiểm (Command Guard):** Yêu cầu xác thực Master Passphrase hoặc mã OTP (6 chữ số) trước khi chạy các lệnh nguy hiểm (`DROP DATABASE`, `systemctl stop`, `rm -rf`).
 * **Audit Log Chống Sửa Đổi (Tamper-Evident):** Tự động tính toán mã băm SHA-256 HMAC cho từng bản ghi nhật ký kiểm toán đảm bảo tuân thủ tiêu chuẩn an toàn ISO 27001 / SOC 2.
+
+### 18. 🎨 Tái Thiết Kế Giao Diện UI/UX Hiện Đại & Bố Cục Không Gian Làm Việc (Workspace Layout)
+* **Thanh Hoạt Động Sidebar Hai Ngăn:** Thanh công cụ chính chuyên nghiệp (Máy chủ, Bảo mật, Cơ sở dữ liệu, DevOps) kết hợp bảng hiển thị phụ linh hoạt giúp tối ưu hóa không gian hiển thị và giảm thiểu sự lộn xộn về thị giác.
+* **Mỹ Thuật Hiện Đại & Glassmorphism:** Giao diện tối sang trọng kết hợp hiệu ứng kính mờ (`backdrop-filter`) trên thanh công cụ và quản lý thẻ (tabs) theo phong cách trình duyệt hiện đại.
+* **Nhân Bản Máy Chủ Nhanh:** Tính năng "Clone Server" một chạm cho phép nhân bản cấu hình kết nối tức thì để triển khai nhanh hạ tầng.
+
+### 19. ☁️ Trình Duyệt Lưu Trữ Đối Tượng Đám Mây S3 / Cloud Object Storage
+* **Tích Hợp S3 Natively:** Mở rộng trình quản lý tệp tin để hỗ trợ trực tiếp AWS S3, Google Cloud Storage, MinIO, và DigitalOcean Spaces, cho phép duyệt và thao tác trực tiếp trên kho lưu trữ đối tượng.
+
+### 20. 🚇 Trình Quản Lý SSH Tunnel & Port Forwarding
+* **Quản Lý Tunnel Trực Quan:** Bảng điều khiển trực quan hỗ trợ cấu hình Local, Remote, và Dynamic SOCKS5 Port Forwarding giúp kết nối an toàn tới các cơ sở dữ liệu/dịch vụ nội bộ phía sau các máy chủ nhảy (Jump Hosts).
+
+### 21. 📊 Theo Dõi Log Đa Luồng & Bộ Thu Thập Log Tập Trung
+* **Truyền Phát Log Thời Gian Thực:** Gom nhóm và truyền phát luồng log thời gian thực (`tail -f`) từ nhiều máy chủ SSH cùng một lúc trên một bảng điều khiển duy nhất, tích hợp bộ lọc Regex và cảnh báo màu sắc.
+
+### 22. 🤝 Cộng Tác Nhóm & Chia Sẻ Kho Khóa Mã Hóa
+* **Đồng Bộ Đám Mây Nhóm Mã Hóa Đầu Cuối (E2EE):** Đồng bộ, xuất và chia sẻ không gian làm việc, danh sách kết nối, và các đoạn lệnh (snippets) với đội ngũ của bạn thông qua GitHub Gist hoặc Amazon S3 bằng các kênh truyền tải mã hóa đầu cuối.
+
+### 23. 🔌 Hệ Thống Plugin & Đầu Kết Nối Tùy Biến (Custom Connectors)
+* **Plugin Hooks Dynamic chạy trên Node.js:** Cơ chế hooks gọn nhẹ bằng JavaScript/TypeScript cho phép cộng đồng xây dựng và tích hợp các đầu kết nối tùy chọn như Elasticsearch, ClickHouse, Apache Kafka, hoặc các công cụ nội bộ bảo mật của doanh nghiệp.
+
+---
+
+## 🔮 Kế Hoạch Phát Triển (Roadmap)
+
+Chúng tôi liên tục cải tiến và phát triển OmniTerminal. Hãy đón chờ các tính năng mới trong tương lai!
 
 ---
 
@@ -150,26 +176,54 @@ terminal/
 │   ├── main.ts                 # Main Process Entry Point & IPC Handlers
 │   ├── preload.ts              # Preload Script an toàn (Expose window.api)
 │   └── services/               # Dịch vụ backend mã hóa, kết nối SSH/SFTP/DB/AI
+│       ├── AuditLogService.ts  # Quản lý nhật ký kiểm toán & mã băm HMAC
+│       ├── SSHTunnelService.ts # Quản lý các luồng SSH Tunnel & Port Forwarding
 │       ├── aiService.ts        # Tích hợp REST API Gemini, OpenAI, Custom Model
 │       ├── databaseService.ts  # Driver kết nối MySQL, PostgreSQL, Redis
 │       ├── hashicorpVaultService.ts # Kết nối HashiCorp Vault REST API
-│       ├── rdpService.ts       # Quản lý phiên RDP & nạp Credential
+│       ├── logTailService.ts   # Dịch vụ stream log thời gian thực đa máy chủ
+│       ├── pluginService.ts    # Cơ chế tải plugin & hooks JS/TS gọn nhẹ
+│       ├── rdpService.ts       # Quản lý phiên RDP & nạp Credential tự động
+│       ├── s3Service.ts        # Quản lý kết nối & thao tác tệp tin S3 Cloud Storage
 │       ├── sftpService.ts      # Quản lý thao tác File & Tiến trình SFTP
 │       ├── sshService.ts       # Quản lý SSH2 PTY stream
+│       ├── teamSyncService.ts  # Đồng bộ hóa dữ liệu nhóm qua Gist/S3 E2EE
 │       └── vaultService.ts     # Mã hóa kho dữ liệu AES-256-GCM
 ├── src/                        # Tiến trình hiển thị giao diện React (Renderer)
 │   ├── App.tsx                 # Quản lý Tabs, Layout & Modals
 │   ├── components/             # Các React Component UI
 │   │   ├── AIAssistantDrawer.tsx # Bảng Trợ Lý AI đính kèm cạnh bên
+│   │   ├── AuditLogManager.tsx # Giao diện kiểm tra Audit Log chống sửa đổi
+│   │   ├── CloudExplorer.tsx   # Trình duyệt máy ảo/Instance Cloud (AWS/GCP/Azure)
+│   │   ├── CommandGuardApprovalModal.tsx # Xác thực bảo mật khi chạy lệnh nguy hiểm
+│   │   ├── CustomConnectorPanel.tsx # Giao diện cấu hình plugin & connector tùy chỉnh
+│   │   ├── Dashboard.tsx       # Bảng điều khiển chính tổng quan hệ thống
+│   │   ├── DataPump.tsx        # Trình sao lưu/khôi phục CSDL dạng stream dung lượng lớn
 │   │   ├── DatabaseExplorer.tsx  # Trình duyệt & Quản lý CSDL
-│   │   ├── SSHTerminal.tsx     # Cửa sổ SSH Terminal Xterm
-│   │   ├── SFTPExplorer.tsx    # Cửa sổ Duyệt File SFTP
-│   │   ├── RDPViewer.tsx       # Cửa sổ Remote Desktop
-│   │   ├── PasswordManager.tsx # Trình quản lý Mật khẩu kiểu KeePass
+│   │   ├── DockerK8sPanel.tsx  # Quản lý Docker containers & K8s Pods
+│   │   ├── ERDAndSchemaDiff.tsx  # So sánh cấu trúc Schema & sơ đồ ERD trực quan
+│   │   ├── ImportExportModal.tsx # Sao lưu và khôi phục kho lưu trữ mã hóa
+│   │   ├── KeyManagerModal.tsx # Trình quản lý & tạo cặp khóa SSH Key Vault
+│   │   ├── LockScreen.tsx      # Màn hình khóa ứng dụng an toàn
+│   │   ├── LogAggregator.tsx   # Trình thu gom và hiển thị log tập trung
+│   │   ├── MultiExecManager.tsx # Giao diện chạy lệnh song song đa máy chủ
 │   │   ├── OTPManager.tsx      # Trình tạo mã OTP 2FA thời gian thực
+│   │   ├── PasswordManager.tsx # Trình quản lý Mật khẩu kiểu KeePass
+│   │   ├── PluginManagerModal.tsx # Trình quản lý và cấu hình plugin
+│   │   ├── RDPViewer.tsx       # Cửa sổ Remote Desktop
+│   │   ├── ReAuthModal.tsx     # Xác thực lại khi hết thời gian phiên làm việc
+│   │   ├── S3Explorer.tsx      # Giao diện duyệt tệp tin S3 Cloud Storage
+│   │   ├── SFTPExplorer.tsx    # Cửa sổ Duyệt File SFTP
+│   │   ├── SSHTerminal.tsx     # Cửa sổ SSH Terminal Xterm
+│   │   ├── SSHTunnelManager.tsx # Cấu hình và quản lý port forwarding
+│   │   ├── ServerMetricsDashboard.tsx # Giám sát tài nguyên máy chủ agentless
+│   │   ├── ServerModal.tsx     # Tạo và chỉnh sửa cấu hình kết nối Server
+│   │   ├── SettingsModal.tsx   # Cài đặt ứng dụng và tùy chỉnh giao diện
+│   │   ├── ShellSmartAssistant.tsx # Thanh trợ lý gợi ý lệnh thông minh
 │   │   ├── Sidebar.tsx         # Thanh danh sách Máy chủ & Bảo mật (Hỗ trợ Mini-bar)
-│   │   ├── TabBar.tsx          # Thanh TabBar đa tiến trình
-│   │   └── TopBar.tsx          # Thanh Tiêu Đề lùi lề 80px cho macOS
+│   │   ├── TabBar.tsx          # Thanh TabBar quản lý các thẻ phiên làm việc
+│   │   ├── TeamSyncModal.tsx   # Giao diện đồng bộ hóa đám mây nhóm mã hóa E2EE
+│   │   └── TopBar.tsx          # Thanh Tiêu Đề lùi lề 80px tối ưu cho macOS
 │   ├── types/                  # Khai báo TypeScript Interfaces & APIs
 │   └── index.css               # Design System Dark Mode
 ├── vite.config.ts              # Cấu hình Vite & Rollup Bundler
