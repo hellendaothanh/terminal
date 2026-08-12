@@ -116,6 +116,14 @@
 * **Kiểm Tra Kết Nối Tiền Kết Nối:** Hỗ trợ kiểm tra tình trạng đường truyền (Đo độ trễ Ping, dò tuyến Traceroute/MTR, truy vấn DNS, hoặc quét nhanh trạng thái mở cổng Port Scanner) ngay cạnh bảng cấu hình Server/Database trước khi kết nối SSH, RDP hoặc CSDL.
 * **Tự Động Đồng Bộ Target:** Tự động điền địa chỉ IP/Tên miền đích từ form cấu hình máy chủ, giúp đơn giản hóa quy trình chẩn đoán mạng khi gặp lỗi kết nối.
 
+### 25. 🤖 Trợ Lý Sửa Lỗi Tự Động & Giải Thích Lỗi Terminal AI (Terminal AI Autofix)
+* **Chẩn Đoán Thông Minh:** Khi lệnh SSH hoặc truy vấn SQL xảy ra sự cố, tự động phát hiện mã lỗi, thu thập ngữ cảnh thực thi lỗi và đề xuất phân tích nguyên nhân sự cố một cách trực quan bằng AI.
+* **Tự Động Sửa Lỗi 1-Click:** Tự động tối ưu hóa câu lệnh đúng cú pháp và cấu hình, hỗ trợ điền và chạy lại câu lệnh tức thì chỉ với một cú nhấp chuột (1-Click Apply).
+
+### 26. ⛵ Quản Lý Helm Chart & CRD Nâng Cao cho Kubernetes
+* **Quản Lý Helm Releases:** Hỗ trợ trực quan hóa danh sách releases, cài đặt (Install), nâng cấp (Upgrade), rollback các phiên bản cấu hình (kèm lịch sử Revision), hoặc gỡ cài đặt (Uninstall) Helm releases trực tiếp từ 3-Pane Explorer.
+* **Trình Trực Quan Hóa CRD Spec:** Liệt kê và hiển thị chi tiết các Custom Resource Definitions (CRDs) trong cluster bao gồm API Group, Scope và cấu trúc OpenAPI v3 spec dạng YAML.
+
 ---
 
 ## 🔮 Kế Hoạch Phát Triển (Roadmap)

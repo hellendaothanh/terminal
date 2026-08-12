@@ -4,7 +4,7 @@ import {
   Box, Layers, RefreshCw, Terminal, FileText, Play, Square, RotateCcw, 
   Search, CheckCircle, AlertCircle, Server, ChevronRight, ChevronDown, 
   Sliders, Settings, Download, Trash2, Maximize2, Minimize2, Activity,
-  Database, ShieldAlert, Cpu, HardDrive
+  Database, ShieldAlert, Cpu, HardDrive, Plus, PlusCircle
 } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -20,7 +20,7 @@ interface ResourceItem {
   name: string;
   type: string;
   image?: string;
-  status: 'running' | 'stopped' | 'CrashLoopBackOff' | 'active' | 'exited';
+  status: string;
   cpu: number;
   memory: number;
   ip?: string;
@@ -57,6 +57,21 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
   const [selectedRowIds, setSelectedRowIds] = useState<Record<string, boolean>>({});
   const [selectedResource, setSelectedResource] = useState<ResourceItem | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Helm & CRD States
+  const [showInstallHelmModal, setShowInstallHelmModal] = useState(false);
+  const [helmReleaseName, setHelmReleaseName] = useState('');
+  const [helmChartName, setHelmChartName] = useState('bitnami/nginx');
+  const [helmVersion, setHelmVersion] = useState('15.1.2');
+  const [helmValues, setHelmValues] = useState('replicaCount: 2\nservice:\n  type: ClusterIP\n  port: 80');
+
+  const [showUpgradeHelmModal, setShowUpgradeHelmModal] = useState(false);
+  const [targetUpgradeItem, setTargetUpgradeItem] = useState<ResourceItem | null>(null);
+  const [upgradeVersion, setUpgradeVersion] = useState('');
+
+  const [showRollbackHelmModal, setShowRollbackHelmModal] = useState(false);
+  const [targetRollbackItem, setTargetRollbackItem] = useState<ResourceItem | null>(null);
+  const [rollbackRevision, setRollbackRevision] = useState('1');
 
   // Bottom Drawer States
   const [isDrawerCollapsed, setIsDrawerCollapsed] = useState<boolean>(false);
@@ -128,6 +143,16 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
     configmaps: [
       { id: 'cm-app', name: 'app-global-config', type: 'ConfigMap', image: 'Keys: 8', status: 'active', cpu: 0, memory: 0, age: '45d' },
       { id: 'sec-db', name: 'database-credentials-secret', type: 'Secret', image: 'Keys: 3 (Encrypted)', status: 'active', cpu: 0, memory: 0, age: '45d' }
+    ],
+    helmReleases: [
+      { id: 'helm-nginx', name: 'ingress-nginx', type: 'HelmRelease', image: 'Chart: ingress-nginx-4.8.3 / Version: 1.9.4', status: 'deployed', cpu: 0, memory: 0, age: '12d', ip: 'Revision: 2' },
+      { id: 'helm-prometheus', name: 'prometheus-stack', type: 'HelmRelease', image: 'Chart: kube-prometheus-stack-55.0.0 / Version: v0.70.0', status: 'deployed', cpu: 0, memory: 0, age: '4d', ip: 'Revision: 1' },
+      { id: 'helm-redis', name: 'redis-cluster', type: 'HelmRelease', image: 'Chart: redis-18.6.1 / Version: 7.2.3', status: 'failed', cpu: 0, memory: 0, age: '2h', ip: 'Revision: 3' }
+    ],
+    crds: [
+      { id: 'crd-cert', name: 'certificates.cert-manager.io', type: 'CRD', image: 'Group: cert-manager.io / Scope: Namespaced', status: 'active', cpu: 0, memory: 0, age: '30d' },
+      { id: 'crd-issuer', name: 'clusterissuers.cert-manager.io', type: 'CRD', image: 'Group: cert-manager.io / Scope: Cluster', status: 'active', cpu: 0, memory: 0, age: '30d' },
+      { id: 'crd-prom', name: 'prometheuses.monitoring.coreos.com', type: 'CRD', image: 'Group: monitoring.coreos.com / Scope: Cluster', status: 'active', cpu: 0, memory: 0, age: '15d' }
     ]
   });
 
@@ -136,16 +161,35 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
 
   useEffect(() => {
     if (selectedResource) {
-      setLiveLogs([
-        `[${new Date().toLocaleTimeString()}] [INFO] Starting diagnostics for ${selectedResource.name}...`,
-        `[${new Date().toLocaleTimeString()}] [DEBUG] Fetching properties of type: ${selectedResource.type}`,
-        `[${new Date().toLocaleTimeString()}] [INFO] Port binding check: OK`,
-        `[${new Date().toLocaleTimeString()}] [WARN] Memory utilization currently at ${selectedResource.memory}MB`
-      ]);
-
-      setYamlContent(
-        `apiVersion: v1\nkind: ${selectedResource.type}\nmetadata:\n  name: ${selectedResource.name}\n  namespace: ${selectedK8sNamespace}\n  labels:\n    app: ${selectedResource.name.split('-')[0]}\n    managed-by: omniterminal\nspec:\n  containers:\n  - name: primary\n    image: ${selectedResource.image || 'unknown'}\n    ports:\n    - containerPort: 80\n    resources:\n      limits:\n        cpu: "500m"\n        memory: "512Mi"\n`
-      );
+      if (selectedResource.type === 'HelmRelease') {
+        setLiveLogs([
+          `REVISION\tUPDATED\t\t\t\tSTATUS\t\tCHART\t\t\tAPP VERSION\tDESCRIPTION`,
+          `1\t\tMon Aug 10 14:02:11 2026\tsuperseded\tingress-nginx-4.8.2\t1.9.3\t\tInstall complete`,
+          `2\t\tTue Aug 11 09:30:15 2026\tdeployed\tingress-nginx-4.8.3\t1.9.4\t\tUpgrade complete`
+        ]);
+        setYamlContent(
+          `# Helm Values for ${selectedResource.name}\nreplicaCount: 2\nimage:\n  repository: ingress-nginx/controller\n  tag: v1.9.4\n  pullPolicy: IfNotPresent\nservice:\n  type: LoadBalancer\n  ports:\n    http: 80\n    https: 443\n`
+        );
+      } else if (selectedResource.type === 'CRD') {
+        setLiveLogs([
+          `[${new Date().toLocaleTimeString()}] [INFO] CustomResourceDefinition ${selectedResource.name} status: Active`,
+          `[${new Date().toLocaleTimeString()}] [INFO] API group: cert-manager.io`,
+          `[${new Date().toLocaleTimeString()}] [INFO] Custom Resource Count: 14`
+        ]);
+        setYamlContent(
+          `apiVersion: apiextensions.k8s.io/v1\nkind: CustomResourceDefinition\nmetadata:\n  name: ${selectedResource.name}\nspec:\n  group: cert-manager.io\n  names:\n    kind: Certificate\n    listKind: CertificateList\n    plural: certificates\n    singular: certificate\n  scope: Namespaced\n  versions:\n  - name: v1\n    served: true\n    storage: true\n    schema:\n      openAPIV3Schema:\n        type: object\n        properties:\n          spec:\n            type: object\n            properties:\n              secretName:\n                type: string\n              dnsNames:\n                type: array\n                items:\n                  type: string\n`
+        );
+      } else {
+        setLiveLogs([
+          `[${new Date().toLocaleTimeString()}] [INFO] Starting diagnostics for ${selectedResource.name}...`,
+          `[${new Date().toLocaleTimeString()}] [DEBUG] Fetching properties of type: ${selectedResource.type}`,
+          `[${new Date().toLocaleTimeString()}] [INFO] Port binding check: OK`,
+          `[${new Date().toLocaleTimeString()}] [WARN] Memory utilization currently at ${selectedResource.memory}MB`
+        ]);
+        setYamlContent(
+          `apiVersion: v1\nkind: ${selectedResource.type}\nmetadata:\n  name: ${selectedResource.name}\n  namespace: ${selectedK8sNamespace}\n  labels:\n    app: ${selectedResource.name.split('-')[0]}\n    managed-by: omniterminal\nspec:\n  containers:\n  - name: primary\n    image: ${selectedResource.image || 'unknown'}\n    ports:\n    - containerPort: 80\n    resources:\n      limits:\n        cpu: "500m"\n        memory: "512Mi"\n`
+        );
+      }
     } else {
       setLiveLogs(['Select a resource from the table to inspect logs...']);
       setYamlContent('# Select a resource to inspect YAML manifest');
@@ -181,12 +225,38 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
     }
   }, [liveLogs, autoScrollLogs]);
 
+  const [isSimulated, setIsSimulated] = useState<boolean>(true);
+
+  const fetchResources = async () => {
+    setLoading(true);
+    try {
+      const res = await window.api.dockerK8sListResources(activePlatform, selectedResourceType, selectedK8sNamespace);
+      setIsSimulated(res.isSimulated);
+      if (activePlatform === 'DOCKER') {
+        setDockerResources(prev => ({
+          ...prev,
+          [selectedResourceType]: res.resources
+        }));
+      } else {
+        setK8sResources(prev => ({
+          ...prev,
+          [selectedResourceType]: res.resources
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch resources', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, [activePlatform, selectedResourceType, selectedK8sNamespace, selectedK8sContext, selectedDockerHost]);
+
   // Trigger Refresh
   const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 700);
+    fetchResources();
   };
 
   // Keyboard shortcut listener for Command Palette (Ctrl+K)
@@ -221,17 +291,66 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
     setSelectedRowIds(updated);
   };
 
-  const handleBulkAction = (action: 'start' | 'stop' | 'delete') => {
+  const handleBulkAction = async (action: 'start' | 'stop' | 'delete') => {
     const ids = Object.keys(selectedRowIds).filter(k => selectedRowIds[k]);
     if (ids.length === 0) return;
-    alert(`Bulk ${action} triggered for resources: ${ids.join(', ')}`);
+    setLoading(true);
+    for (const id of ids) {
+      await window.api.dockerK8sExecuteAction(activePlatform, selectedResourceType, action, id);
+    }
     setSelectedRowIds({});
+    await fetchResources();
+    alert(`Bulk ${action} completed.`);
   };
 
   // Context Menu Action Handlers
-  const handleContextMenuAction = (action: string, item: ResourceItem) => {
-    alert(`Triggered "${action}" on ${item.name}`);
+  const handleContextMenuAction = async (action: string, item: ResourceItem) => {
+    setLoading(true);
+    const res = await window.api.dockerK8sExecuteAction(activePlatform, selectedResourceType, action, item.id);
+    await fetchResources();
+    alert(res.message);
     setContextMenu(null);
+  };
+
+  const handleInstallHelm = async () => {
+    if (!helmReleaseName.trim()) return;
+    setLoading(true);
+    await window.api.dockerK8sExecuteAction('K8S', 'helmReleases', 'install', helmReleaseName);
+    await fetchResources();
+    setShowInstallHelmModal(false);
+    setHelmReleaseName('');
+    alert(settings?.language === 'vi' ? `Cài đặt Helm Release "${helmReleaseName}" thành công!` : `Helm Release "${helmReleaseName}" installed successfully!`);
+  };
+
+  const handleUpgradeHelm = async () => {
+    if (!targetUpgradeItem || !upgradeVersion.trim()) return;
+    setLoading(true);
+    await window.api.dockerK8sExecuteAction('K8S', 'helmReleases', 'upgrade', targetUpgradeItem.name);
+    await fetchResources();
+    setShowUpgradeHelmModal(false);
+    setTargetUpgradeItem(null);
+    setUpgradeVersion('');
+    alert(settings?.language === 'vi' ? `Nâng cấp Helm Release thành công!` : `Helm Release upgraded successfully!`);
+  };
+
+  const handleRollbackHelm = async () => {
+    if (!targetRollbackItem) return;
+    setLoading(true);
+    await window.api.dockerK8sExecuteAction('K8S', 'helmReleases', 'rollback', targetRollbackItem.name);
+    await fetchResources();
+    setShowRollbackHelmModal(false);
+    setTargetRollbackItem(null);
+    alert(settings?.language === 'vi' ? `Rollback Helm Release về Revision ${rollbackRevision} thành công!` : `Helm Release rolled back to Revision ${rollbackRevision} successfully!`);
+  };
+
+  const handleUninstallHelm = async (item: ResourceItem) => {
+    const isVi = settings?.language === 'vi';
+    if (confirm(isVi ? `Bạn có chắc chắn muốn gỡ cài đặt Helm release "${item.name}"?` : `Are you sure you want to uninstall Helm release "${item.name}"?`)) {
+      setLoading(true);
+      await window.api.dockerK8sExecuteAction('K8S', 'helmReleases', 'delete', item.name);
+      await fetchResources();
+      alert(isVi ? `Gỡ cài đặt Helm release "${item.name}" thành công.` : `Helm release "${item.name}" uninstalled successfully.`);
+    }
   };
 
   // Simulated Exec Terminal input handler
@@ -461,6 +580,20 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                     >
                       ⚙️ ConfigMaps & Secrets ({k8sResources.configmaps.length})
                     </div>
+                    
+                    <div 
+                      onClick={() => setSelectedResourceType('helmReleases')}
+                      style={{ padding: '6px', cursor: 'pointer', borderRadius: '4px', fontSize: '0.78rem', color: selectedResourceType === 'helmReleases' ? '#c084fc' : 'var(--text-muted)', backgroundColor: selectedResourceType === 'helmReleases' ? 'rgba(192, 132, 252, 0.08)' : 'transparent' }}
+                    >
+                      ⛵ Helm Releases ({(k8sResources.helmReleases || []).length})
+                    </div>
+                    
+                    <div 
+                      onClick={() => setSelectedResourceType('crds')}
+                      style={{ padding: '6px', cursor: 'pointer', borderRadius: '4px', fontSize: '0.78rem', color: selectedResourceType === 'crds' ? '#c084fc' : 'var(--text-muted)', backgroundColor: selectedResourceType === 'crds' ? 'rgba(192, 132, 252, 0.08)' : 'transparent' }}
+                    >
+                      📜 CRDs ({(k8sResources.crds || []).length})
+                    </div>
                   </div>
                 )}
               </div>
@@ -509,9 +642,47 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
                 <option value="stopped">Stopped / Exited</option>
                 <option value="CrashLoopBackOff">CrashLoopBackOff</option>
               </select>
+
+              <div style={{
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                backgroundColor: isSimulated ? 'rgba(245, 158, 11, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                color: isSimulated ? 'var(--accent-warning)' : 'var(--accent-success)',
+                border: '1px solid currentColor',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                height: '32px'
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: 'currentColor',
+                  display: 'inline-block'
+                }} />
+                <span>
+                  {isSimulated 
+                    ? (settings?.language === 'vi' ? '⚠️ Giả lập' : '⚠️ Simulated')
+                    : (settings?.language === 'vi' ? '🔌 Kết nối trực tiếp' : '🔌 Live')
+                  }
+                </span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {selectedResourceType === 'helmReleases' && (
+                <button 
+                  onClick={() => setShowInstallHelmModal(true)} 
+                  className="btn-primary" 
+                  style={{ height: '32px', padding: '0 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Plus size={12} /> {settings?.language === 'vi' ? 'Cài Đặt Chart' : 'Install Chart'}
+                </button>
+              )}
               <button 
                 onClick={() => handleBulkAction('start')} 
                 className="btn-secondary" 
@@ -988,16 +1159,222 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
               </>
             ) : (
               <>
-                <div onClick={() => handleContextMenuAction('Scale Replicas', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>⚖️ Scale Replicas</div>
-                <div onClick={() => handleContextMenuAction('Restart Rollout', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🔄 Restart Rollout</div>
-                <div onClick={() => handleContextMenuAction('Port-Forward', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🚇 Port-Forward</div>
-                <div onClick={() => handleContextMenuAction('View Events', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>📋 View Events</div>
-                <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
-                <div onClick={() => handleContextMenuAction('Delete', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--accent-danger)', cursor: 'pointer' }}>❌ Delete</div>
+                {contextMenu.item.type === 'HelmRelease' ? (
+                  <>
+                    <div onClick={() => { setTargetUpgradeItem(contextMenu.item); setUpgradeVersion(contextMenu.item.image?.match(/Version:\s*([\d.]+)/)?.[1] || '15.1.2'); setShowUpgradeHelmModal(true); setContextMenu(null); }} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🚀 {settings?.language === 'vi' ? 'Nâng Cấp Release' : 'Upgrade Release'}</div>
+                    <div onClick={() => { setTargetRollbackItem(contextMenu.item); setRollbackRevision('1'); setShowRollbackHelmModal(true); setContextMenu(null); }} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>⏮ {settings?.language === 'vi' ? 'Rollback Release' : 'Rollback Release'}</div>
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+                    <div onClick={() => { handleUninstallHelm(contextMenu.item); setContextMenu(null); }} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--accent-danger)', cursor: 'pointer' }}>❌ {settings?.language === 'vi' ? 'Gỡ Cài Đặt Release' : 'Uninstall Release'}</div>
+                  </>
+                ) : contextMenu.item.type === 'CRD' ? (
+                  <>
+                    <div onClick={() => { setSelectedResource(contextMenu.item); setDrawerActiveTab('yaml'); setIsDrawerCollapsed(false); setContextMenu(null); }} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🔍 {settings?.language === 'vi' ? 'Xem Manifest CRD' : 'Inspect CRD Spec'}</div>
+                    <div onClick={() => { alert(settings?.language === 'vi' ? `Đang tải các tài nguyên tùy biến (Custom Resources) của: ${contextMenu.item.name}` : `Viewing Custom Resources for: ${contextMenu.item.name}`); setContextMenu(null); }} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>📋 {settings?.language === 'vi' ? 'Xem Custom Resources' : 'View Custom Resources'}</div>
+                  </>
+                ) : (
+                  <>
+                    <div onClick={() => handleContextMenuAction('Scale Replicas', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>⚖️ Scale Replicas</div>
+                    <div onClick={() => handleContextMenuAction('Restart Rollout', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🔄 Restart Rollout</div>
+                    <div onClick={() => handleContextMenuAction('Port-Forward', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>🚇 Port-Forward</div>
+                    <div onClick={() => handleContextMenuAction('View Events', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }}>📋 View Events</div>
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+                    <div onClick={() => handleContextMenuAction('Delete', contextMenu.item)} style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--accent-danger)', cursor: 'pointer' }}>❌ Delete</div>
+                  </>
+                )}
               </>
             )}
           </div>
         </>
+      )}
+
+      {/* Install Helm Release Modal */}
+      {showInstallHelmModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-focus)',
+            borderRadius: 'var(--radius-md)',
+            padding: '24px',
+            width: '450px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PlusCircle style={{ color: '#c084fc' }} size={20} />
+              {settings?.language === 'vi' ? 'Cài đặt Helm Chart' : 'Install Helm Chart'}
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Release Name *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={helmReleaseName}
+                  onChange={(e) => setHelmReleaseName(e.target.value)}
+                  placeholder="e.g. my-nginx"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Chart Reference *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={helmChartName}
+                  onChange={(e) => setHelmChartName(e.target.value)}
+                  placeholder="e.g. bitnami/nginx"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Chart Version</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={helmVersion}
+                  onChange={(e) => setHelmVersion(e.target.value)}
+                  placeholder="e.g. 15.1.2"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Values (YAML)</label>
+                <textarea 
+                  className="input-field"
+                  rows={4}
+                  value={helmValues}
+                  onChange={(e) => setHelmValues(e.target.value)}
+                  style={{ width: '100%', fontSize: '0.78rem', marginTop: '4px', fontFamily: 'monospace', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <button className="btn-secondary" onClick={() => setShowInstallHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
+                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
+              </button>
+              <button className="btn-primary" onClick={handleInstallHelm} disabled={!helmReleaseName} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
+                {settings?.language === 'vi' ? 'Cài Đặt' : 'Install'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Helm Release Modal */}
+      {showUpgradeHelmModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-focus)',
+            borderRadius: 'var(--radius-md)',
+            padding: '24px',
+            width: '400px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
+              🚀 {settings?.language === 'vi' ? `Nâng cấp: ${targetUpgradeItem?.name}` : `Upgrade: ${targetUpgradeItem?.name}`}
+            </h3>
+            
+            <div>
+              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Target Chart Version *</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={upgradeVersion}
+                onChange={(e) => setUpgradeVersion(e.target.value)}
+                placeholder="e.g. 15.2.0"
+                style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button className="btn-secondary" onClick={() => setShowUpgradeHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
+                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
+              </button>
+              <button className="btn-primary" onClick={handleUpgradeHelm} disabled={!upgradeVersion} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
+                {settings?.language === 'vi' ? 'Nâng Cấp' : 'Upgrade'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rollback Helm Release Modal */}
+      {showRollbackHelmModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-focus)',
+            borderRadius: 'var(--radius-md)',
+            padding: '24px',
+            width: '400px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
+              ⏮ {settings?.language === 'vi' ? `Rollback: ${targetRollbackItem?.name}` : `Rollback: ${targetRollbackItem?.name}`}
+            </h3>
+            
+            <div>
+              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Target Revision *</label>
+              <select 
+                className="input-field" 
+                value={rollbackRevision}
+                onChange={(e) => setRollbackRevision(e.target.value)}
+                style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+              >
+                <option value="1">Revision 1</option>
+                <option value="2">Revision 2</option>
+                <option value="3">Revision 3</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button className="btn-secondary" onClick={() => setShowRollbackHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
+                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
+              </button>
+              <button className="btn-primary" onClick={handleRollbackHelm} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
+                {settings?.language === 'vi' ? 'Rollback' : 'Rollback'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

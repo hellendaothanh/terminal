@@ -116,6 +116,15 @@ contextBridge.exposeInMainWorld('api', {
     return () => ipcRenderer.removeListener('s3:progress', callback);
   },
 
+  /* Docker & K8s APIs */
+  dockerK8sListResources: (platform: 'DOCKER' | 'K8S', resourceType: string, namespace?: string) => ipcRenderer.invoke('docker-k8s:list-resources', { platform, resourceType, namespace }),
+  dockerK8sExecuteAction: (platform: 'DOCKER' | 'K8S', resourceType: string, action: string, nameOrId: string) => ipcRenderer.invoke('docker-k8s:execute-action', { platform, resourceType, action, nameOrId }),
+
+  /* Cloud Explorer APIs */
+  cloudListInstances: () => ipcRenderer.invoke('cloud:list-instances'),
+  cloudAddInstance: (instance: any) => ipcRenderer.invoke('cloud:add-instance', instance),
+  cloudDeleteInstance: (instanceId: string) => ipcRenderer.invoke('cloud:delete-instance', instanceId),
+
   /* RDP APIs */
   rdpConnect: (options: any) => ipcRenderer.invoke('rdp:connect', options),
   rdpResize: (sessionId: string, width: number, height: number) => ipcRenderer.invoke('rdp:resize', { sessionId, width, height }),

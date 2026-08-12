@@ -79,6 +79,13 @@ export interface ElectronAPI {
   s3Disconnect: (sessionId: string) => Promise<boolean>;
   onS3Progress: (callback: (event: any, payload: { sessionId: string; type: 'upload' | 'download'; fileName: string; transferred: number; total: number; percentage: number }) => void) => () => void;
 
+  dockerK8sListResources: (platform: 'DOCKER' | 'K8S', resourceType: string, namespace?: string) => Promise<{ resources: any[]; isSimulated: boolean }>;
+  dockerK8sExecuteAction: (platform: 'DOCKER' | 'K8S', resourceType: string, action: string, nameOrId: string) => Promise<{ success: boolean; message: string }>;
+
+  cloudListInstances: () => Promise<any[]>;
+  cloudAddInstance: (instance: any) => Promise<boolean>;
+  cloudDeleteInstance: (instanceId: string) => Promise<boolean>;
+
   rdpConnect: (options: any) => Promise<{ success: boolean; error?: string }>;
   rdpResize: (sessionId: string, width: number, height: number) => void;
   rdpDisconnect: (sessionId: string) => void;

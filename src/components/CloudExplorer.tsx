@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ServerConfig, Protocol, TerminalSettings } from '../types';
-import { Cloud, Server, RefreshCw, Terminal, Monitor, Plus, CheckCircle, ExternalLink, Globe } from 'lucide-react';
+import { Cloud, Server, RefreshCw, Terminal, Monitor, Plus, CheckCircle, Trash2, PlusCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface CloudExplorerProps {
@@ -28,22 +28,68 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
 }) => {
   const { t } = useTranslation(settings);
   const [selectedProvider, setSelectedProvider] = useState<'ALL' | 'AWS' | 'GCP' | 'AZURE'>('ALL');
-  const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [connectedCloud, setConnectedCloud] = useState<boolean>(true);
+  const [instances, setInstances] = useState<CloudInstance[]>([]);
 
-  const [instances, setInstances] = useState<CloudInstance[]>([
-    { id: 'i-0a12b34c56d78', provider: 'AWS', name: 'prod-api-cluster-node-1', region: 'us-east-1 (N. Virginia)', publicIp: '54.210.12.89', privateIp: '172.31.16.4', state: 'running', instanceType: 't3.xlarge', os: 'Linux' },
-    { id: 'i-0f98e76d54c32', provider: 'AWS', name: 'prod-bastion-host', region: 'us-east-1 (N. Virginia)', publicIp: '3.88.45.102', privateIp: '172.31.32.10', state: 'running', instanceType: 't3.micro', os: 'Linux' },
-    { id: 'gcp-vm-102938', provider: 'GCP', name: 'gcp-bigdata-spark-master', region: 'asia-southeast1 (Singapore)', publicIp: '34.87.110.45', privateIp: '10.148.0.2', state: 'running', instanceType: 'e2-standard-4', os: 'Linux' },
-    { id: 'azure-vm-445566', provider: 'AZURE', name: 'win-rdp-jump-server', region: 'eastus2 (East US 2)', publicIp: '20.120.44.18', privateIp: '10.0.1.5', state: 'running', instanceType: 'Standard_D2s_v3', os: 'Windows' }
-  ]);
+  // Add Instance Modal State
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [newName, setNewName] = useState<string>('');
+  const [newProvider, setNewProvider] = useState<'AWS' | 'GCP' | 'AZURE'>('AWS');
+  const [newRegion, setNewRegion] = useState<string>('us-east-1');
+  const [newPublicIp, setNewPublicIp] = useState<string>('');
+  const [newPrivateIp, setNewPrivateIp] = useState<string>('172.31.0.10');
+  const [newInstanceType, setNewInstanceType] = useState<string>('t3.micro');
+  const [newOs, setNewOs] = useState<'Linux' | 'Windows'>('Linux');
+
+  const fetchInstances = async () => {
+    setLoading(true);
+    try {
+      const data = await window.api.cloudListInstances();
+      setInstances(data || []);
+    } catch (err) {
+      console.error('Failed to load cloud instances:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInstances();
+  }, []);
 
   const handleSyncCloud = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    fetchInstances();
+  };
+
+  const handleAddInstance = async () => {
+    if (!newName.trim() || !newPublicIp.trim()) return;
+    const newItem: CloudInstance = {
+      id: 'cloud_' + Math.random().toString(36).substr(2, 9),
+      provider: newProvider,
+      name: newName,
+      region: newRegion,
+      publicIp: newPublicIp,
+      privateIp: newPrivateIp,
+      state: 'running',
+      instanceType: newInstanceType,
+      os: newOs
+    };
+    await window.api.cloudAddInstance(newItem);
+    await fetchInstances();
+    setShowAddModal(false);
+    // Reset form fields
+    setNewName('');
+    setNewPublicIp('');
+    setNewPrivateIp('172.31.0.10');
+    setNewInstanceType('t3.micro');
+  };
+
+  const handleDeleteInstance = async (id: string) => {
+    const isVi = settings?.language === 'vi';
+    if (confirm(isVi ? 'Bạn có chắc chắn muốn xóa VM này khỏi Cloud Explorer?' : 'Are you sure you want to delete this VM instance?')) {
+      await window.api.cloudDeleteInstance(id);
+      await fetchInstances();
+    }
   };
 
   const handleQuickConnect = (instance: CloudInstance) => {
@@ -86,10 +132,17 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
           </p>
         </div>
 
-        <button className="btn-primary" onClick={handleSyncCloud} disabled={loading} style={{ height: '36px' }}>
-          <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          <span>{t('ceSyncBtn')}</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn-secondary" onClick={() => setShowAddModal(true)} style={{ height: '36px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={14} />
+            <span>{settings?.language === 'vi' ? 'Thêm Instance' : 'Add Instance'}</span>
+          </button>
+          
+          <button className="btn-primary" onClick={handleSyncCloud} disabled={loading} style={{ height: '36px' }}>
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <span>{t('ceSyncBtn')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Provider Selector */}
@@ -145,7 +198,16 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
                   {instance.provider} ({instance.os})
                 </span>
 
-                <span style={{ fontSize: '0.7rem', color: 'var(--accent-success)', fontWeight: 600 }}>● {instance.state}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--accent-success)', fontWeight: 600 }}>● {instance.state}</span>
+                  <button 
+                    onClick={() => handleDeleteInstance(instance.id)}
+                    style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '2px' }}
+                    title="Delete Instance"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
 
               <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
@@ -173,6 +235,134 @@ export const CloudExplorer: React.FC<CloudExplorerProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Add Cloud Instance Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-focus)',
+            borderRadius: 'var(--radius-md)',
+            padding: '24px',
+            width: '400px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PlusCircle style={{ color: 'var(--accent-primary)' }} size={20} />
+              {settings?.language === 'vi' ? 'Thêm Cloud Instance' : 'Add Cloud Instance'}
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Name *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. prod-web-vm"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Cloud Provider</label>
+                <select 
+                  className="input-field" 
+                  value={newProvider}
+                  onChange={(e: any) => setNewProvider(e.target.value)}
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                >
+                  <option value="AWS">AWS</option>
+                  <option value="GCP">GCP</option>
+                  <option value="AZURE">AZURE</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Region</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newRegion}
+                  onChange={(e) => setNewRegion(e.target.value)}
+                  placeholder="e.g. us-east-1"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Public IP *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newPublicIp}
+                  onChange={(e) => setNewPublicIp(e.target.value)}
+                  placeholder="e.g. 54.210.12.89"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Private IP</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newPrivateIp}
+                  onChange={(e) => setNewPrivateIp(e.target.value)}
+                  placeholder="e.g. 172.31.0.10"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Instance Type</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newInstanceType}
+                  onChange={(e) => setNewInstanceType(e.target.value)}
+                  placeholder="e.g. t3.micro"
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Operating System</label>
+                <select 
+                  className="input-field" 
+                  value={newOs}
+                  onChange={(e: any) => setNewOs(e.target.value)}
+                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
+                >
+                  <option value="Linux">Linux</option>
+                  <option value="Windows">Windows</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <button className="btn-secondary" onClick={() => setShowAddModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
+                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
+              </button>
+              <button className="btn-primary" onClick={handleAddInstance} disabled={!newName || !newPublicIp} style={{ height: '32px', fontSize: '0.75rem' }}>
+                {settings?.language === 'vi' ? 'Lưu' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

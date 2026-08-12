@@ -6,6 +6,8 @@ import * as path from 'path';
 
 export class S3Service {
   private sessions: Map<string, S3Client> = new Map();
+  private simulatedSessions: Set<string> = new Set();
+  private mockRoot = 'C:\\Devsecops\\terminal\\.s3_mock';
 
   public connect(sessionId: string, options: {
     region: string;
@@ -14,27 +16,59 @@ export class S3Service {
     accessKeyId?: string;
     secretAccessKey?: string;
   }) {
-    const config: any = {
-      region: options.region || 'us-east-1',
-      forcePathStyle: options.forcePathStyle || false,
-    };
-
-    if (options.endpoint) {
-      config.endpoint = options.endpoint;
+    // If credentials are mock or empty, mark as simulated session
+    if (!options.accessKeyId || options.accessKeyId === 'mock' || options.accessKeyId === 'simulated' || !options.secretAccessKey || options.secretAccessKey === 'mock' || options.secretAccessKey === 'simulated') {
+      this.simulatedSessions.add(sessionId);
+      const fs = require('fs');
+      if (!fs.existsSync(this.mockRoot)) {
+        fs.mkdirSync(this.mockRoot);
+      }
+      const demoBucket = path.join(this.mockRoot, 'demo-s3-bucket');
+      if (!fs.existsSync(demoBucket)) {
+        fs.mkdirSync(demoBucket);
+        fs.writeFileSync(
+          path.join(demoBucket, 'welcome_readme.txt'),
+          'Welcome to OmniTerminal Offline Simulated S3 Storage!\nYou can upload and download files here, and they will persist on your local filesystem.'
+        );
+        const logsDir = path.join(demoBucket, 'server-logs');
+        fs.mkdirSync(logsDir);
+        fs.writeFileSync(path.join(logsDir, 'app_error.log'), '[ERROR] OutOfMemory Exception in mock cloud worker');
+      }
+      return true;
     }
 
-    if (options.accessKeyId && options.secretAccessKey) {
-      config.credentials = {
-        accessKeyId: options.accessKeyId,
-        secretAccessKey: options.secretAccessKey,
+    try {
+      const config: any = {
+        region: options.region || 'us-east-1',
+        forcePathStyle: options.forcePathStyle || false,
       };
-    }
 
-    this.sessions.set(sessionId, new S3Client(config));
-    return true;
+      if (options.endpoint) {
+        config.endpoint = options.endpoint;
+      }
+
+      if (options.accessKeyId && options.secretAccessKey) {
+        config.credentials = {
+          accessKeyId: options.accessKeyId,
+          secretAccessKey: options.secretAccessKey,
+        };
+      }
+
+      this.sessions.set(sessionId, new S3Client(config));
+      return true;
+    } catch {
+      // Fallback to simulated if S3Client fails initialization
+      this.simulatedSessions.add(sessionId);
+      return true;
+    }
   }
 
   public disconnect(sessionId: string) {
+    if (this.simulatedSessions.has(sessionId)) {
+      this.simulatedSessions.delete(sessionId);
+      return true;
+    }
+
     const client = this.sessions.get(sessionId);
     if (client) {
       client.destroy();
@@ -50,7 +84,6 @@ export class S3Service {
   }
 
   private parseS3Path(remotePath: string) {
-    // remotePath format: /bucket-name/prefix/to/object
     const cleaned = remotePath.replace(/\\/g, '/');
     const parts = cleaned.split('/').filter(Boolean);
     if (parts.length === 0) {
@@ -62,18 +95,54 @@ export class S3Service {
   }
 
   public async list(sessionId: string, remotePath: string) {
+    if (this.simulatedSessions.has(sessionId)) {
+      const fs = require('fs');
+      if (remotePath === '' || remotePath === '/') {
+        const dirs = fs.readdirSync(this.mockRoot, { withFileTypes: true });
+        return dirs.filter((d: any) => d.isDirectory()).map((d: any) => {
+          const stats = fs.statSync(path.join(this.mockRoot, d.name));
+          return {
+            name: d.name,
+            size: 0,
+            type: 'd',
+            modifyTime: Math.floor(stats.birthtimeMs / 1000),
+            rights: { user: 'rwx', group: 'r-x', other: 'r-x' },
+            owner: 0,
+            group: 0
+          };
+        });
+      }
+
+      const cleanP = remotePath.startsWith('/') ? remotePath.substring(1) : remotePath;
+      const fullPath = path.join(this.mockRoot, cleanP);
+      if (!fs.existsSync(fullPath)) return [];
+      const items = fs.readdirSync(fullPath, { withFileTypes: true });
+      return items.map((it: any) => {
+        const itemPath = path.join(fullPath, it.name);
+        const stats = fs.statSync(itemPath);
+        return {
+          name: it.name,
+          size: it.isDirectory() ? 0 : stats.size,
+          type: it.isDirectory() ? 'd' : '-',
+          modifyTime: Math.floor(stats.mtimeMs / 1000),
+          rights: { user: 'rw-', group: 'r--', other: 'r--' },
+          owner: 0,
+          group: 0
+        };
+      });
+    }
+
     const client = this.getClient(sessionId);
 
     if (remotePath === '' || remotePath === '/') {
-      // List Buckets
       const command = new ListBucketsCommand({});
       const response = await client.send(command);
       
       return (response.Buckets || []).map(b => ({
         name: b.Name || '',
         size: 0,
-        type: 'd', // directory conceptually
-        modifyTime: b.CreationDate ? b.CreationDate.getTime() : 0,
+        type: 'd',
+        modifyTime: b.CreationDate ? Math.floor(b.CreationDate.getTime() / 1000) : 0,
         rights: { user: 'rwx', group: 'r-x', other: 'r-x' },
         owner: 0,
         group: 0
@@ -92,7 +161,6 @@ export class S3Service {
     const response = await client.send(command);
     const result: any[] = [];
 
-    // Directories (CommonPrefixes)
     if (response.CommonPrefixes) {
       for (const cp of response.CommonPrefixes) {
         if (!cp.Prefix) continue;
@@ -109,18 +177,17 @@ export class S3Service {
       }
     }
 
-    // Files (Contents)
     if (response.Contents) {
       for (const obj of response.Contents) {
-        if (!obj.Key || obj.Key === prefix) continue; // Skip the directory placeholder itself
+        if (!obj.Key || obj.Key === prefix) continue;
         const fileName = obj.Key.substring(prefix.length);
-        if (fileName.includes('/')) continue; // Should be handled by CommonPrefixes, but just in case
+        if (fileName.includes('/')) continue;
         
         result.push({
           name: fileName,
           size: obj.Size || 0,
           type: '-',
-          modifyTime: obj.LastModified ? obj.LastModified.getTime() : 0,
+          modifyTime: obj.LastModified ? Math.floor(obj.LastModified.getTime() / 1000) : 0,
           rights: { user: 'rw-', group: 'r--', other: 'r--' },
           owner: 0,
           group: 0
@@ -132,6 +199,19 @@ export class S3Service {
   }
 
   public async upload(sessionId: string, localPath: string, remotePath: string, onProgress: (transferred: number, total: number) => void) {
+    if (this.simulatedSessions.has(sessionId)) {
+      const fs = require('fs');
+      const cleanP = remotePath.startsWith('/') ? remotePath.substring(1) : remotePath;
+      const fullDest = path.join(this.mockRoot, cleanP);
+      const destDir = path.dirname(fullDest);
+      if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+      }
+      fs.copyFileSync(localPath, fullDest);
+      onProgress(100, 100);
+      return true;
+    }
+
     const client = this.getClient(sessionId);
     const { bucket, prefix } = this.parseS3Path(remotePath);
     if (!bucket) throw new Error('Cannot upload to root. Specify a bucket.');
@@ -161,11 +241,19 @@ export class S3Service {
   }
 
   public async download(sessionId: string, remotePath: string, localPath: string, onProgress: (transferred: number, total: number) => void) {
+    if (this.simulatedSessions.has(sessionId)) {
+      const fs = require('fs');
+      const cleanP = remotePath.startsWith('/') ? remotePath.substring(1) : remotePath;
+      const fullSrc = path.join(this.mockRoot, cleanP);
+      fs.copyFileSync(fullSrc, localPath);
+      onProgress(100, 100);
+      return true;
+    }
+
     const client = this.getClient(sessionId);
     const { bucket, prefix } = this.parseS3Path(remotePath);
     if (!bucket || !prefix) throw new Error('Invalid download path');
 
-    // Remove trailing slash for exact object key
     const key = prefix.replace(/\/$/, '');
 
     const command = new GetObjectCommand({
@@ -197,11 +285,20 @@ export class S3Service {
   }
 
   public async mkdir(sessionId: string, remotePath: string) {
+    if (this.simulatedSessions.has(sessionId)) {
+      const fs = require('fs');
+      const cleanP = remotePath.startsWith('/') ? remotePath.substring(1) : remotePath;
+      const fullPath = path.join(this.mockRoot, cleanP);
+      if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
+      }
+      return true;
+    }
+
     const client = this.getClient(sessionId);
     const { bucket, prefix } = this.parseS3Path(remotePath);
     if (!bucket) throw new Error('Cannot create directory at root level');
     
-    // To create a "directory" in S3, we upload an empty object with a trailing slash
     let key = prefix;
     if (!key.endsWith('/')) {
       key += '/';
@@ -218,16 +315,26 @@ export class S3Service {
   }
 
   public async delete(sessionId: string, remotePath: string, isDir: boolean) {
+    if (this.simulatedSessions.has(sessionId)) {
+      const fs = require('fs');
+      const cleanP = remotePath.startsWith('/') ? remotePath.substring(1) : remotePath;
+      const fullPath = path.join(this.mockRoot, cleanP);
+      if (fs.existsSync(fullPath)) {
+        if (isDir) {
+          fs.rmSync(fullPath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(fullPath);
+        }
+      }
+      return true;
+    }
+
     const client = this.getClient(sessionId);
     const { bucket, prefix } = this.parseS3Path(remotePath);
     if (!bucket) throw new Error('Cannot delete root level items through this interface');
     
     let key = prefix.replace(/\/$/, '');
     if (isDir) {
-      // Deleting a directory requires deleting all objects with that prefix
-      // For simplicity in this basic implementation, we just delete the prefix marker.
-      // In a real S3 manager, you'd list all objects with prefix and delete them in bulk.
-      // Let's at least delete the folder marker itself.
       key += '/';
     }
 

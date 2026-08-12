@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw } from 'lucide-react';
+import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
@@ -92,6 +92,12 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   const [historyCommands, setHistoryCommands] = useState<string[]>([]);
   const [anomalyAlert, setAnomalyAlert] = useState<string | null>(null);
 
+  // AI Autofix states
+  const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiExplanation, setAiExplanation] = useState<string>('');
+  const [aiSuggestedCommand, setAiSuggestedCommand] = useState<string>('');
+
   const HIGH_RISK_COMMANDS = ['rm -rf', 'drop database', 'drop table', 'truncate', 'chmod 777', 'mkfs', 'dd if=', 'shutdown', 'reboot', 'systemctl stop'];
 
   const checkDangerousCommand = (cmd: string): 'HIGH' | 'MEDIUM' | null => {
@@ -109,16 +115,26 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
     'Segmentation Fault',
     'segmentation fault',
     'Permission denied',
+    'Permission Denied',
+    'permission denied',
     'FATAL ERROR',
     'Panic: ',
     'SyntaxError',
-    'Uncaught Exception'
+    'Uncaught Exception',
+    'command not found',
+    'not found',
+    'no such file or directory',
+    'Cannot find module',
+    'is not recognized as an internal or external command',
+    'Access denied',
+    'fatal:',
+    'FAILED'
   ];
 
   const checkAnomalyLogs = (text: string) => {
     for (const kw of ANOMALY_KEYWORDS) {
       if (text.includes(kw)) {
-        setAnomalyAlert(`Phát hiện lỗi nghiêm trọng trong log: "${kw}"`);
+        setAnomalyAlert(settings.language === 'vi' ? `Phát hiện lỗi log: "${kw}"` : `Log error detected: "${kw}"`);
         break;
       }
     }
@@ -186,6 +202,46 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
           setIsReAuthOpen(false);
         }
       });
+  };
+
+  const handleTriggerAutofix = async () => {
+    const bufferGetter = (window as any).__activeBuffers?.[sessionId];
+    const textContext = bufferGetter ? bufferGetter().text : '';
+
+    setShowAiPanel(true);
+    setAiLoading(true);
+    setAiExplanation('');
+    setAiSuggestedCommand('');
+
+    const isVi = settings.language === 'vi';
+    const prompt = isVi
+      ? `Bạn là chuyên gia DevOps và Quản trị Hệ thống. Hãy phân tích lỗi/sự cố trong log Terminal SSH sau:
+${textContext}
+
+Hãy thực hiện:
+1. Giải thích nguyên nhân sự cố ngắn gọn (2-3 câu).
+2. Đề xuất câu lệnh Unix/Shell sửa đổi chính xác. Đặt câu lệnh này DUY NHẤT trong khối code block markdown dạng \`\`\`bash ... \`\`\`.`
+      : `You are a DevOps and System Administration expert. Diagnose the failure/error in this SSH Terminal output:
+${textContext}
+
+Please:
+1. Explain the cause of the failure briefly (2-3 sentences).
+2. Propose the corrected Unix/Shell command. Place the suggested command ONLY inside a markdown code block like \`\`\`bash ... \`\`\`.`;
+
+    try {
+      const config = settings.ai || { provider: 'gemini', enabled: true, model: 'gemini-1.5-flash', apiKey: '' };
+      const reply = await window.api.aiSendMessage(prompt, config);
+      setAiExplanation(reply);
+
+      const match = reply.match(/```bash([\s\S]*?)```/i);
+      if (match && match[1]) {
+        setAiSuggestedCommand(match[1].trim());
+      }
+    } catch (err: any) {
+      setAiExplanation(isVi ? `Lỗi khi gọi AI Assistant: ${err.message || err}` : `AI Assistant Error: ${err.message || err}`);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleReconnect = () => {
@@ -520,6 +576,84 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
         }}
       />
 
+      {/* Floating AI Autofix Pane */}
+      {showAiPanel && (
+        <div style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderTop: '1px solid var(--border-subtle)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          maxHeight: '220px',
+          overflowY: 'auto',
+          userSelect: 'text'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-main)' }}>
+              <Sparkles size={14} style={{ color: 'var(--accent-primary)' }} />
+              <span>{settings.language === 'vi' ? 'AI Chẩn Đoán & Sửa Lỗi Tự Động' : 'AI Diagnostics & Autofix'}</span>
+            </div>
+            <button 
+              onClick={() => setShowAiPanel(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.85rem' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {aiLoading ? (
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 0' }}>
+              <RotateCcw size={14} className="spin" /> 
+              {settings.language === 'vi' ? 'Đang phân tích lỗi trong terminal...' : 'Analyzing terminal logs...'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.78rem' }}>
+              <div style={{ color: 'var(--text-muted)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                {aiExplanation}
+              </div>
+
+              {aiSuggestedCommand && (
+                <div style={{
+                  backgroundColor: 'var(--bg-tertiary)',
+                  padding: '10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                    {settings.language === 'vi' ? 'CÂU LỆNH ĐỀ XUẤT:' : 'SUGGESTED COMMAND:'}
+                  </div>
+                  <pre style={{
+                    fontFamily: 'monospace',
+                    fontSize: '0.72rem',
+                    color: 'var(--accent-success)',
+                    margin: 0,
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {aiSuggestedCommand}
+                  </pre>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => {
+                      window.api.sshWrite(sessionId, aiSuggestedCommand + '\n');
+                      setShowAiPanel(false);
+                      setAnomalyAlert(null);
+                    }}
+                    style={{ alignSelf: 'flex-end', height: '26px', padding: '0 10px', fontSize: '0.72rem' }}
+                  >
+                    {settings.language === 'vi' ? 'Chạy Lệnh (1-Click)' : 'Run Command (1-Click)'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Shell Smart Assistant: Auto-completion & Log Anomaly Alert Banner */}
       <ShellSmartAssistant
         currentInput={currentInput}
@@ -532,6 +666,9 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
             setCurrentInput(suggestion);
           }
         }}
+        onTriggerAutofix={handleTriggerAutofix}
+        aiFixLoading={aiLoading}
+        language={settings.language}
       />
 
       {/* Command Guard Approval Modal */}

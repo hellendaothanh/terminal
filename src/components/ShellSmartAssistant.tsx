@@ -7,6 +7,9 @@ interface AutoCompletionBarProps {
   onSelectSuggestion: (suggestion: string) => void;
   onClearAnomalyAlert?: () => void;
   anomalyAlert?: string | null;
+  onTriggerAutofix?: () => void;
+  aiFixLoading?: boolean;
+  language?: 'vi' | 'en';
 }
 
 const COMMON_COMMANDS = [
@@ -37,7 +40,10 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
   historyCommands = [],
   onSelectSuggestion,
   onClearAnomalyAlert,
-  anomalyAlert
+  anomalyAlert,
+  onTriggerAutofix,
+  aiFixLoading,
+  language
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -86,25 +92,53 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShieldAlert size={16} style={{ color: '#ef4444' }} />
-            <span>⚠️ CẢNH BÁO PHÁT HIỆN SỰ CỐ LOG: {anomalyAlert}</span>
+            <span>
+              {language === 'vi' 
+                ? `⚠️ CẢNH BÁO PHÁT HIỆN SỰ CỐ LOG: ${anomalyAlert}`
+                : `⚠️ LOG ANOMALY DETECTED: ${anomalyAlert}`}
+            </span>
           </div>
 
-          {onClearAnomalyAlert && (
-            <button
-              onClick={onClearAnomalyAlert}
-              style={{
-                background: 'rgba(239, 68, 68, 0.3)',
-                border: '1px solid rgba(239, 68, 68, 0.5)',
-                color: '#ffffff',
-                borderRadius: '4px',
-                padding: '2px 8px',
-                fontSize: '0.7rem',
-                cursor: 'pointer'
-              }}
-            >
-              Đã hiểu / Xóa cảnh báo
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {onTriggerAutofix && (
+              <button
+                onClick={onTriggerAutofix}
+                disabled={aiFixLoading}
+                style={{
+                  background: 'rgba(59, 130, 246, 0.4)',
+                  border: '1px solid rgba(59, 130, 246, 0.6)',
+                  color: '#ffffff',
+                  borderRadius: '4px',
+                  padding: '2px 10px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontWeight: 600
+                }}
+              >
+                <Sparkles size={11} className={aiFixLoading ? 'spin' : ''} />
+                {language === 'vi' ? 'Sửa Lỗi Bằng AI' : 'AI Autofix'}
+              </button>
+            )}
+            {onClearAnomalyAlert && (
+              <button
+                onClick={onClearAnomalyAlert}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.3)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: '#ffffff',
+                  borderRadius: '4px',
+                  padding: '2px 8px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'vi' ? 'Đã hiểu' : 'Dismiss'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -121,11 +155,13 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 600 }}>
           <Sparkles size={13} />
-          <span>Gợi ý lệnh:</span>
+          <span>{language === 'vi' ? 'Gợi ý lệnh:' : 'Suggestions:'}</span>
         </div>
 
         {suggestions.length === 0 ? (
-          <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Nhập lệnh để xem gợi ý thông minh...</span>
+          <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>
+            {language === 'vi' ? 'Nhập lệnh để xem gợi ý thông minh...' : 'Type commands to get smart suggestions...'}
+          </span>
         ) : (
           suggestions.map((suggestion, idx) => (
             <button

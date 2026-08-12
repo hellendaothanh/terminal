@@ -15,6 +15,7 @@ import { LogTailService } from './services/logTailService';
 import { TeamSyncService } from './services/teamSyncService';
 import { PluginService } from './services/pluginService';
 import { NetDiagnosticsService } from './services/netDiagnosticsService';
+import { DockerK8sService } from './services/dockerK8sService';
 
 let mainWindow: BrowserWindow | null = null;
 const vaultService = new VaultService();
@@ -31,6 +32,7 @@ const logTailService = new LogTailService();
 const teamSyncService = new TeamSyncService();
 const pluginService = new PluginService();
 const netDiagnosticsService = new NetDiagnosticsService();
+const dockerK8sService = new DockerK8sService();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -444,6 +446,57 @@ function setupIpcHandlers() {
 
   ipcMain.handle('s3:disconnect', async (event, sessionId) => {
     return s3Service.disconnect(sessionId);
+  });
+
+  // --- Docker & K8s Explorer ---
+  ipcMain.handle('docker-k8s:list-resources', async (_, { platform, resourceType, namespace }) => {
+    return dockerK8sService.listResources(platform, resourceType, namespace);
+  });
+
+  ipcMain.handle('docker-k8s:execute-action', async (_, { platform, resourceType, action, nameOrId }) => {
+    return dockerK8sService.executeAction(platform, resourceType, action, nameOrId);
+  });
+
+  // --- Cloud Explorer VM Persistence ---
+  ipcMain.handle('cloud:list-instances', async () => {
+    const filePath = 'C:\\Devsecops\\terminal\\.instances.json';
+    if (!fs.existsSync(filePath)) {
+      const defaultInstances = [
+        { id: 'i-0a12b34c56d78', provider: 'AWS', name: 'prod-api-cluster-node-1', region: 'us-east-1 (N. Virginia)', publicIp: '54.210.12.89', privateIp: '172.31.16.4', state: 'running', instanceType: 't3.xlarge', os: 'Linux' },
+        { id: 'i-0f98e76d54c32', provider: 'AWS', name: 'prod-bastion-host', region: 'us-east-1 (N. Virginia)', publicIp: '3.88.45.102', privateIp: '172.31.32.10', state: 'running', instanceType: 't3.micro', os: 'Linux' },
+        { id: 'gcp-vm-102938', provider: 'GCP', name: 'gcp-bigdata-spark-master', region: 'asia-southeast1 (Singapore)', publicIp: '34.87.110.45', privateIp: '10.148.0.2', state: 'running', instanceType: 'e2-standard-4', os: 'Linux' },
+        { id: 'azure-vm-445566', provider: 'AZURE', name: 'win-rdp-jump-server', region: 'eastus2 (East US 2)', publicIp: '20.120.44.18', privateIp: '10.0.1.5', state: 'running', instanceType: 'Standard_D2s_v3', os: 'Windows' }
+      ];
+      fs.writeFileSync(filePath, JSON.stringify(defaultInstances, null, 2));
+      return defaultInstances;
+    }
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    } catch {
+      return [];
+    }
+  });
+
+  ipcMain.handle('cloud:add-instance', async (_, instance) => {
+    const filePath = 'C:\\Devsecops\\terminal\\.instances.json';
+    let list: any[] = [];
+    if (fs.existsSync(filePath)) {
+      try { list = JSON.parse(fs.readFileSync(filePath, 'utf-8')); } catch {}
+    }
+    list.push(instance);
+    fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
+    return true;
+  });
+
+  ipcMain.handle('cloud:delete-instance', async (_, instanceId) => {
+    const filePath = 'C:\\Devsecops\\terminal\\.instances.json';
+    let list: any[] = [];
+    if (fs.existsSync(filePath)) {
+      try { list = JSON.parse(fs.readFileSync(filePath, 'utf-8')); } catch {}
+    }
+    const filtered = list.filter((i: any) => i.id !== instanceId);
+    fs.writeFileSync(filePath, JSON.stringify(filtered, null, 2));
+    return true;
   });
 
   /* ================= RDP Protocol Handlers ================= */

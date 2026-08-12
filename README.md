@@ -116,6 +116,14 @@
 * **Pre-Connection Validation:** Instantly test server/database network connectivity (Ping latency, trace routes, look up DNS records, or scan specific ports) directly from the Server/DB configuration modal before launching SSH, RDP, or Database clients.
 * **Auto-Populated Targets:** Hostnames and IP addresses are automatically synchronized with the server profile configuration form for a frictionless diagnostic workflow.
 
+### 25. 🤖 Terminal AI Autofix & Error Explainer (Bilingual EN/VI)
+* **Intelligent Diagnostics:** Captures execution history or query errors in real time when an SSH shell command or SQL query fails. Shows a contextual "AI Fix" helper card that diagnoses the root cause of the error.
+* **1-Click Autofix:** Generates standard corrected commands/queries with one-click injection and execution support, restoring system runtime without manual troubleshooting.
+
+### 26. ⛵ Advanced Helm Release & CRD Explorer for Kubernetes
+* **Helm Charts Management:** Visual management dashboard to search, install, upgrade, rollback (with revision histories), or uninstall Helm releases in a namespace directly from the 3-Pane explorer.
+* **CRD Schema Inspector:** Hierarchical inspection of Custom Resource Definitions (CRDs) including API Groups, Scope types, and OpenAPI v3 validation specs.
+
 ---
 
 ## 🔮 Roadmap & Future Features

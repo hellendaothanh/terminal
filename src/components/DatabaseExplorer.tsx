@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Clock,
   Layers,
-  FileCode
+  FileCode,
+  Activity
 } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { useTranslation } from '../i18n/useTranslation';
@@ -47,6 +48,12 @@ export const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const [executing, setExecuting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isReAuthOpen, setIsReAuthOpen] = useState<boolean>(false);
+
+  // AI Autofix states
+  const [aiFixLoading, setAiFixLoading] = useState(false);
+  const [aiFixExplanation, setAiFixExplanation] = useState('');
+  const [aiFixSuggestedQuery, setAiFixSuggestedQuery] = useState('');
+  const [showAiFixPanel, setShowAiFixPanel] = useState(false);
 
   useEffect(() => {
     (window as any).__activeBuffers = (window as any).__activeBuffers || {};
@@ -141,9 +148,54 @@ export const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (!q.trim()) return;
 
     setExecuting(true);
+    setShowAiFixPanel(false);
+    setAiFixExplanation('');
+    setAiFixSuggestedQuery('');
     const res = await window.api.dbExecuteQuery(sessionId, dbType, q, selectedDb);
     setQueryResult(res);
     setExecuting(false);
+  };
+
+  const handleSQLAutofix = async () => {
+    if (!queryResult?.error) return;
+    setAiFixLoading(true);
+    setShowAiFixPanel(true);
+    setAiFixExplanation('');
+    setAiFixSuggestedQuery('');
+
+    const isVi = settings?.language === 'vi';
+    const prompt = isVi 
+      ? `Bạn là một chuyên gia quản trị CSDL cao cấp. Hãy phân tích lỗi SQL sau đây:
+CSDL: ${dbType}
+Câu lệnh đã chạy: ${queryInput}
+Thông báo lỗi: ${queryResult.error}
+
+Hãy thực hiện:
+1. Giải thích nguyên nhân lỗi ngắn gọn (2-3 câu).
+2. Đề xuất câu lệnh SQL đã sửa chính xác. Đặt câu lệnh này DUY NHẤT trong khối code block markdown dạng \`\`\`sql ... \`\`\`.`
+      : `You are a senior Database Administrator. Analyze the following SQL query error:
+Database Engine: ${dbType}
+Executed Query: ${queryInput}
+Error Message: ${queryResult.error}
+
+Please:
+1. Explain the cause of the error briefly (2-3 sentences).
+2. Suggest the corrected SQL query. Place the suggested query ONLY inside a markdown code block like \`\`\`sql ... \`\`\`.`;
+
+    try {
+      const config = settings?.ai || { provider: 'gemini', enabled: true, model: 'gemini-1.5-flash', apiKey: '' };
+      const reply = await window.api.aiSendMessage(prompt, config);
+      setAiFixExplanation(reply);
+
+      const match = reply.match(/```sql([\s\S]*?)```/i);
+      if (match && match[1]) {
+        setAiFixSuggestedQuery(match[1].trim());
+      }
+    } catch (e: any) {
+      setAiFixExplanation(isVi ? `Lỗi khi gọi AI Assistant: ${e.message || e}` : `AI Assistant Error: ${e.message || e}`);
+    } finally {
+      setAiFixLoading(false);
+    }
   };
 
   const handleRetryAuth = (newPassword: string, saveToVault: boolean) => {
@@ -354,15 +406,112 @@ export const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               Đang kết nối tới máy chủ CSDL {dbType}...
             </div>
           ) : queryResult?.error ? (
-            <div style={{
-              padding: '16px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--accent-danger)',
-              fontSize: '0.85rem'
-            }}>
-              <strong>Lỗi thực thi SQL:</strong> {queryResult.error}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{
+                padding: '16px',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--accent-danger)',
+                fontSize: '0.85rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '12px'
+              }}>
+                <div>
+                  <strong>{settings?.language === 'vi' ? 'Lỗi thực thi SQL:' : 'SQL Execution Error:'}</strong> {queryResult.error}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSQLAutofix}
+                  disabled={aiFixLoading}
+                  className="btn-secondary"
+                  style={{
+                    fontSize: '0.72rem',
+                    padding: '4px 10px',
+                    height: '28px',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    borderColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary)'
+                  }}
+                >
+                  <Activity size={12} className={aiFixLoading ? 'spin' : ''} />
+                  {settings?.language === 'vi' ? 'Sửa Lỗi Bằng AI' : 'AI Fix Error'}
+                </button>
+              </div>
+
+              {showAiFixPanel && (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+                    <Activity size={14} style={{ color: 'var(--accent-primary)' }} />
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      {settings?.language === 'vi' ? 'Giải Thích & Gợi Ý từ AI' : 'AI Diagnostics & Suggestion'}
+                    </span>
+                  </div>
+
+                  {aiFixLoading ? (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <RefreshCw size={14} className="spin" />
+                      {settings?.language === 'vi' ? 'Đang phân tích câu lệnh SQL...' : 'Analyzing SQL query error...'}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
+                      <div style={{ color: 'var(--text-muted)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                        {aiFixExplanation}
+                      </div>
+
+                      {aiFixSuggestedQuery && (
+                        <div style={{
+                          backgroundColor: 'var(--bg-tertiary)',
+                          padding: '12px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--border-subtle)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                            {settings?.language === 'vi' ? 'CÂU LỆNH ĐỀ XUẤT:' : 'SUGGESTED SQL QUERY:'}
+                          </div>
+                          <pre style={{
+                            fontFamily: 'monospace',
+                            fontSize: '0.75rem',
+                            color: 'var(--accent-success)',
+                            margin: 0,
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {aiFixSuggestedQuery}
+                          </pre>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => {
+                              setQueryInput(aiFixSuggestedQuery);
+                              runQuery(aiFixSuggestedQuery);
+                              setShowAiFixPanel(false);
+                            }}
+                            style={{ alignSelf: 'flex-end', height: '28px', padding: '0 12px', fontSize: '0.74rem' }}
+                          >
+                            {settings?.language === 'vi' ? 'Áp dụng & Chạy lại (1-Click)' : 'Apply & Run (1-Click)'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : queryResult ? (
             <div>
