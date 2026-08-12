@@ -40,6 +40,7 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
   const [contextSourceInfo, setContextSourceInfo] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setMessages([
@@ -122,13 +123,18 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
     }
   };
 
+
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setToastMsg(settings.language === 'vi' ? 'Copy thành công!' : 'Copied successfully!');
+    setTimeout(() => {
+      setCopiedId(null);
+      setToastMsg(null);
+    }, 2000);
   };
 
-  // Helper parser: formats Markdown code blocks, **bold**, and `inline code`
+  // Helper parser: formats Markdown code blocks, headings, lists, **bold**, and `inline code`
   const renderFormattedContent = (content: string) => {
     // Split by code blocks ```lang ... ```
     const codeBlockRegex = /```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
@@ -154,6 +160,34 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
     if (lastIndex < content.length) {
       parts.push({ type: 'text', value: content.substring(lastIndex) });
     }
+
+    const renderInlineMarkdown = (text: string) => {
+      const inlineRegex = /(\*\*.*?\*\*|`.*?`)/g;
+      const lineParts = text.split(inlineRegex);
+      return lineParts.map((sub, sIdx) => {
+        if (sub.startsWith('**') && sub.endsWith('**')) {
+          return <strong key={sIdx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>{sub.slice(2, -2)}</strong>;
+        }
+        if (sub.startsWith('`') && sub.endsWith('`')) {
+          return (
+            <code
+              key={sIdx}
+              style={{
+                backgroundColor: 'var(--bg-tertiary)',
+                color: '#f43f5e',
+                padding: '2px 5px',
+                borderRadius: '4px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-mono)'
+              }}
+            >
+              {sub.slice(1, -1)}
+            </code>
+          );
+        }
+        return sub;
+      });
+    };
 
     return parts.map((part, index) => {
       if (part.type === 'code') {
@@ -196,10 +230,18 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
                 <button
                   onClick={() => handleCopy(`code_${index}`, part.code || '')}
                   className="btn-secondary"
-                  style={{ padding: '2px 6px', fontSize: '0.7rem', height: '22px' }}
+                  style={{
+                    padding: '2px 6px',
+                    fontSize: '0.7rem',
+                    height: '22px',
+                    backgroundColor: copiedId === `code_${index}` ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-tertiary)',
+                    borderColor: copiedId === `code_${index}` ? 'var(--accent-success)' : 'var(--border-subtle)',
+                    color: copiedId === `code_${index}` ? 'var(--accent-success)' : 'var(--text-main)',
+                    transition: 'all 0.2s ease'
+                  }}
                 >
-                  <Copy size={11} />
-                  <span>{t('copyCode')}</span>
+                  {copiedId === `code_${index}` ? <Check size={11} /> : <Copy size={11} />}
+                  <span>{copiedId === `code_${index}` ? (settings.language === 'vi' ? 'Đã copy!' : 'Copied!') : t('copyCode')}</span>
                 </button>
               </div>
             </div>
@@ -219,43 +261,46 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
           </div>
         );
       } else {
-        // Simple inline markdown formatting parser for **bold** and `inline code`
         const textLines = (part.value || '').split('\n');
 
         return (
           <div key={index}>
             {textLines.map((line, lIdx) => {
-              if (!line.trim()) return <br key={lIdx} />;
+              const trimmedLine = line.trim();
+              if (!trimmedLine) return <br key={lIdx} />;
 
-              // Process **bold** and `code`
-              const inlineRegex = /(\*\*.*?\*\*|`.*?`)/g;
-              const lineParts = line.split(inlineRegex);
+              // Divider / Horizontal rule
+              if (/^(?:---+|\*\*\*+|___+)$/.test(trimmedLine)) {
+                return <hr key={lIdx} style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '12px 0' }} />;
+              }
+
+              // Headings
+              const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+              if (headingMatch) {
+                const level = headingMatch[1].length;
+                const text = headingMatch[2];
+                const fontSize = level === 1 ? '1.2rem' : level === 2 ? '1.05rem' : '0.92rem';
+                return (
+                  <h4 key={lIdx} style={{ fontSize, fontWeight: 600, color: 'var(--text-main)', margin: '12px 0 6px 0' }}>
+                    {text}
+                  </h4>
+                );
+              }
+
+              // List items
+              const listMatch = line.match(/^(\*|-|\+)\s+(.+)$/);
+              if (listMatch) {
+                const text = listMatch[2];
+                return (
+                  <li key={lIdx} style={{ marginLeft: '16px', listStyleType: 'disc', margin: '4px 0', color: 'var(--text-main)' }}>
+                    {renderInlineMarkdown(text)}
+                  </li>
+                );
+              }
 
               return (
-                <p key={lIdx} style={{ margin: '4px 0' }}>
-                  {lineParts.map((sub, sIdx) => {
-                    if (sub.startsWith('**') && sub.endsWith('**')) {
-                      return <strong key={sIdx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>{sub.slice(2, -2)}</strong>;
-                    }
-                    if (sub.startsWith('`') && sub.endsWith('`')) {
-                      return (
-                        <code
-                          key={sIdx}
-                          style={{
-                            backgroundColor: 'var(--bg-tertiary)',
-                            color: '#f43f5e',
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            fontSize: '0.78rem',
-                            fontFamily: 'var(--font-mono)'
-                          }}
-                        >
-                          {sub.slice(1, -1)}
-                        </code>
-                      );
-                    }
-                    return sub;
-                  })}
+                <p key={lIdx} style={{ margin: '4px 0', lineHeight: '1.4' }}>
+                  {renderInlineMarkdown(line)}
                 </p>
               );
             })}
@@ -275,9 +320,33 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
         flexDirection: 'column',
         height: '100%',
         boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.3)',
-        userSelect: 'none'
+        userSelect: 'none',
+        position: 'relative'
       }}
     >
+      {toastMsg && (
+        <div style={{
+          position: 'absolute',
+          top: '60px',
+          right: '16px',
+          zIndex: 100,
+          backgroundColor: 'rgba(34, 197, 94, 0.95)',
+          color: '#ffffff',
+          padding: '6px 12px',
+          borderRadius: 'var(--radius-sm)',
+          boxShadow: 'var(--shadow-lg)',
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <Check size={14} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
       {/* Header Bar */}
       <div
         style={{

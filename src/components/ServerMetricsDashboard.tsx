@@ -22,13 +22,15 @@ interface ServerMetricsDashboardProps {
   keyObj?: SSHKey;
   refreshIntervalMs?: number; // Default 3000ms
   compact?: boolean;
+  vaultConfig?: any;
 }
 
 export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
   server,
   keyObj,
   refreshIntervalMs = 3000,
-  compact = false
+  compact = false,
+  vaultConfig
 }) => {
   const [metrics, setMetrics] = useState<ServerMetrics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -119,23 +121,25 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
 
     // Single lightweight bash command sequence
     const cmd = `
-      top -bn1 | grep "Cpu(s)" | sed "s/.*, *\\([0-9.]*\\)%* id.*/\\1/" | awk '{print 100 - $1}' || echo "0"
-      echo "---METRICS_DELIM---"
-      free -m | awk 'NR==2{print $2" "$3}' || echo "0 0"
-      echo "---METRICS_DELIM---"
-      df -k / | awk 'NR==2{print $2" "$3" "$5}' || echo "0 0 0%"
-      echo "---METRICS_DELIM---"
-      R1=$(cat /proc/net/dev | grep -v "lo:" | awk 'NR>2 {r+=$2; t+=$10} END {print r" "t}')
+      CPU1=\$(awk '/^cpu / {usr=\$2; nic=\$3; sys=\$4; idl=\$5; io=\$6; irq=\$7; sirq=\$8; steal=\$9; total=usr+nic+sys+idl+io+irq+sirq+steal; print total" "idl; exit}' /proc/stat)
+      NET1=\$(cat /proc/net/dev 2>/dev/null | grep -v "lo:" | awk 'NR>2 {r+=\$2; t+=\$10} END {print r" "t}' || echo "0 0")
       sleep 1
-      R2=$(cat /proc/net/dev | grep -v "lo:" | awk 'NR>2 {r+=$2; t+=$10} END {print r" "t}')
-      echo "$R1 $R2" | awk '{print ($3-$1)" "($4-$2)}' || echo "0 0"
+      CPU2=\$(awk '/^cpu / {usr=\$2; nic=\$3; sys=\$4; idl=\$5; io=\$6; irq=\$7; sirq=\$8; steal=\$9; total=usr+nic+sys+idl+io+irq+sirq+steal; print total" "idl; exit}' /proc/stat)
+      NET2=\$(cat /proc/net/dev 2>/dev/null | grep -v "lo:" | awk 'NR>2 {r+=\$2; t+=\$10} END {print r" "t}' || echo "0 0")
+      echo "\$CPU1 \$CPU2" | awk '{dt=\$3-\$1; di=\$4-\$2; if (dt==0) print 0; else print (1-di/dt)*100}'
+      echo "---METRICS_DELIM---"
+      awk '/MemTotal/ {t=\$2} /MemAvailable/ {a=\$2} END {print int(t/1024)" "int((t-a)/1024)}' /proc/meminfo || echo "0 0"
+      echo "---METRICS_DELIM---"
+      df -k / | awk 'NR==2{print \$2" "\$3" "\$5}' || echo "0 0 0%"
+      echo "---METRICS_DELIM---"
+      echo "\$NET1 \$NET2" | awk '{print (\$3-\$1)" "(\$4-\$2)}' || echo "0 0"
       echo "---METRICS_DELIM---"
       uptime -p || uptime
-      uptime | awk -F'load average:' '{ print $2 }'
+      uptime | awk -F'load average:' '{ print \$2 }'
     `.trim();
 
     try {
-      const res = await window.api.multiExecSsh([server], cmd, keyObj ? [keyObj] : []);
+      const res = await window.api.multiExecSsh([server], cmd, keyObj ? [keyObj] : [], vaultConfig);
       if (res && res.length > 0) {
         const item = res[0];
         if (item.status === 'SUCCESS' && item.output) {
@@ -172,56 +176,265 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
     return 'var(--accent-success, #22c55e)';
   };
 
-  if (compact && !isExpanded) {
+  const renderDetailCards = () => {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '4px 10px',
-          backgroundColor: 'var(--bg-tertiary)',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.72rem',
-          color: 'var(--text-muted)',
-          userSelect: 'none'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Cpu size={12} style={{ color: getProgressColor(metrics?.cpuUsage || 0) }} />
-          <span>CPU: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : `${metrics?.cpuUsage || 0}%`}</strong></span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Activity size={12} style={{ color: getProgressColor(metrics?.memUsage || 0) }} />
-          <span>RAM: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : `${metrics?.memUsage || 0}%`}</strong></span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <HardDrive size={12} style={{ color: getProgressColor(metrics?.diskUsage || 0) }} />
-          <span>Disk: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : `${metrics?.diskUsage || 0}%`}</strong></span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Network size={12} style={{ color: 'var(--accent-primary)' }} />
-          <span>Net: <strong style={{ color: 'var(--text-main)' }}>↓{metrics?.netRxKbps || 0} KB/s ↑{metrics?.netTxKbps || 0} KB/s</strong></span>
-        </div>
-
-        <button
-          onClick={() => setIsExpanded(true)}
+      <>
+        {/* Metrics Grid */}
+        <div
           style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-dim)',
-            cursor: 'pointer',
-            padding: '2px',
-            display: 'flex',
-            alignItems: 'center'
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '12px',
+            marginBottom: '10px'
           }}
-          title="Mở rộng bảng Giám sát Tài nguyên"
         >
-          <ChevronDown size={14} />
-        </button>
+          {/* CPU Metric Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '10px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Cpu size={14} /> CPU
+              </span>
+              <span style={{ fontWeight: 700, color: getProgressColor(metrics?.cpuUsage || 0) }}>
+                {metrics ? `${metrics.cpuUsage}%` : 'N/A'}
+              </span>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  height: '100%',
+                  width: `${metrics?.cpuUsage || 0}%`,
+                  backgroundColor: getProgressColor(metrics?.cpuUsage || 0),
+                  transition: 'width 0.4s ease'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* RAM Metric Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '10px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Activity size={14} /> RAM
+              </span>
+              <span style={{ fontWeight: 700, color: getProgressColor(metrics?.memUsage || 0) }}>
+                {metrics ? `${metrics.memUsage}%` : 'N/A'}
+              </span>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+              <div
+                style={{
+                  height: '100%',
+                  width: `${metrics?.memUsage || 0}%`,
+                  backgroundColor: getProgressColor(metrics?.memUsage || 0),
+                  transition: 'width 0.4s ease'
+                }}
+              />
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', textAlign: 'right' }}>
+              {metrics ? `${metrics.memUsedMb} / ${metrics.memTotalMb} MB` : 'N/A'}
+            </div>
+          </div>
+
+          {/* Disk Metric Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '10px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <HardDrive size={14} /> Disk (/)
+              </span>
+              <span style={{ fontWeight: 700, color: getProgressColor(metrics?.diskUsage || 0) }}>
+                {metrics ? `${metrics.diskUsage}%` : 'N/A'}
+              </span>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+              <div
+                style={{
+                  height: '100%',
+                  width: `${metrics?.diskUsage || 0}%`,
+                  backgroundColor: getProgressColor(metrics?.diskUsage || 0),
+                  transition: 'width 0.4s ease'
+                }}
+              />
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', textAlign: 'right' }}>
+              {metrics ? `${metrics.diskUsedGb} / ${metrics.diskTotalGb} GB` : 'N/A'}
+            </div>
+          </div>
+
+          {/* Network I/O Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '10px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Network size={14} /> Network I/O
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-main)' }}>
+              <span>↓ Download: <strong>{metrics ? `${metrics.netRxKbps} KB/s` : 'N/A'}</strong></span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-main)', marginTop: '2px' }}>
+              <span>↑ Upload: <strong>{metrics ? `${metrics.netTxKbps} KB/s` : 'N/A'}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Info: Uptime & Load Avg */}
+        {metrics?.uptime && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '4px 8px',
+              borderRadius: 'var(--radius-sm)'
+            }}
+          >
+            <span>Uptime: <strong style={{ color: 'var(--text-main)' }}>{metrics.uptime}</strong></span>
+            {metrics.loadAvg && <span>Load Average: <strong style={{ color: 'var(--text-main)' }}>{metrics.loadAvg}</strong></span>}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  if (compact) {
+    return (
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '4px 10px',
+            backgroundColor: 'var(--bg-tertiary)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.72rem',
+            color: 'var(--text-muted)',
+            userSelect: 'none',
+            cursor: 'pointer',
+            border: isExpanded ? '1px solid var(--border-focus)' : '1px solid var(--border-subtle)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Cpu size={12} style={{ color: metrics ? getProgressColor(metrics.cpuUsage) : 'var(--text-muted)' }} />
+            <span>CPU: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : (metrics ? `${metrics.cpuUsage}%` : 'N/A')}</strong></span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Activity size={12} style={{ color: metrics ? getProgressColor(metrics.memUsage) : 'var(--text-muted)' }} />
+            <span>RAM: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : (metrics ? `${metrics.memUsage}%` : 'N/A')}</strong></span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <HardDrive size={12} style={{ color: metrics ? getProgressColor(metrics.diskUsage) : 'var(--text-muted)' }} />
+            <span>Disk: <strong style={{ color: 'var(--text-main)' }}>{loading && !metrics ? '...' : (metrics ? `${metrics.diskUsage}%` : 'N/A')}</strong></span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Network size={12} style={{ color: 'var(--accent-primary)' }} />
+            <span>Net: <strong style={{ color: 'var(--text-main)' }}>{metrics ? `↓${metrics.netRxKbps} KB/s ↑${metrics.netTxKbps} KB/s` : 'N/A'}</strong></span>
+          </div>
+
+          <span style={{ color: 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
+            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </span>
+        </div>
+
+        {isExpanded && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '36px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '420px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-focus)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 16px',
+              boxShadow: 'var(--shadow-lg)',
+              zIndex: 1000,
+              fontSize: '0.8rem',
+              color: 'var(--text-main)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                <Activity size={16} style={{ color: 'var(--accent-primary)' }} />
+                <span>Chi tiết tài nguyên (Real-time Metrics)</span>
+                {loading && <RefreshCw size={12} className="spin" style={{ color: 'var(--text-muted)' }} />}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(false);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <ChevronUp size={14} />
+              </button>
+            </div>
+
+            {error && !metrics ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: 'var(--accent-warning)',
+                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.75rem'
+                }}
+              >
+                <AlertTriangle size={14} />
+                <span>{error}</span>
+              </div>
+            ) : (
+              renderDetailCards()
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -234,11 +447,9 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
         borderRadius: 'var(--radius-md)',
         padding: '12px 16px',
         fontSize: '0.8rem',
-        color: 'var(--text-main)',
-        marginBottom: compact ? '8px' : '0'
+        color: 'var(--text-main)'
       }}
     >
-      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -253,29 +464,11 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
           {loading && <RefreshCw size={12} className="spin" style={{ color: 'var(--text-muted)' }} />}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {metrics && (
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-              Cập nhật: {new Date(metrics.timestamp).toLocaleTimeString()}
-            </span>
-          )}
-
-          {compact && (
-            <button
-              onClick={() => setIsExpanded(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '2px'
-              }}
-              title="Thu gọn"
-            >
-              <ChevronUp size={14} />
-            </button>
-          )}
-        </div>
+        {metrics && (
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+            Cập nhật: {new Date(metrics.timestamp).toLocaleTimeString()}
+          </span>
+        )}
       </div>
 
       {error && !metrics ? (
@@ -295,151 +488,7 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
           <span>{error}</span>
         </div>
       ) : (
-        <div>
-          {/* Metrics Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '12px',
-              marginBottom: '10px'
-            }}
-          >
-            {/* CPU Metric Card */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.75rem' }}>
-                <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Cpu size={14} /> CPU
-                </span>
-                <span style={{ fontWeight: 700, color: getProgressColor(metrics?.cpuUsage || 0) }}>
-                  {metrics?.cpuUsage || 0}%
-                </span>
-              </div>
-              <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${metrics?.cpuUsage || 0}%`,
-                    backgroundColor: getProgressColor(metrics?.cpuUsage || 0),
-                    transition: 'width 0.4s ease'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* RAM Metric Card */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem' }}>
-                <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Activity size={14} /> RAM
-                </span>
-                <span style={{ fontWeight: 700, color: getProgressColor(metrics?.memUsage || 0) }}>
-                  {metrics?.memUsage || 0}%
-                </span>
-              </div>
-              <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${metrics?.memUsage || 0}%`,
-                    backgroundColor: getProgressColor(metrics?.memUsage || 0),
-                    transition: 'width 0.4s ease'
-                  }}
-                />
-              </div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', textAlign: 'right' }}>
-                {metrics?.memUsedMb || 0} / {metrics?.memTotalMb || 0} MB
-              </div>
-            </div>
-
-            {/* Disk Metric Card */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem' }}>
-                <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <HardDrive size={14} /> Disk (/)
-                </span>
-                <span style={{ fontWeight: 700, color: getProgressColor(metrics?.diskUsage || 0) }}>
-                  {metrics?.diskUsage || 0}%
-                </span>
-              </div>
-              <div style={{ height: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${metrics?.diskUsage || 0}%`,
-                    backgroundColor: getProgressColor(metrics?.diskUsage || 0),
-                    transition: 'width 0.4s ease'
-                  }}
-                />
-              </div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', textAlign: 'right' }}>
-                {metrics?.diskUsedGb || 0} / {metrics?.diskTotalGb || 0} GB
-              </div>
-            </div>
-
-            {/* Network I/O Card */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.75rem' }}>
-                <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Network size={14} /> Network I/O
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-main)' }}>
-                <span>↓ Download: <strong>{metrics?.netRxKbps || 0} KB/s</strong></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                <span>↑ Upload: <strong>{metrics?.netTxKbps || 0} KB/s</strong></span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Info: Uptime & Load Avg */}
-          {metrics?.uptime && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '0.72rem',
-                color: 'var(--text-muted)',
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-sm)'
-              }}
-            >
-              <span>Uptime: <strong style={{ color: 'var(--text-main)' }}>{metrics.uptime}</strong></span>
-              {metrics.loadAvg && <span>Load Average: <strong style={{ color: 'var(--text-main)' }}>{metrics.loadAvg}</strong></span>}
-            </div>
-          )}
-        </div>
+        renderDetailCards()
       )}
     </div>
   );

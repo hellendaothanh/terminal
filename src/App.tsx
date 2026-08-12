@@ -71,13 +71,37 @@ export const App: React.FC = () => {
   }, []);
 
   // Terminal Settings
-  const [settings, setSettings] = useState<TerminalSettings>({
-    fontSize: 14,
-    fontFamily: 'JetBrains Mono, monospace',
-    theme: 'one-dark',
-    cursorBlink: true,
-    scrollback: 5000
+  const [settings, setSettings] = useState<TerminalSettings>(() => {
+    const saved = localStorage.getItem('omni_terminal_settings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          fontSize: 14,
+          fontFamily: 'JetBrains Mono, monospace',
+          theme: 'one-dark',
+          cursorBlink: true,
+          scrollback: 5000,
+          language: 'vi',
+          ...parsed
+        };
+      } catch (e) {
+        console.error('Lỗi tải cài đặt đã lưu:', e);
+      }
+    }
+    return {
+      fontSize: 14,
+      fontFamily: 'JetBrains Mono, monospace',
+      theme: 'one-dark',
+      cursorBlink: true,
+      scrollback: 5000,
+      language: 'vi'
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('omni_terminal_settings', JSON.stringify(settings));
+  }, [settings]);
 
   useEffect(() => {
     // Check initial Vault status
@@ -120,6 +144,9 @@ export const App: React.FC = () => {
     const res = await window.api.vaultSaveData(importedData);
     if (res.success) {
       setVaultData(importedData);
+      if (importedData.settings) {
+        setSettings(importedData.settings);
+      }
       setIsImportExportOpen(false);
     }
   };

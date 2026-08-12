@@ -36,7 +36,7 @@ export interface ElectronAPI {
   tunnelStop: (tunnelId: string) => Promise<{ success: boolean }>;
   tunnelGetStats: () => Promise<Record<string, any>>;
 
-  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[]) => Promise<any[]>;
+  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[], vaultConfig?: any) => Promise<any[]>;
   multiExecDb: (targetServers: any[], queryStr: string) => Promise<any[]>;
 
   auditList: () => Promise<any[]>;

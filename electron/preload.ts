@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld('api', {
   tunnelGetStats: () => ipcRenderer.invoke('tunnel:get-stats'),
 
   /* Multi-Exec Parallel APIs */
-  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[]) => ipcRenderer.invoke('multi-exec:ssh', { targetServers, commandStr, keys }),
+  multiExecSsh: (targetServers: any[], commandStr: string, keys: any[], vaultConfig?: any) => ipcRenderer.invoke('multi-exec:ssh', { targetServers, commandStr, keys, vaultConfig }),
   multiExecDb: (targetServers: any[], queryStr: string) => ipcRenderer.invoke('multi-exec:db', { targetServers, queryStr }),
 
   /* Audit Log APIs */

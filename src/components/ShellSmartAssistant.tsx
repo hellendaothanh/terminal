@@ -10,6 +10,9 @@ interface AutoCompletionBarProps {
   onTriggerAutofix?: () => void;
   aiFixLoading?: boolean;
   language?: 'vi' | 'en';
+  aiSuggestions?: string[];
+  aiSuggestionsLoading?: boolean;
+  onTriggerAiSuggestions?: () => void;
 }
 
 const COMMON_COMMANDS = [
@@ -43,10 +46,11 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
   anomalyAlert,
   onTriggerAutofix,
   aiFixLoading,
-  language
+  language,
+  aiSuggestions = [],
+  aiSuggestionsLoading = false,
+  onTriggerAiSuggestions
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
-
   // Filter intelligent suggestions based on currentInput or history
   const getSuggestions = (): string[] => {
     const trimmed = currentInput.trim().toLowerCase();
@@ -145,50 +149,100 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
       {/* 2. Auto-completion & Smart Suggestions Bar */}
       <div
         style={{
-          height: '28px',
+          height: '32px',
           display: 'flex',
           alignItems: 'center',
           padding: '0 12px',
           gap: '8px',
-          overflowX: 'auto'
+          overflowX: 'auto',
+          borderBottom: '1px solid var(--border-subtle)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 600 }}>
-          <Sparkles size={13} />
+          <Terminal size={13} />
           <span>{language === 'vi' ? 'Gợi ý lệnh:' : 'Suggestions:'}</span>
         </div>
 
-        {suggestions.length === 0 ? (
-          <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>
-            {language === 'vi' ? 'Nhập lệnh để xem gợi ý thông minh...' : 'Type commands to get smart suggestions...'}
-          </span>
-        ) : (
-          suggestions.map((suggestion, idx) => (
-            <button
-              key={idx}
-              onClick={() => onSelectSuggestion(suggestion)}
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '4px',
-                color: 'var(--text-main)',
-                padding: '2px 8px',
-                fontSize: '0.72rem',
-                fontFamily: 'monospace',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease'
-              }}
-              title="Click hoặc nhấn Tab để chèn câu lệnh gợi ý"
-            >
-              <span>{suggestion}</span>
-              <CornerDownLeft size={10} style={{ color: 'var(--text-dim)' }} />
-            </button>
-          ))
+        {onTriggerAiSuggestions && (
+          <button
+            onClick={onTriggerAiSuggestions}
+            disabled={aiSuggestionsLoading}
+            style={{
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              color: '#d8b4fe',
+              borderRadius: '4px',
+              padding: '2px 8px',
+              fontSize: '0.7rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontWeight: 600,
+              transition: 'all 0.15s ease',
+              marginRight: '8px'
+            }}
+            title={language === 'vi' ? 'Sử dụng AI phân tích log để gợi ý câu lệnh tiếp theo' : 'Use AI to analyze log and suggest next commands'}
+          >
+            <Sparkles size={11} className={aiSuggestionsLoading ? 'spin' : ''} style={{ color: '#c084fc' }} />
+            <span>{language === 'vi' ? '🤖 AI Phân Tích & Gợi Ý' : '🤖 AI Analyze & Suggest'}</span>
+          </button>
         )}
+
+        {/* Regular Suggestions */}
+        {suggestions.map((suggestion, idx) => (
+          <button
+            key={`reg-${idx}`}
+            onClick={() => onSelectSuggestion(suggestion)}
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '4px',
+              color: 'var(--text-main)',
+              padding: '2px 8px',
+              fontSize: '0.72rem',
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
+            }}
+            title="Click để chèn câu lệnh"
+          >
+            <span>{suggestion}</span>
+            <CornerDownLeft size={10} style={{ color: 'var(--text-dim)' }} />
+          </button>
+        ))}
+
+        {/* AI-generated Suggestions */}
+        {aiSuggestions && aiSuggestions.map((suggestion, idx) => (
+          <button
+            key={`ai-${idx}`}
+            onClick={() => onSelectSuggestion(suggestion)}
+            style={{
+              backgroundColor: 'rgba(168, 85, 247, 0.12)',
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              borderRadius: '4px',
+              color: '#e9d5ff',
+              padding: '2px 8px',
+              fontSize: '0.72rem',
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
+            }}
+            title="Câu lệnh đề xuất từ AI"
+          >
+            <Sparkles size={10} style={{ color: '#c084fc' }} />
+            <span>{suggestion}</span>
+            <CornerDownLeft size={10} style={{ color: '#c084fc' }} />
+          </button>
+        ))}
       </div>
     </div>
   );

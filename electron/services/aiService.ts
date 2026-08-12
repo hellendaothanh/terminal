@@ -75,7 +75,7 @@ export class AIService {
         return { success: false, error: 'Tính năng AI chưa được kích hoạt trong Cài Đặt.' };
       }
 
-      const systemPrompt = `Bạn là OmniTerminal AI Copilot - một chuyên gia DevOps, Linux System Admin, và Database Administrator cấp cao.
+      const systemPrompt = `Bạn là OmniTerminal AI Assistant - một chuyên gia DevOps, Linux System Admin, và Database Administrator cấp cao.
 Nhiệm vụ của bạn là hỗ trợ người dùng phân tích thông tin trên terminal SSH, giải thích lỗi hệ thống, tối ưu hóa câu lệnh SQL, viết script Linux shell và phân tích log.
 Hãy trả lời bằng Tiếng Việt rõ ràng, ngắn gọn, chuẩn xác và định dạng Markdown (code snippet đầy đủ).`;
 
@@ -139,7 +139,7 @@ ${userPrompt}`;
         }
       }
 
-      return { success: false, error: 'Không thể nhận phản hồi từ AI Copilot.' };
+      return { success: false, error: 'Không thể nhận phản hồi từ AI Assistant.' };
     } catch (err: any) {
       return { success: false, error: err.message };
     }

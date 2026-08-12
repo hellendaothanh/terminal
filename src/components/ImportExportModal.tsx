@@ -54,7 +54,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     }
 
     try {
-      const res = await window.api.vaultExportEncrypted(vaultData, exportPassphrase);
+      const dataToExport = {
+        ...vaultData,
+        settings: settings
+      };
+      const res = await window.api.vaultExportEncrypted(dataToExport, exportPassphrase);
       if (res.success && res.jsonContent) {
         const saved = await window.api.saveFileDialog('omni_vault_backup.enc.json', res.jsonContent);
         if (saved) {

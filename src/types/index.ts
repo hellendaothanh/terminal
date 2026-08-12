@@ -144,6 +144,7 @@ export interface VaultData {
   tunnels?: SSHTunnelConfig[];
   snippets?: CommandSnippet[];
   hashicorpVault?: HashiCorpVaultConfig;
+  settings?: TerminalSettings;
 }
 
 export interface AuditLogEntry {

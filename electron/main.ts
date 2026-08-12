@@ -197,11 +197,17 @@ function setupIpcHandlers() {
   });
 
   /* ================= Multi-Exec Handlers ================= */
-  ipcMain.handle('multi-exec:ssh', async (_, { targetServers, commandStr, keys }) => {
+  ipcMain.handle('multi-exec:ssh', async (_, { targetServers, commandStr, keys, vaultConfig }) => {
     const promises = targetServers.map(async (server: any) => {
       const keyObj = keys.find((k: any) => k.id === server.privateKeyId);
       const startTime = Date.now();
       try {
+        if (server.authType === 'hashicorpVault' && server.vaultSecretPath && vaultConfig) {
+          const vaultRes = await hashicorpVaultService.fetchSecret(vaultConfig, server.vaultSecretPath, server.vaultKeyName || 'password');
+          if (vaultRes.success && vaultRes.secret) {
+            server.password = vaultRes.secret;
+          }
+        }
         const res = await sshService.executeCommand(server, commandStr, keyObj);
         return {
           targetId: server.id,

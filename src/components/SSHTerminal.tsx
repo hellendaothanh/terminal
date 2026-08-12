@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles } from 'lucide-react';
+import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
@@ -91,6 +91,94 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   const [currentInput, setCurrentInput] = useState<string>('');
   const [historyCommands, setHistoryCommands] = useState<string[]>([]);
   const [anomalyAlert, setAnomalyAlert] = useState<string | null>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState<boolean>(false);
+
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState<boolean>(false);
+
+  const handleGetAiSuggestions = async () => {
+    setAiSuggestionsLoading(true);
+    const bufferGetter = (window as any).__activeBuffers?.[sessionId];
+    const textContext = bufferGetter ? bufferGetter().text : '';
+
+    const isVi = settings.language === 'vi';
+    const prompt = isVi
+      ? `Bạn là một trợ lý DevOps. Dựa trên log terminal SSH sau đây:
+${textContext}
+
+Hãy đề xuất 3 đến 5 câu lệnh Linux/Unix tiếp theo phù hợp nhất để kiểm tra hệ thống, khắc phục sự cố hoặc theo dõi.
+Chỉ trả về duy nhất một danh sách các câu lệnh dưới dạng JSON array dạng ["command1", "command2", "command3"]. Không giải thích thêm bất cứ điều gì.`
+      : `You are a DevOps assistant. Based on this SSH terminal output:
+${textContext}
+
+Suggest 3 to 5 relevant Linux/Unix next commands for system checks, troubleshooting, or monitoring.
+Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "command3"]. Do not explain anything else.`;
+
+    try {
+      const config = settings.ai || { provider: 'gemini', enabled: true, model: 'gemini-1.5-flash', apiKey: '' };
+      const reply = await window.api.aiSendMessage(prompt, config);
+      
+      let parsedCommands: string[] = [];
+
+      // 1. Try JSON Array parsing
+      try {
+        const jsonStart = reply.indexOf('[');
+        const jsonEnd = reply.lastIndexOf(']');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          const jsonStr = reply.slice(jsonStart, jsonEnd + 1)
+            .replace(/'/g, '"') // Replace single quotes with double quotes
+            .replace(/\\"/g, '"'); // Replace escaped quotes if any
+          const parsed = JSON.parse(jsonStr);
+          if (Array.isArray(parsed)) {
+            parsedCommands = parsed.map(cmd => String(cmd).trim()).filter(Boolean);
+          }
+        }
+      } catch (e) {
+        console.warn('JSON parsing of AI reply failed, trying fallback parser...', e);
+      }
+
+      // 2. Fallback: Parse line-by-line if JSON parser failed
+      if (parsedCommands.length === 0) {
+        const lines = reply.split('\n');
+        for (let line of lines) {
+          line = line.trim();
+          if (!line) continue;
+
+          // Match code blocks like `cmd` or ```cmd```
+          const codeMatch = line.match(/`([^`]+)`/);
+          if (codeMatch && codeMatch[1]) {
+            const cmd = codeMatch[1].trim();
+            if (cmd && cmd.length < 120 && !parsedCommands.includes(cmd)) {
+              parsedCommands.push(cmd);
+            }
+            continue;
+          }
+
+          // Match list elements like "1. cmd" or "- cmd"
+          const listMatch = line.match(/^(?:\d+\.|\*|-)\s+(.+)$/);
+          if (listMatch && listMatch[1]) {
+            const cmd = listMatch[1].trim().replace(/^['"`]|['"`]$/g, '');
+            // Only add if it's a reasonably short command line and doesn't contain explanations
+            if (cmd && cmd.length < 80 && !cmd.includes('để') && !cmd.includes('to ') && !parsedCommands.includes(cmd)) {
+              parsedCommands.push(cmd);
+            }
+          }
+        }
+      }
+
+      if (parsedCommands.length > 0) {
+        setAiSuggestions(parsedCommands.slice(0, 5));
+        showToast('success', isVi ? 'Đã cập nhật gợi ý từ AI!' : 'AI Suggestions updated!');
+      } else {
+        showToast('empty', isVi ? 'AI không trả về danh sách câu lệnh hợp lệ.' : 'AI did not return a valid list of commands.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching AI suggestions:', err);
+      showToast('empty', isVi ? `Lỗi gọi AI: ${err.message || err}` : `AI Error: ${err.message || err}`);
+    } finally {
+      setAiSuggestionsLoading(false);
+    }
+  };
 
   // AI Autofix states
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
@@ -262,7 +350,8 @@ Please:
       cursorBlink: settings.cursorBlink ?? true,
       scrollback: settings.scrollback || 5000,
       theme: THEMES[settings.theme] || THEMES['one-dark'],
-      allowProposedApi: true
+      allowProposedApi: true,
+      scrollSensitivity: 2
     });
 
     const fitAddon = new FitAddon();
@@ -276,6 +365,12 @@ Please:
 
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
+
+    const scrollListener = term.onScroll(() => {
+      const buffer = term.buffer.active;
+      const hasScrolledUp = buffer.viewportY < buffer.baseY;
+      setShowScrollBottom(hasScrolledUp);
+    });
 
     let lineBuf = '';
     const dataListener = term.onData((data) => {
@@ -327,6 +422,7 @@ Please:
 
     return () => {
       dataListener.dispose();
+      scrollListener.dispose();
       removeSshDataListener();
       removeSshClosedListener();
       resizeObserver.disconnect();
@@ -458,7 +554,7 @@ Please:
         </div>
 
         {/* Real-time Server Metrics Widget */}
-        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} />
+        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} vaultConfig={settings.hashicorpVault} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Reconnect Button */}
@@ -567,14 +663,51 @@ Please:
       </div>
 
       {/* Terminal Container */}
-      <div
-        ref={containerRef}
-        style={{
-          flex: 1,
-          padding: '8px',
-          overflow: 'hidden'
-        }}
-      />
+      <div style={{ flex: 1, padding: '8px', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
+        <div
+          ref={containerRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden'
+          }}
+        />
+
+        {/* Scroll-to-bottom Helper Button */}
+        {showScrollBottom && (
+          <button
+            onClick={() => {
+              if (terminalRef.current) {
+                terminalRef.current.scrollToBottom();
+                setShowScrollBottom(false);
+              }
+            }}
+            style={{
+              position: 'absolute',
+              bottom: '20px',
+              right: '24px',
+              backgroundColor: 'var(--accent-primary)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '20px',
+              padding: '6px 12px',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              zIndex: 90,
+              fontWeight: 500,
+              animation: 'fadeIn 0.2s ease-out'
+            }}
+            title={settings.language === 'vi' ? 'Cuộn xuống dưới cùng' : 'Scroll to bottom'}
+          >
+            <ChevronDown size={14} />
+            <span>{settings.language === 'vi' ? 'Cuộn xuống dưới' : 'Scroll to Bottom'}</span>
+          </button>
+        )}
+      </div>
 
       {/* Floating AI Autofix Pane */}
       {showAiPanel && (
@@ -669,6 +802,9 @@ Please:
         onTriggerAutofix={handleTriggerAutofix}
         aiFixLoading={aiLoading}
         language={settings.language}
+        aiSuggestions={aiSuggestions}
+        aiSuggestionsLoading={aiSuggestionsLoading}
+        onTriggerAiSuggestions={handleGetAiSuggestions}
       />
 
       {/* Command Guard Approval Modal */}
