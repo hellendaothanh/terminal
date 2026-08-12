@@ -232,6 +232,29 @@ terminal/
 
 ---
 
+## 🛡️ Security Auditing & Best Practices
+
+To ensure OmniTerminal runs securely and without vulnerabilities, follow these tools and practices:
+
+### 1. Dependency Vulnerability Audits
+Run the built-in security auditing script to check for known vulnerabilities in external libraries:
+```bash
+npm run lint:security
+```
+This runs `npm audit` underneath and scans installed packages.
+
+### 2. Static Code Analysis (SAST)
+We use `eslint-plugin-security` to scan project code for security hotspots (e.g., vulnerable regex patterns, insecure imports, unsafe execution points):
+1. Configure your IDE to run ESLint with the security ruleset active.
+2. Run ESLint locally to scan the workspace.
+
+### 3. Electron Hardening Rules
+* **Context Isolation:** Enabled (`contextIsolation: true` in Electron main process config) to isolate renderer processes from raw Node.js API execution.
+* **Preload Scripting:** Node.js capabilities are exposed safely to the renderer via `contextBridge.revealInMainWorld` in [preload.ts](file:///c:/Devsecops/terminal/electron/preload.ts).
+* **Command Sanitization:** Ensure inputs are sanitized before calling system-level handlers in database, SSH, and RDP connectors.
+
+---
+
 ## 📄 License
 
 Distributed under the **MIT License**.

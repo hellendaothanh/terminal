@@ -232,6 +232,29 @@ terminal/
 
 ---
 
+## 🛡️ Hướng Dẫn Kiểm Tra & Đảm Bảo Bảo Mật (Security Auditing)
+
+Để đảm bảo OmniTerminal hoạt động an toàn và không gặp các lỗi bảo mật, vui lòng tuân thủ các quy trình và công cụ sau:
+
+### 1. Quét Lỗ Hổng Bảo Mật Thư Viện (Dependencies Audit)
+Chạy script kiểm tra lỗ hổng bảo mật tích hợp để rà soát các thư viện bên thứ ba:
+```bash
+npm run lint:security
+```
+Lệnh này sẽ thực hiện quét `npm audit` trên toàn bộ các package đã cài đặt.
+
+### 2. Phân Tích Mã Nguồn Tĩnh (SAST)
+Dự án tích hợp `eslint-plugin-security` để tự động phát hiện các điểm nhạy cảm về bảo mật trong mã nguồn (ví dụ: các biểu thức chính quy dễ bị tấn công ReDoS, nối chuỗi SQL nguy hiểm, hoặc thực thi lệnh shell trực tiếp):
+1. Cấu hình IDE của bạn để kích hoạt tập luật bảo mật của ESLint.
+2. Chạy quét ESLint định kỳ trên toàn bộ không gian làm việc.
+
+### 3. Quy Tắc Bảo Mật Đặc Thù của Electron
+* **Context Isolation:** Được bật (`contextIsolation: true` trong cấu hình tiến trình Electron Main) nhằm cách ly hoàn toàn môi trường Render UI khỏi các hàm API Node.js thô.
+* **Preload Scripting:** Các tính năng hệ thống của Node.js chỉ được tiếp xúc với giao diện thông qua `contextBridge.revealInMainWorld` tại file [preload.ts](file:///c:/Devsecops/terminal/electron/preload.ts).
+* **Sanitize Inputs:** Mọi tham số đầu vào cho kết nối Database, SSH và RDP phải được làm sạch (Sanitize) để tránh các nguy cơ tấn công tiêm lệnh (Command Injection).
+
+---
+
 ## 📄 Giấy Phép (License)
 
 Dự án được phân phối dưới giấy phép **MIT License**.
