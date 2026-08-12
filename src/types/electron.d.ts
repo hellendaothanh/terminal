@@ -84,6 +84,8 @@ export interface ElectronAPI {
   rdpDisconnect: (sessionId: string) => void;
   onRdpStatus: (callback: (event: any, payload: any) => void) => () => void;
 
+  netDiagnose: (tool: string, host: string, options?: any) => Promise<string>;
+
   openFileDialog: () => Promise<{ path: string; content: string } | null>;
   saveFileDialog: (defaultName: string, content: string) => Promise<string | null>;
 }

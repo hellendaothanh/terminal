@@ -112,6 +112,10 @@
 ### 23. 🔌 Plugin System & Custom Connectors
 * **Dynamic Node.js Plugin Hooks:** A lightweight JavaScript/TypeScript hooks mechanism allowing the community to build and load custom connectors for anything, like Elasticsearch, ClickHouse, Apache Kafka, or custom proprietary internal tools.
 
+### 24. 🌐 Integrated Network Diagnostics Suite
+* **Pre-Connection Validation:** Instantly test server/database network connectivity (Ping latency, trace routes, look up DNS records, or scan specific ports) directly from the Server/DB configuration modal before launching SSH, RDP, or Database clients.
+* **Auto-Populated Targets:** Hostnames and IP addresses are automatically synchronized with the server profile configuration form for a frictionless diagnostic workflow.
+
 ---
 
 ## 🔮 Roadmap & Future Features
@@ -182,6 +186,7 @@ terminal/
 │       ├── databaseService.ts  # Drivers for MySQL, PostgreSQL & Redis
 │       ├── hashicorpVaultService.ts # HashiCorp Vault REST API integration
 │       ├── logTailService.ts   # Real-time multi-log streaming service
+│       ├── netDiagnosticsService.ts # Network diagnostics utility (Ping, DNS, Port scan, etc.)
 │       ├── pluginService.ts    # Lightweight JS/TS plugin hook manager
 │       ├── rdpService.ts       # RDP session & credential injection
 │       ├── s3Service.ts        # S3 & cloud object storage operations

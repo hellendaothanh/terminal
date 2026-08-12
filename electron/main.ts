@@ -14,6 +14,7 @@ import { AuditLogService } from './services/AuditLogService';
 import { LogTailService } from './services/logTailService';
 import { TeamSyncService } from './services/teamSyncService';
 import { PluginService } from './services/pluginService';
+import { NetDiagnosticsService } from './services/netDiagnosticsService';
 
 let mainWindow: BrowserWindow | null = null;
 const vaultService = new VaultService();
@@ -29,6 +30,7 @@ const auditLogService = new AuditLogService();
 const logTailService = new LogTailService();
 const teamSyncService = new TeamSyncService();
 const pluginService = new PluginService();
+const netDiagnosticsService = new NetDiagnosticsService();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -491,5 +493,25 @@ function setupIpcHandlers() {
       fs.writeFileSync(result.filePath, content, 'utf8');
     }
     return result.filePath;
+  });
+
+  /* ================= Network Diagnostics Handlers ================= */
+  ipcMain.handle('net:diagnose', async (_, { tool, host, options }) => {
+    try {
+      if (tool === 'ping') {
+        return await netDiagnosticsService.ping(host, options?.packets);
+      } else if (tool === 'dns') {
+        return await netDiagnosticsService.dnsLookup(host, options?.dnsType);
+      } else if (tool === 'ports') {
+        return await netDiagnosticsService.scanPorts(host, options?.portsList);
+      } else if (tool === 'traceroute') {
+        return await netDiagnosticsService.traceroute(host, options?.maxHops);
+      } else if (tool === 'mtr') {
+        return await netDiagnosticsService.mtr(host, options?.count);
+      }
+      return 'Unknown diagnostic tool';
+    } catch (e: any) {
+      return `Diagnostics error: ${e.message}`;
+    }
   });
 }

@@ -125,6 +125,9 @@ contextBridge.exposeInMainWorld('api', {
     return () => ipcRenderer.removeListener('rdp:status', callback);
   },
 
+  /* Network Diagnostics APIs */
+  netDiagnose: (tool: string, host: string, options?: any) => ipcRenderer.invoke('net:diagnose', { tool, host, options }),
+
   /* File Dialog APIs */
   openFileDialog: () => ipcRenderer.invoke('dialog:open-file'),
   saveFileDialog: (defaultName: string, content: string) => ipcRenderer.invoke('dialog:save-file', { defaultName, content })

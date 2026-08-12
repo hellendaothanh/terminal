@@ -112,6 +112,10 @@
 ### 23. 🔌 Hệ Thống Plugin & Đầu Kết Nối Tùy Biến (Custom Connectors)
 * **Plugin Hooks Dynamic chạy trên Node.js:** Cơ chế hooks gọn nhẹ bằng JavaScript/TypeScript cho phép cộng đồng xây dựng và tích hợp các đầu kết nối tùy chọn như Elasticsearch, ClickHouse, Apache Kafka, hoặc các công cụ nội bộ bảo mật của doanh nghiệp.
 
+### 24. 🌐 Bộ Công Cụ Chẩn Đoán Mạng & Kết Nối Tích Hợp (Network Diagnostics Suite)
+* **Kiểm Tra Kết Nối Tiền Kết Nối:** Hỗ trợ kiểm tra tình trạng đường truyền (Đo độ trễ Ping, dò tuyến Traceroute/MTR, truy vấn DNS, hoặc quét nhanh trạng thái mở cổng Port Scanner) ngay cạnh bảng cấu hình Server/Database trước khi kết nối SSH, RDP hoặc CSDL.
+* **Tự Động Đồng Bộ Target:** Tự động điền địa chỉ IP/Tên miền đích từ form cấu hình máy chủ, giúp đơn giản hóa quy trình chẩn đoán mạng khi gặp lỗi kết nối.
+
 ---
 
 ## 🔮 Kế Hoạch Phát Triển (Roadmap)
@@ -182,6 +186,7 @@ terminal/
 │       ├── databaseService.ts  # Driver kết nối MySQL, PostgreSQL, Redis
 │       ├── hashicorpVaultService.ts # Kết nối HashiCorp Vault REST API
 │       ├── logTailService.ts   # Dịch vụ stream log thời gian thực đa máy chủ
+│       ├── netDiagnosticsService.ts # Công cụ chẩn đoán mạng Ping, Traceroute, DNS & Port Scanner
 │       ├── pluginService.ts    # Cơ chế tải plugin & hooks JS/TS gọn nhẹ
 │       ├── rdpService.ts       # Quản lý phiên RDP & nạp Credential tự động
 │       ├── s3Service.ts        # Quản lý kết nối & thao tác tệp tin S3 Cloud Storage
