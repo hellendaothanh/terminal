@@ -54,7 +54,18 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
   // Filter intelligent suggestions based on currentInput or history
   const getSuggestions = (): string[] => {
     const trimmed = currentInput.trim().toLowerCase();
-    const allCandidates = Array.from(new Set([...historyCommands.reverse(), ...COMMON_COMMANDS]));
+    
+    // Clean and validate history commands to filter out any garbage
+    const cleanHistory = (historyCommands || [])
+      .map(cmd => cmd.trim())
+      .filter(cmd => {
+        return cmd.length >= 2 && 
+               cmd.length <= 150 && 
+               !/[\x00-\x1F\x7F-\x9F]/.test(cmd) &&
+               !/^[a-zA-Z]$/.test(cmd);
+      });
+
+    const allCandidates = Array.from(new Set([...cleanHistory.reverse(), ...COMMON_COMMANDS]));
 
     if (!trimmed) {
       return allCandidates.slice(0, 5);

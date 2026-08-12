@@ -450,10 +450,25 @@ Please:
     const dataListener = term.onData((data) => {
       window.api.sshWrite(sessionId, data);
 
+      // Reset buffer on control keys that alter the command or navigate history (Escape, Tab, Ctrl+C, Ctrl+D)
+      if (data.includes('\x1b') || data.includes('\t') || data.includes('\x03') || data.includes('\x04')) {
+        lineBuf = '';
+        setCurrentInput('');
+        return;
+      }
+
       if (data === '\r' || data === '\n') {
         const trimmed = lineBuf.trim();
-        if (trimmed) {
-          setHistoryCommands((prev) => [...prev, trimmed]);
+        const isValidCmd = trimmed && 
+                           trimmed.length >= 2 && 
+                           trimmed.length <= 150 && 
+                           !/[\x00-\x1F\x7F-\x9F]/.test(trimmed) &&
+                           !/^[a-zA-Z]$/.test(trimmed);
+        if (isValidCmd) {
+          setHistoryCommands((prev) => {
+            const filtered = prev.filter(c => c !== trimmed);
+            return [...filtered, trimmed].slice(-50);
+          });
         }
         lineBuf = '';
         setCurrentInput('');
