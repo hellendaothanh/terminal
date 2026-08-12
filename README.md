@@ -124,6 +124,11 @@
 * **Helm Charts Management:** Visual management dashboard to search, install, upgrade, rollback (with revision histories), or uninstall Helm releases in a namespace directly from the 3-Pane explorer.
 * **CRD Schema Inspector:** Hierarchical inspection of Custom Resource Definitions (CRDs) including API Groups, Scope types, and OpenAPI v3 validation specs.
 
+### 27. 📑 Quick Commands Library & User Custom Command Manager
+* **Bilingual Preset Commands:** Built-in template repository tailored for popular OSes (Red Hat, CentOS, Ubuntu, Debian) and common production software (PostgreSQL, Patroni, HAProxy, Keepalived, Kafka, MongoDB, Redis, MySQL, Vault, GitLab).
+* **Command Customization:** Add, edit, and delete personal commands saved locally in persistent `localStorage` and shared instantly across sessions.
+* **1-Click Execution & Copy:** Double-action triggers support copying command blocks or direct injection & execution into SSH sessions with smart line-break auto-detection.
+
 ---
 
 ## 🔮 Roadmap & Future Features

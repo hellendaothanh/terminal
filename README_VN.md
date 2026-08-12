@@ -124,6 +124,11 @@
 * **Quản Lý Helm Releases:** Hỗ trợ trực quan hóa danh sách releases, cài đặt (Install), nâng cấp (Upgrade), rollback các phiên bản cấu hình (kèm lịch sử Revision), hoặc gỡ cài đặt (Uninstall) Helm releases trực tiếp từ 3-Pane Explorer.
 * **Trình Trực Quan Hóa CRD Spec:** Liệt kê và hiển thị chi tiết các Custom Resource Definitions (CRDs) trong cluster bao gồm API Group, Scope và cấu trúc OpenAPI v3 spec dạng YAML.
 
+### 27. 📑 Thư Viện Lệnh Thường Dùng & Quản Lý Lệnh Tự Định Nghĩa
+* **Kho Lệnh Mẫu Phong Phú:** Tích hợp sẵn bộ lệnh mẫu tiện ích cho các hệ điều hành phổ biến (Red Hat, CentOS, Ubuntu, Debian) và ứng dụng DevOps/Database (PostgreSQL, Patroni, HAProxy, Keepalived, Kafka, MongoDB, Redis, MySQL, Vault, GitLab).
+* **Quản Lý Lệnh Tự Định Nghĩa Cá Nhân:** Dễ dàng thêm mới, sửa đổi, xóa các lệnh cá nhân. Dữ liệu được lưu trữ lâu dài trong `localStorage` giúp sử dụng lại ở mọi phiên kết nối SSH.
+* **Thực Thi & Sao Chép 1-Click**: Hỗ trợ copy câu lệnh nhanh vào clipboard hoặc truyền thẳng lệnh vào terminal với cơ chế tự động xuống dòng thông minh (ngoại trừ lệnh cần điền thêm tham số).
+
 ---
 
 ## 🔮 Kế Hoạch Phát Triển (Roadmap)
