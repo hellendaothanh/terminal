@@ -4,11 +4,12 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
+import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, Bookmark } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
 import { CommandGuardApprovalModal } from './CommandGuardApprovalModal';
+import { QuickCommandsPanel } from './QuickCommandsPanel';
 
 interface SSHTerminalProps {
   sessionId: string;
@@ -92,6 +93,7 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   const [historyCommands, setHistoryCommands] = useState<string[]>([]);
   const [anomalyAlert, setAnomalyAlert] = useState<string | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState<boolean>(false);
+  const [showQuickCommands, setShowQuickCommands] = useState<boolean>(false);
 
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState<boolean>(false);
@@ -716,6 +718,27 @@ Please:
             <span>{copyStatus === 'pasted' ? 'Đã Dán!' : 'Paste'}</span>
           </button>
 
+          <button
+            onClick={() => setShowQuickCommands(!showQuickCommands)}
+            style={{
+              background: showQuickCommands ? 'rgba(59, 130, 246, 0.15)' : 'none',
+              border: showQuickCommands ? '1px solid rgba(59, 130, 246, 0.4)' : 'none',
+              borderRadius: '4px',
+              padding: '2px 6px',
+              color: showQuickCommands ? 'var(--accent-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              transition: 'all 0.2s ease'
+            }}
+            title="Mở thư viện lệnh thông dụng (Red Hat, Ubuntu, Postgres, Kafka...)"
+          >
+            <Bookmark size={13} />
+            <span>Lệnh thường dùng</span>
+          </button>
+
           <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)', margin: '0 4px' }} />
 
           <button
@@ -734,50 +757,71 @@ Please:
         </div>
       </div>
 
-      {/* Terminal Container */}
-      <div style={{ flex: 1, padding: '8px', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
-        <div
-          ref={containerRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            overflow: 'hidden'
-          }}
-        />
+      {/* Terminal Container with side-by-side Quick Commands Panel */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ flex: 1, padding: '8px', overflow: 'hidden', minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          <div
+            ref={containerRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden'
+            }}
+          />
 
-        {/* Scroll-to-bottom Helper Button */}
-        {showScrollBottom && (
-          <button
-            onClick={() => {
+          {/* Scroll-to-bottom Helper Button */}
+          {showScrollBottom && (
+            <button
+              onClick={() => {
+                if (terminalRef.current) {
+                  terminalRef.current.scrollToBottom();
+                  setShowScrollBottom(false);
+                }
+              }}
+              style={{
+                position: 'absolute',
+                bottom: '20px',
+                right: '24px',
+                backgroundColor: 'var(--accent-primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-lg)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                zIndex: 90,
+                fontWeight: 500,
+                animation: 'fadeIn 0.2s ease-out'
+              }}
+              title={settings.language === 'vi' ? 'Cuộn xuống dưới cùng' : 'Scroll to bottom'}
+            >
+              <ChevronDown size={14} />
+              <span>{settings.language === 'vi' ? 'Cuộn xuống dưới' : 'Scroll to Bottom'}</span>
+            </button>
+          )}
+        </div>
+
+        {showQuickCommands && (
+          <QuickCommandsPanel
+            language={settings.language}
+            onClose={() => setShowQuickCommands(false)}
+            onExecute={(cmd) => {
               if (terminalRef.current) {
-                terminalRef.current.scrollToBottom();
-                setShowScrollBottom(false);
+                // If it ends with a space (e.g. systemctl restart ), write it but don't enter
+                const needsEnter = !cmd.endsWith(' ');
+                window.api.sshWrite(sessionId, cmd + (needsEnter ? '\n' : ''));
+                showToast('success', needsEnter ? 'Đã chạy lệnh!' : 'Đã chèn lệnh vào terminal!');
               }
             }}
-            style={{
-              position: 'absolute',
-              bottom: '20px',
-              right: '24px',
-              backgroundColor: 'var(--accent-primary)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '20px',
-              padding: '6px 12px',
-              fontSize: '0.75rem',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              zIndex: 90,
-              fontWeight: 500,
-              animation: 'fadeIn 0.2s ease-out'
+            onCopy={(cmd) => {
+              navigator.clipboard.writeText(cmd);
+              showToast('success', 'Đã copy lệnh vào Clipboard!');
             }}
-            title={settings.language === 'vi' ? 'Cuộn xuống dưới cùng' : 'Scroll to bottom'}
-          >
-            <ChevronDown size={14} />
-            <span>{settings.language === 'vi' ? 'Cuộn xuống dưới' : 'Scroll to Bottom'}</span>
-          </button>
+          />
         )}
       </div>
 
