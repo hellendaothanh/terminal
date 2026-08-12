@@ -332,6 +332,78 @@ Please:
     }
   };
 
+  const renderFormattedExplanation = (content: string) => {
+    const lines = content.split('\n');
+    
+    const renderInline = (text: string) => {
+      const inlineRegex = /(\*\*.*?\*\*|`.*?`)/g;
+      const parts = text.split(inlineRegex);
+      return parts.map((sub, sIdx) => {
+        if (sub.startsWith('**') && sub.endsWith('**')) {
+          return <strong key={sIdx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>{sub.slice(2, -2)}</strong>;
+        }
+        if (sub.startsWith('`') && sub.endsWith('`')) {
+          return (
+            <code
+              key={sIdx}
+              style={{
+                backgroundColor: 'var(--bg-tertiary)',
+                color: '#f43f5e',
+                padding: '2px 4px',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace'
+              }}
+            >
+              {sub.slice(1, -1)}
+            </code>
+          );
+        }
+        return sub;
+      });
+    };
+
+    return lines.map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <br key={idx} />;
+
+      // Horizontal dividers
+      if (/^(?:---+|\*\*\*+|___+)$/.test(trimmed)) {
+        return <hr key={idx} style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '8px 0' }} />;
+      }
+
+      // Headings
+      const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      if (headingMatch) {
+        const level = headingMatch[1].length;
+        const text = headingMatch[2];
+        const fontSize = level === 1 ? '1.1rem' : level === 2 ? '1rem' : '0.85rem';
+        return (
+          <h4 key={idx} style={{ fontSize, fontWeight: 600, color: 'var(--text-main)', margin: '8px 0 4px 0' }}>
+            {text}
+          </h4>
+        );
+      }
+
+      // List items
+      const listMatch = line.match(/^(\*|-|\+)\s+(.+)$/);
+      if (listMatch) {
+        const text = listMatch[2];
+        return (
+          <li key={idx} style={{ marginLeft: '12px', listStyleType: 'disc', margin: '3px 0', color: 'var(--text-main)' }}>
+            {renderInline(text)}
+          </li>
+        );
+      }
+
+      return (
+        <p key={idx} style={{ margin: '3px 0', lineHeight: '1.4' }}>
+          {renderInline(line)}
+        </p>
+      );
+    });
+  };
+
   const handleReconnect = () => {
     window.api.sshDisconnect(sessionId);
     if (terminalRef.current) {
@@ -742,8 +814,8 @@ Please:
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.78rem' }}>
-              <div style={{ color: 'var(--text-muted)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                {aiExplanation}
+              <div style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                {renderFormattedExplanation(aiExplanation)}
               </div>
 
               {aiSuggestedCommand && (
