@@ -117,7 +117,7 @@
 * **Tự Động Đồng Bộ Target:** Tự động điền địa chỉ IP/Tên miền đích từ form cấu hình máy chủ, giúp đơn giản hóa quy trình chẩn đoán mạng khi gặp lỗi kết nối.
 
 ### 25. 🤖 Trợ Lý Sửa Lỗi Tự Động & Giải Thích Lỗi Terminal AI (Terminal AI Autofix)
-* **Chẩn Đoán Thông Minh:** Khi lệnh SSH hoặc truy vấn SQL xảy ra sự cố, tự động phát hiện mã lỗi, thu thập ngữ cảnh thực thi lỗi và đề xuất phân tích nguyên nhân sự cố một cách trực quan bằng AI.
+* **Chẩn Đoán Thông Minh:** Khi lệnh SSH hoặc truy vấn SQL xảy ra sự cố, tự động phát hiện mã lỗi, thu thập ngữ cảnh thực thi lỗi và đề xuất phân tích nguyên nhân sự cố bằng AI được trình bày đẹp mắt dưới dạng Markdown sạch sẽ (tiêu đề, in đậm, danh sách...).
 * **Tự Động Sửa Lỗi 1-Click:** Tự động tối ưu hóa câu lệnh đúng cú pháp và cấu hình, hỗ trợ điền và chạy lại câu lệnh tức thì chỉ với một cú nhấp chuột (1-Click Apply).
 
 ### 26. ⛵ Quản Lý Helm Chart & CRD Nâng Cao cho Kubernetes

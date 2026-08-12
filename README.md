@@ -117,7 +117,7 @@
 * **Auto-Populated Targets:** Hostnames and IP addresses are automatically synchronized with the server profile configuration form for a frictionless diagnostic workflow.
 
 ### 25. 🤖 Terminal AI Autofix & Error Explainer (Bilingual EN/VI)
-* **Intelligent Diagnostics:** Captures execution history or query errors in real time when an SSH shell command or SQL query fails. Shows a contextual "AI Fix" helper card that diagnoses the root cause of the error.
+* **Intelligent Diagnostics:** Captures execution history or query errors in real time when an SSH shell command or SQL query fails. Shows a contextual "AI Fix" helper card that diagnoses the root cause of the error formatted in beautiful, readable Markdown (headings, bold, lists).
 * **1-Click Autofix:** Generates standard corrected commands/queries with one-click injection and execution support, restoring system runtime without manual troubleshooting.
 
 ### 26. ⛵ Advanced Helm Release & CRD Explorer for Kubernetes
