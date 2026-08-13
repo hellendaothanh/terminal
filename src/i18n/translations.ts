@@ -88,6 +88,8 @@ export const translations = {
     tagsInputLabel: 'Thẻ Tag (Phân cách bởi dấu phẩy)',
     cancel: 'Hủy',
     saveServer: 'Lưu Máy Chủ / CSDL',
+    netDiagnostics: 'Chẩn Đoán Mạng',
+    closeDiagnostics: 'Đóng Chẩn Đoán',
 
     // Settings Modal
     settingsTitle: 'Cài Đặt Hệ Thống & Trợ Lý AI',
@@ -482,6 +484,8 @@ export const translations = {
     tagsInputLabel: 'Tags (Comma separated)',
     cancel: 'Cancel',
     saveServer: 'Save Server / Database',
+    netDiagnostics: 'Network Diagnostics',
+    closeDiagnostics: 'Close Diagnostics',
 
     // Settings Modal
     settingsTitle: 'System & AI Settings',

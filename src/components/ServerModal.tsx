@@ -224,18 +224,20 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               onClick={() => setShowDiagnostics(!showDiagnostics)}
               className="btn-secondary"
               style={{
-                fontSize: '0.72rem',
-                padding: '3px 8px',
-                height: '24px',
+                fontSize: '0.78rem',
+                padding: '4px 10px',
+                height: '28px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '6px',
                 border: showDiagnostics ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                color: showDiagnostics ? 'var(--accent-primary)' : 'var(--text-muted)'
+                color: showDiagnostics ? 'var(--accent-primary)' : 'var(--text-main)',
+                backgroundColor: showDiagnostics ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                fontWeight: 600
               }}
             >
-              <Activity size={12} />
-              {showDiagnostics ? 'Đóng Chẩn Đoán' : 'Chẩn Đoán Mạng'}
+              <Activity size={14} style={{ color: 'var(--accent-primary)' }} />
+              <span>{showDiagnostics ? t('closeDiagnostics') || 'Đóng Chẩn Đoán' : t('netDiagnostics') || 'Chẩn Đoán Mạng'}</span>
             </button>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -338,9 +340,31 @@ export const ServerModal: React.FC<ServerModalProps> = ({
 
                 {protocol !== 'S3' && (
                   <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                      {t('hostIp')}
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                        {t('hostIp')}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowDiagnostics(!showDiagnostics)}
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--accent-primary)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 600,
+                          padding: 0
+                        }}
+                        title={showDiagnostics ? t('closeDiagnostics') : t('netDiagnostics')}
+                      >
+                        <Activity size={12} />
+                        <span>{showDiagnostics ? t('closeDiagnostics') || 'Đóng Chẩn Đoán' : t('netDiagnostics') || 'Chẩn Đoán Mạng'}</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       className="input-field"
