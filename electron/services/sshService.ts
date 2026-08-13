@@ -203,6 +203,24 @@ export class SSHService {
   ): Promise<{ success: boolean; output?: string; error?: string }> {
     return new Promise((resolve) => {
       const client = new Client();
+      let resolved = false;
+
+      const safeResolve = (res: { success: boolean; output?: string; error?: string }) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          try {
+            client.end();
+          } catch (e) {}
+          resolve(res);
+        }
+      };
+
+      // 30 seconds overall timeout for command execution
+      const timeoutId = setTimeout(() => {
+        safeResolve({ success: false, error: 'Command execution timed out after 30 seconds.' });
+      }, 30000);
+
       const connectConfig: ConnectConfig = {
         host: server.host,
         port: server.port || 22,
@@ -224,10 +242,10 @@ export class SSHService {
               if (parsed instanceof Error) throw parsed;
               needPassphrase = true;
             } catch (err: any) {
-              return resolve({ success: false, error: 'Cannot parse privateKey: ' + err.message });
+              return safeResolve({ success: false, error: 'Cannot parse privateKey: ' + err.message });
             }
           } else {
-            return resolve({ success: false, error: 'Khóa SSH yêu cầu Passphrase.' });
+            return safeResolve({ success: false, error: 'Khóa SSH yêu cầu Passphrase.' });
           }
         }
         connectConfig.privateKey = key.privateKey;
@@ -243,14 +261,25 @@ export class SSHService {
       });
 
       client.on('error', (err) => {
-        resolve({ success: false, error: err.message });
+        safeResolve({ success: false, error: err.message });
+      });
+
+      (client as any).on('close', (hadError: boolean) => {
+        safeResolve({ success: false, error: hadError ? 'Connection closed due to transmission error' : 'Connection closed' });
+      });
+
+      (client as any).on('end', () => {
+        safeResolve({ success: false, error: 'Connection ended' });
+      });
+
+      (client as any).on('timeout', () => {
+        safeResolve({ success: false, error: 'Connection timed out' });
       });
 
       client.on('ready', () => {
         client.exec(command, (err, stream) => {
           if (err) {
-            client.end();
-            return resolve({ success: false, error: err.message });
+            return safeResolve({ success: false, error: err.message });
           }
 
           let output = '';
@@ -265,17 +294,20 @@ export class SSHService {
           });
 
           stream.on('close', (code: number) => {
-            client.end();
             if (code === 0) {
-              resolve({ success: true, output: output || 'Executing command finished with exit code 0.' });
+              safeResolve({ success: true, output: output || 'Executing command finished with exit code 0.' });
             } else {
-              resolve({ success: false, output: output, error: errorOutput || `Process exited with code ${code}` });
+              safeResolve({ success: false, output: output, error: errorOutput || `Process exited with code ${code}` });
             }
           });
         });
       });
 
-      client.connect(connectConfig);
+      try {
+        client.connect(connectConfig);
+      } catch (err: any) {
+        safeResolve({ success: false, error: err.message });
+      }
     });
   }
 }
