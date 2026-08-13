@@ -199,7 +199,10 @@ function setupIpcHandlers() {
   /* ================= Multi-Exec Handlers ================= */
   ipcMain.handle('multi-exec:ssh', async (_, { targetServers, commandStr, keys, vaultConfig }) => {
     const promises = targetServers.map(async (server: any) => {
-      const keyObj = (keys && Array.isArray(keys)) ? keys.find((k: any) => k.id === server.privateKeyId) : undefined;
+      let keyObj = (keys && Array.isArray(keys)) ? keys.find((k: any) => k.id === server.privateKeyId) : undefined;
+      if (!keyObj && keys && Array.isArray(keys) && keys.length > 0) {
+        keyObj = keys[0];
+      }
       const startTime = Date.now();
       try {
         if (server.authType === 'hashicorpVault' && server.vaultSecretPath && vaultConfig) {

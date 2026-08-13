@@ -14,6 +14,7 @@ export interface ServerMetrics {
   netTxKbps: number;
   uptime: string;
   loadAvg: string;
+  osInfo?: string;
   timestamp: number;
 }
 
@@ -44,7 +45,7 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
       const parts = output.trim().split('---METRICS_DELIM---');
       if (parts.length < 5) return null;
 
-      const [cpuPart, memPart, diskPart, netPart, uptimePart] = parts.map((p) => p.trim());
+      const [cpuPart, memPart, diskPart, netPart, uptimePart, osPart] = parts.map((p) => p.trim());
 
       // 1. CPU Usage %
       let cpuUsage = 0;
@@ -108,6 +109,7 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
         netTxKbps,
         uptime,
         loadAvg,
+        osInfo: osPart || undefined,
         timestamp: Date.now()
       };
     } catch (e) {
@@ -136,6 +138,15 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
       echo "---METRICS_DELIM---"
       uptime -p || uptime
       uptime | awk -F'load average:' '{ print \$2 }'
+      echo "---METRICS_DELIM---"
+      if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "\$NAME \$VERSION"
+      elif [ -f /etc/redhat-release ]; then
+        cat /etc/redhat-release
+      else
+        uname -s
+      fi
     `.trim();
 
     try {
@@ -304,22 +315,47 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
           </div>
         </div>
 
-        {/* Footer Info: Uptime & Load Avg */}
-        {metrics?.uptime && (
+        {/* Footer Info: Uptime & Load Avg & OS */}
+        {metrics && (
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.72rem',
-              color: 'var(--text-muted)',
+              flexDirection: 'column',
+              gap: '4px',
               backgroundColor: 'var(--bg-tertiary)',
-              padding: '4px 8px',
+              padding: '6px 8px',
               borderRadius: 'var(--radius-sm)'
             }}
           >
-            <span>Uptime: <strong style={{ color: 'var(--text-main)' }}>{metrics.uptime}</strong></span>
-            {metrics.loadAvg && <span>Load Average: <strong style={{ color: 'var(--text-main)' }}>{metrics.loadAvg}</strong></span>}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <span>Uptime: <strong style={{ color: 'var(--text-main)' }}>{metrics.uptime}</strong></span>
+              {metrics.loadAvg && <span>Load Average: <strong style={{ color: 'var(--text-main)' }}>{metrics.loadAvg}</strong></span>}
+            </div>
+            {metrics.osInfo && (
+              <div
+                style={{
+                  fontSize: '0.68rem',
+                  color: 'var(--text-dim)',
+                  borderTop: '1px solid var(--border-subtle)',
+                  paddingTop: '4px',
+                  marginTop: '2px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <span>Hệ điều hành:</span>
+                <strong style={{ color: 'var(--text-main)' }}>{metrics.osInfo}</strong>
+              </div>
+            )}
           </div>
         )}
       </>
