@@ -29,6 +29,7 @@ import { VisualQueryBuilder } from './components/VisualQueryBuilder';
 import { DataPump } from './components/DataPump';
 import { DockerK8sPanel } from './components/DockerK8sPanel';
 import { CloudExplorer } from './components/CloudExplorer';
+import { NetDiagnosticsPanel } from './components/NetDiagnosticsPanel';
 
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
@@ -542,6 +543,16 @@ export const App: React.FC = () => {
               setActiveTabId(newTabId);
             }
           }}
+          onOpenDiagnostics={() => {
+            const exists = tabs.find((t) => t.type === 'NET_DIAGNOSTICS');
+            if (exists) {
+              setActiveTabId(exists.id);
+            } else {
+              const newTabId = 'tab_' + Date.now();
+              setTabs([...tabs, { id: newTabId, title: 'Network Diagnostics', type: 'NET_DIAGNOSTICS' }]);
+              setActiveTabId(newTabId);
+            }
+          }}
         />
 
         {/* Central Active Viewport Container */}
@@ -715,6 +726,8 @@ export const App: React.FC = () => {
                     />
                   ) : tab.type === 'LOG_AGGREGATOR' ? (
                     <LogAggregator servers={vaultData.servers || []} keys={vaultData.keys || []} />
+                  ) : tab.type === 'NET_DIAGNOSTICS' ? (
+                    <NetDiagnosticsPanel settings={settings} />
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}

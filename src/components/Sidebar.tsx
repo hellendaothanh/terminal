@@ -37,6 +37,7 @@ interface SidebarProps {
   onOpenTeamSync?: () => void;
   onOpenPluginManager?: () => void;
   onOpenCustomConnector?: () => void;
+  onOpenDiagnostics?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -67,7 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenLogAggregator,
   onOpenTeamSync,
   onOpenPluginManager,
-  onOpenCustomConnector
+  onOpenCustomConnector,
+  onOpenDiagnostics
 }) => {
   const { t } = useTranslation(settings);
   const [activePane, setActivePane] = useState<'SERVERS' | 'SECURITY' | 'DATABASES' | 'DEVOPS'>('SERVERS');
@@ -310,6 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <ToolButton icon={Cloud} label={t('cloudExplorer') || 'S3 Cloud Explorer'} onClick={onOpenCloudExplorer} />
                 <ToolButton icon={Network} label={t('sshTunnels') || 'SSH Tunnels & Forwarding'} onClick={onOpenTunnels} />
                 <ToolButton icon={TerminalSquare} label={t('multiExec') || 'Batch Exec (Multi-Exec)'} onClick={onOpenMultiExec} />
+                <ToolButton icon={Activity} label={t('netDiagnostics') || 'Network Diagnostics'} onClick={onOpenDiagnostics} />
                 <ToolButton icon={Activity} label={t('multiLogTail') || 'Multi-Log Tail'} onClick={onOpenLogAggregator} />
                 <ToolButton icon={Blocks} label={t('pluginManager') || 'Plugin Manager'} onClick={onOpenPluginManager} />
               </div>

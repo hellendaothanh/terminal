@@ -1,4 +1,4 @@
-import { Terminal, FolderOpen, Monitor, Key, Settings, X, Plus, Database, PanelLeftClose, PanelLeftOpen, Box, Cloud } from 'lucide-react';
+import { Terminal, FolderOpen, Monitor, Key, Settings, X, Plus, Database, PanelLeftClose, PanelLeftOpen, Box, Cloud, Activity } from 'lucide-react';
 import { TabItem, TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -47,6 +47,8 @@ export const TabBar: React.FC<TabBarProps> = ({
         return <Box size={14} style={{ color: 'var(--env-dev)' }} />;
       case 'CLOUD_EXPLORER':
         return <Cloud size={14} style={{ color: 'var(--accent-primary)' }} />;
+      case 'NET_DIAGNOSTICS':
+        return <Activity size={14} style={{ color: 'var(--accent-primary)' }} />;
       default:
         return <Terminal size={14} />;
     }
@@ -126,7 +128,8 @@ export const TabBar: React.FC<TabBarProps> = ({
                  tab.type === 'VISUAL_QUERY_BUILDER' ? t('visualQueryBuilder') :
                  tab.type === 'DATA_PUMP' ? t('dataPump') :
                  tab.type === 'DOCKER_K8S' ? t('dockerK8s') :
-                 tab.type === 'CLOUD_EXPLORER' ? t('cloudExplorer') : tab.title}
+                 tab.type === 'CLOUD_EXPLORER' ? t('cloudExplorer') :
+                 tab.type === 'NET_DIAGNOSTICS' ? t('netDiagnostics') : tab.title}
               </span>
               <button
                 onClick={(e) => {
