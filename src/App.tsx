@@ -618,7 +618,7 @@ export const App: React.FC = () => {
             {/* Persistent Tab Views - Keeps SSH/SFTP/RDP/Managers alive when switching tabs */}
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
-              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER' && tab.type !== 'ERD_SCHEMA_DIFF' && tab.type !== 'VISUAL_QUERY_BUILDER' && tab.type !== 'DATA_PUMP' && tab.type !== 'DOCKER_K8S' && tab.type !== 'CLOUD_EXPLORER' && tab.type !== 'CUSTOM_CONNECTOR') return null;
+              if (!tab.server && tab.type !== 'PASSWORD_MANAGER' && tab.type !== 'OTP_MANAGER' && tab.type !== 'TUNNEL_MANAGER' && tab.type !== 'MULTI_EXEC_MANAGER' && tab.type !== 'AUDIT_LOG_MANAGER' && tab.type !== 'ERD_SCHEMA_DIFF' && tab.type !== 'VISUAL_QUERY_BUILDER' && tab.type !== 'DATA_PUMP' && tab.type !== 'DOCKER_K8S' && tab.type !== 'CLOUD_EXPLORER' && tab.type !== 'CUSTOM_CONNECTOR' && tab.type !== 'NET_DIAGNOSTICS') return null;
 
               return (
                 <div

@@ -20,7 +20,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
   const [mtrCount, setMtrCount] = useState(5);
 
   React.useEffect(() => {
-    alert("NetDiagnosticsPanel mounted!");
+    console.log("NetDiagnosticsPanel mounted!");
   }, []);
 
   const handleRunDiagnostics = async () => {
