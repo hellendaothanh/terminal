@@ -31,6 +31,31 @@ import { DockerK8sPanel } from './components/DockerK8sPanel';
 import { CloudExplorer } from './components/CloudExplorer';
 import { NetDiagnosticsPanel } from './components/NetDiagnosticsPanel';
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '24px', backgroundColor: '#1a0505', color: '#ff8888', border: '1px solid #ff4444', borderRadius: '4px', fontFamily: 'monospace', overflow: 'auto', height: '100%' }}>
+          <h3>Rendering Error in Tab:</h3>
+          <p>{this.state.error?.toString()}</p>
+          <pre>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const App: React.FC = () => {
   const [hasVault, setHasVault] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
@@ -727,7 +752,9 @@ export const App: React.FC = () => {
                   ) : tab.type === 'LOG_AGGREGATOR' ? (
                     <LogAggregator servers={vaultData.servers || []} keys={vaultData.keys || []} />
                   ) : tab.type === 'NET_DIAGNOSTICS' ? (
-                    <NetDiagnosticsPanel settings={settings} />
+                    <ErrorBoundary>
+                      <NetDiagnosticsPanel settings={settings} />
+                    </ErrorBoundary>
                   ) : tab.server ? (
                     <RDPViewer
                       sessionId={tab.id}
