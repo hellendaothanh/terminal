@@ -10,6 +10,7 @@
 
 ### 1. 🔒 Bảo Mật Kho Dữ Liệu Mã Hóa (Master Passphrase & Vault)
 * **Master Passphrase Vault:** Mọi thông tin máy chủ, tài khoản, khóa bí mật đều được mã hóa bằng thuật toán **AES-256-GCM** kết hợp hàm tạo khóa **PBKDF2 (100,000 vòng lặp)**.
+* **Bảo Mật Kiểu KeePass (Mật khẩu + Key File):** Hỗ trợ tăng cường bảo mật bằng cách kết hợp Master Passphrase và tệp khóa cá nhân (`.key` tự sinh ngẫu nhiên 256-bit). Cho phép tùy chọn vị trí lưu trữ tệp Database (`.enc`) và tệp khóa (`.key`) linh hoạt (ví dụ: đồng bộ qua Google Drive / OneDrive để dùng chung giữa Windows và macOS).
 * **Sao Lưu & Phục Hồi Dữ Liệu Mã Hóa (Encrypted Vault Backup):** Xuất và nhập toàn bộ kho dữ liệu (bao gồm cả các cấu hình giao diện & Trợ lý AI) an toàn với mật khẩu mã hóa riêng (Passphrase) chuẩn **AES-256-GCM** chống lộ thông tin.
 * **Quản Lý Khóa SSH Key Vault:** Sinh cặp khóa an toàn **RSA 4096-bit** và **Ed25519** ngay trong ứng dụng, hỗ trợ copy nhanh Public Key để đưa vào `~/.ssh/authorized_keys`.
 

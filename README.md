@@ -10,6 +10,7 @@
 
 ### 1. 🔒 Encrypted Master Passphrase & Local Vault
 * **Master Passphrase Protection:** All server configurations, credentials, and private keys are encrypted using **AES-256-GCM** combined with **PBKDF2 key derivation (100,000 iterations)**.
+* **KeePass-style Security (Passphrase + Key File):** Enhances security by combining a Master Passphrase with a private key file (`.key` containing a random 256-bit security key). Users can choose custom paths for both the Database file (`.enc`) and the Key file (`.key`) anywhere on their disk (e.g., in Google Drive / OneDrive for easy syncing and cross-platform compatibility between Windows and macOS).
 * **Encrypted Vault Import/Export:** Securely backup and restore your entire vault data (including general terminal and AI settings) with custom **AES-256-GCM passphrase protection** for `.enc.json` files.
 * **SSH Key Vault Manager:** Generate secure **RSA 4096-bit** and **Ed25519** key pairs directly within the application with one-click public key copying for `~/.ssh/authorized_keys`.
 
