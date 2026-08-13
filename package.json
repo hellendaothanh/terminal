@@ -74,7 +74,6 @@
     "react-dom": "^18.3.1",
     "socks": "^2.8.9",
     "socks-server": "^0.0.2",
-    "socksv5": "^0.0.4",
     "ssh2": "^1.15.0",
     "ssh2-sftp-client": "^10.0.3"
   },

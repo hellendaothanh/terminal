@@ -1,6 +1,6 @@
 import net from 'net';
 import { Client, utils } from 'ssh2';
-import socksv5 from 'socksv5';
+import { createSocksServer } from '../utils/socks5';
 import { ServerConfig, SSHKey, SSHTunnelConfig, TunnelTrafficStats } from '../../src/types';
 
 interface ActiveTunnel {
@@ -261,7 +261,7 @@ export class SSHTunnelService {
     const localPort = config.localPort;
 
     try {
-      const socksServer = socksv5.createServer((info: any, accept: any, reject: any) => {
+      const socksServer = createSocksServer((info: any, accept: any, reject: any) => {
         tunnel.activeConnections++;
         client.forwardOut(
           info.srcAddr,
@@ -300,7 +300,7 @@ export class SSHTunnelService {
         );
       });
 
-      socksServer.useAuth(socksv5.auth.None());
+      socksServer.useAuth();
 
       socksServer.listen(localPort, localHost, () => {
         tunnel.socksServer = socksServer;

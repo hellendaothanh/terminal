@@ -243,6 +243,20 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
     }, 2500);
   };
 
+  const safeFit = () => {
+    try {
+      if (fitAddonRef.current && terminalRef.current && containerRef.current) {
+        const container = containerRef.current;
+        if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+          fitAddonRef.current.fit();
+          window.api.sshResize(sessionId, terminalRef.current.cols, terminalRef.current.rows);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fit terminal:', e);
+    }
+  };
+
   const startConnection = (targetServer: ServerConfig) => {
     if (!terminalRef.current) return;
     const term = terminalRef.current;
@@ -250,9 +264,7 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
     setIsConnected(false);
     setError(null);
 
-    if (fitAddonRef.current) {
-      fitAddonRef.current.fit();
-    }
+    safeFit();
 
     // Resolve Bastion / Jump Host Chain
     const jumpChain: { server: ServerConfig; key?: SSHKey }[] = [];
@@ -435,7 +447,13 @@ Please:
     term.loadAddon(webLinksAddon);
 
     term.open(containerRef.current);
-    fitAddon.fit();
+    try {
+      if (containerRef.current && containerRef.current.offsetWidth > 0 && containerRef.current.offsetHeight > 0) {
+        fitAddon.fit();
+      }
+    } catch (e) {
+      console.warn('Initial fit failed:', e);
+    }
 
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -498,10 +516,7 @@ Please:
     startConnection(currentServer);
 
     const handleResize = () => {
-      if (fitAddonRef.current && terminalRef.current) {
-        fitAddonRef.current.fit();
-        window.api.sshResize(sessionId, terminalRef.current.cols, terminalRef.current.rows);
-      }
+      safeFit();
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -547,10 +562,7 @@ Please:
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.options.fontSize = fontSize;
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
-        window.api.sshResize(sessionId, terminalRef.current.cols, terminalRef.current.rows);
-      }
+      safeFit();
     }
   }, [fontSize]);
 

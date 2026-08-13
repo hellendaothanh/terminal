@@ -384,6 +384,14 @@ export const App: React.FC = () => {
     }
   };
 
+  const handlePasteToTerminal = (text: string) => {
+    if (!activeTabId) return;
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    if (activeTab && activeTab.type === 'SSH') {
+      window.api.sshWrite(activeTabId, text);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)' }}>
@@ -775,6 +783,7 @@ export const App: React.FC = () => {
           onClose={() => setIsAIOpen(false)}
           settings={settings}
           activeTabId={activeTabId || undefined}
+          onPasteToTerminal={handlePasteToTerminal}
         />
       </div>
 
