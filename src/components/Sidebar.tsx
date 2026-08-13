@@ -285,28 +285,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {activePane === 'SECURITY' && (
               <div>
-                <ToolButton icon={Key} label="Password Manager" onClick={onOpenPasswords} />
-                <ToolButton icon={FileKey2} label="2FA (OTP) Manager" onClick={onOpenOTPs} />
-                <ToolButton icon={Table2} label="ERD & Schema Diff" onClick={onOpenErdDiff} />
-                <ToolButton icon={Activity} label="Data Pump" onClick={onOpenDataPump} />
+                <ToolButton icon={Key} label={t('passwords') || 'Password Manager'} onClick={onOpenPasswords} />
+                <ToolButton icon={FileKey2} label={t('otpAuth') || '2FA (OTP) Manager'} onClick={onOpenOTPs} />
+                <ToolButton icon={FileClock} label={t('auditLogs') || 'Session Audit Logs'} onClick={onOpenAuditLogs} />
+                <ToolButton icon={Activity} label={t('teamSync') || 'Team Sync'} onClick={onOpenTeamSync} />
+                <ToolButton icon={Table2} label={t('erdDiff') || 'ERD & Schema Diff'} onClick={onOpenErdDiff} />
+                <ToolButton icon={Activity} label={t('dataPump') || 'Data Pump'} onClick={onOpenDataPump} />
                 <ToolButton icon={Blocks} label="Custom Connectors (Plugins)" onClick={onOpenCustomConnector} />
               </div>
             )}
 
             {activePane === 'DATABASES' && (
               <div>
-                <ToolButton icon={SplitSquareHorizontal} label="ERD & Schema Diff" onClick={onOpenErdDiff} />
-                <ToolButton icon={LayoutGrid} label="Visual Query Builder" onClick={onOpenVisualQueryBuilder} />
-                <ToolButton icon={DatabaseBackup} label="Data Pump Stream" onClick={onOpenDataPump} />
+                <ToolButton icon={SplitSquareHorizontal} label={t('erdDiff') || 'ERD & Schema Diff'} onClick={onOpenErdDiff} />
+                <ToolButton icon={LayoutGrid} label={t('visualQueryBuilder') || 'Visual Query Builder'} onClick={onOpenVisualQueryBuilder} />
+                <ToolButton icon={TerminalSquare} label={t('multiExec') || 'Multi-Exec & Snippets'} onClick={onOpenMultiExec} />
+                <ToolButton icon={DatabaseBackup} label={t('dataPump') || 'Data Pump Stream'} onClick={onOpenDataPump} />
               </div>
             )}
 
             {activePane === 'DEVOPS' && (
               <div>
-                <ToolButton icon={Container} label="Docker & K8s Explorer" onClick={onOpenDockerK8s} />
-                <ToolButton icon={Cloud} label="S3 Cloud Explorer" onClick={onOpenCloudExplorer} />
-                <ToolButton icon={Activity} label="Multi-Log Tail" onClick={onOpenLogAggregator} />
-                <ToolButton icon={Blocks} label="Plugin Manager" onClick={onOpenPluginManager} />
+                <ToolButton icon={Container} label={t('dockerK8s') || 'Docker & K8s Explorer'} onClick={onOpenDockerK8s} />
+                <ToolButton icon={Cloud} label={t('cloudExplorer') || 'S3 Cloud Explorer'} onClick={onOpenCloudExplorer} />
+                <ToolButton icon={Network} label={t('sshTunnels') || 'SSH Tunnels & Forwarding'} onClick={onOpenTunnels} />
+                <ToolButton icon={TerminalSquare} label={t('multiExec') || 'Batch Exec (Multi-Exec)'} onClick={onOpenMultiExec} />
+                <ToolButton icon={Activity} label={t('multiLogTail') || 'Multi-Log Tail'} onClick={onOpenLogAggregator} />
+                <ToolButton icon={Blocks} label={t('pluginManager') || 'Plugin Manager'} onClick={onOpenPluginManager} />
               </div>
             )}
           </div>

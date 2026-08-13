@@ -390,7 +390,10 @@ export const translations = {
     ceDesc: 'Kết nối API Cloud Provider để đồng bộ danh sách Instance/VM và mở kết nối SSH / RDP tức thì chỉ bằng 1 cú nhấp chuột.',
     ceSyncBtn: 'Đồng Bộ API Cloud',
     ceAllCloud: 'Tất cả Cloud',
-    ceConnectBtn: 'Kết Nối'
+    ceConnectBtn: 'Kết Nối',
+    multiLogTail: 'Theo Dõi Log Hàng Loạt (Multi-Log)',
+    teamSync: 'Đồng Bộ Nhóm (Team Sync)',
+    pluginManager: 'Quản Lý Plugin'
   },
   en: {
     // App & Header
@@ -781,6 +784,9 @@ export const translations = {
     ceDesc: 'Connect Cloud Provider APIs to sync Instance/VM lists and open SSH / RDP connections instantly in one click.',
     ceSyncBtn: 'Sync Cloud API',
     ceAllCloud: 'All Clouds',
-    ceConnectBtn: 'Connect'
+    ceConnectBtn: 'Connect',
+    multiLogTail: 'Multi-Log Tail Aggregator',
+    teamSync: 'Team Sync & Share',
+    pluginManager: 'Plugin Manager'
   }
 };
