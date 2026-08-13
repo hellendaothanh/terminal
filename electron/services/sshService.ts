@@ -204,11 +204,13 @@ export class SSHService {
     return new Promise((resolve) => {
       const client = new Client();
       let resolved = false;
+      let executionTimeoutId: NodeJS.Timeout | null = null;
 
       const safeResolve = (res: { success: boolean; output?: string; error?: string }) => {
         if (!resolved) {
           resolved = true;
-          clearTimeout(timeoutId);
+          clearTimeout(connectionTimeoutId);
+          if (executionTimeoutId) clearTimeout(executionTimeoutId);
           try {
             client.end();
           } catch (e) {}
@@ -216,16 +218,16 @@ export class SSHService {
         }
       };
 
-      // 30 seconds overall timeout for command execution
-      const timeoutId = setTimeout(() => {
-        safeResolve({ success: false, error: 'Command execution timed out after 30 seconds.' });
-      }, 30000);
+      // 25 seconds connection phase timeout
+      const connectionTimeoutId = setTimeout(() => {
+        safeResolve({ success: false, error: 'SSH connection attempt timed out after 25 seconds.' });
+      }, 25000);
 
       const connectConfig: ConnectConfig = {
         host: server.host,
         port: server.port || 22,
         username: server.username,
-        readyTimeout: 15000,
+        readyTimeout: 20000,
         keepaliveInterval: 10000,
         tryKeyboard: true
       };
@@ -277,6 +279,14 @@ export class SSHService {
       });
 
       client.on('ready', () => {
+        // Connection successful: clear connection phase timer
+        clearTimeout(connectionTimeoutId);
+
+        // Start 60 seconds command execution phase timer
+        executionTimeoutId = setTimeout(() => {
+          safeResolve({ success: false, error: 'Command execution timed out after 60 seconds.' });
+        }, 60000);
+
         client.exec(command, (err, stream) => {
           if (err) {
             return safeResolve({ success: false, error: err.message });
