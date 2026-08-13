@@ -106,12 +106,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     // Check initial Vault status
     if (window.api) {
-      window.api.vaultCheckStatus().then((status) => {
+      const savedDbPath = localStorage.getItem('omni_vault_db_path') || null;
+      window.api.vaultCheckStatus(savedDbPath).then((status) => {
         setHasVault(status.hasVault);
         setIsUnlocked(status.isUnlocked);
         if (status.isUnlocked) {
           loadVaultData();
         }
+        setLoading(false);
+      }).catch(() => {
         setLoading(false);
       });
     } else {
@@ -180,8 +183,8 @@ export const App: React.FC = () => {
     setSettings(newSettings);
   };
 
-  const handleInitVault = async (passphrase: string): Promise<boolean> => {
-    const res = await window.api.vaultInit(passphrase);
+  const handleInitVault = async (dbPath: string, passphrase: string, keyFileContent?: string): Promise<boolean> => {
+    const res = await window.api.vaultInit(dbPath, passphrase, keyFileContent);
     if (res.success) {
       setHasVault(true);
       setIsUnlocked(true);
@@ -191,8 +194,8 @@ export const App: React.FC = () => {
     return false;
   };
 
-  const handleUnlockVault = async (passphrase: string): Promise<boolean> => {
-    const res = await window.api.vaultUnlock(passphrase);
+  const handleUnlockVault = async (dbPath: string, passphrase: string, keyFileContent?: string): Promise<boolean> => {
+    const res = await window.api.vaultUnlock(dbPath, passphrase, keyFileContent);
     if (res.success && res.data) {
       setIsUnlocked(true);
       setVaultData(res.data);

@@ -10,7 +10,7 @@ const KEY_LEN = 32; // 256 bits
 const ALGORITHM = 'aes-256-gcm';
 
 export class VaultService {
-  private vaultPath: string;
+  private vaultPath: string | null = null;
   private currentMasterKey: Buffer | null = null;
 
   constructor() {
@@ -18,8 +18,17 @@ export class VaultService {
     this.vaultPath = path.join(userDataPath, VAULT_FILE_NAME);
   }
 
-  public hasVault(): boolean {
-    return fs.existsSync(this.vaultPath);
+  public setVaultPath(filePath: string): void {
+    this.vaultPath = filePath;
+  }
+
+  public getVaultPath(): string | null {
+    return this.vaultPath;
+  }
+
+  public hasVault(dbPath?: string | null): boolean {
+    const p = dbPath || this.vaultPath;
+    return p !== null && fs.existsSync(p);
   }
 
   public isUnlocked(): boolean {
@@ -30,10 +39,13 @@ export class VaultService {
     this.currentMasterKey = null;
   }
 
-  public initVault(passphrase: string): { success: boolean; error?: string } {
+  public initVault(dbPath: string, passphrase: string, keyFileContent?: string): { success: boolean; error?: string } {
     try {
+      this.vaultPath = dbPath;
       const salt = crypto.randomBytes(16);
-      const masterKey = crypto.pbkdf2Sync(passphrase, salt, ITERATIONS, KEY_LEN, 'sha256');
+      
+      const combinedInput = passphrase + (keyFileContent || '');
+      const masterKey = crypto.pbkdf2Sync(combinedInput, salt, ITERATIONS, KEY_LEN, 'sha256');
       
       const emptyData: VaultData = { servers: [], keys: [] };
       const iv = crypto.randomBytes(12);
@@ -51,7 +63,7 @@ export class VaultService {
         data: encrypted
       };
 
-      fs.writeFileSync(this.vaultPath, JSON.stringify(payload, null, 2), 'utf8');
+      fs.writeFileSync(dbPath, JSON.stringify(payload, null, 2), 'utf8');
       this.currentMasterKey = masterKey;
       return { success: true };
     } catch (err: any) {
@@ -59,13 +71,14 @@ export class VaultService {
     }
   }
 
-  public unlockVault(passphrase: string): { success: boolean; data?: VaultData; error?: string } {
-    if (!this.hasVault()) {
-      return { success: false, error: 'Kho dữ liệu chưa được khởi tạo.' };
+  public unlockVault(dbPath: string, passphrase: string, keyFileContent?: string): { success: boolean; data?: VaultData; error?: string } {
+    this.vaultPath = dbPath;
+    if (!this.hasVault(dbPath)) {
+      return { success: false, error: 'Kho dữ liệu không tồn tại tại đường dẫn này.' };
     }
 
     try {
-      const fileContent = fs.readFileSync(this.vaultPath, 'utf8');
+      const fileContent = fs.readFileSync(dbPath, 'utf8');
       const payload = JSON.parse(fileContent);
 
       const salt = Buffer.from(payload.salt, 'hex');
@@ -73,23 +86,48 @@ export class VaultService {
       const authTag = Buffer.from(payload.authTag, 'hex');
       const encryptedData = payload.data;
 
-      const derivedKey = crypto.pbkdf2Sync(passphrase, salt, ITERATIONS, KEY_LEN, 'sha256');
-      const decipher = crypto.createDecipheriv(ALGORITHM, derivedKey, iv);
-      decipher.setAuthTag(authTag);
+      let decrypted: string | null = null;
+      let derivedKey: Buffer | null = null;
 
-      let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
+      // 1. Try with keyFileContent if provided
+      if (keyFileContent) {
+        try {
+          const combinedInput = passphrase + keyFileContent;
+          const testKey = crypto.pbkdf2Sync(combinedInput, salt, ITERATIONS, KEY_LEN, 'sha256');
+          const decipher = crypto.createDecipheriv(ALGORITHM, testKey, iv);
+          decipher.setAuthTag(authTag);
+
+          let dec = decipher.update(encryptedData, 'hex', 'utf8');
+          dec += decipher.final('utf8');
+          decrypted = dec;
+          derivedKey = testKey;
+        } catch (e) {
+          // Fallback to password-only logic if keyfile decrypt fails
+        }
+      }
+
+      // 2. Try with password only (for backward compatibility or keyfile-less vaults)
+      if (!decrypted) {
+        const testKey = crypto.pbkdf2Sync(passphrase, salt, ITERATIONS, KEY_LEN, 'sha256');
+        const decipher = crypto.createDecipheriv(ALGORITHM, testKey, iv);
+        decipher.setAuthTag(authTag);
+
+        let dec = decipher.update(encryptedData, 'hex', 'utf8');
+        dec += decipher.final('utf8');
+        decrypted = dec;
+        derivedKey = testKey;
+      }
 
       const data: VaultData = JSON.parse(decrypted);
       this.currentMasterKey = derivedKey;
       return { success: true, data: this.migrateKeysToOpenSSH(data) };
     } catch (err) {
-      return { success: false, error: 'Master Password/Passphrase không chính xác.' };
+      return { success: false, error: 'Mật khẩu Master hoặc File khóa không chính xác.' };
     }
   }
 
   public getVaultData(): VaultData {
-    if (!this.currentMasterKey || !this.hasVault()) {
+    if (!this.currentMasterKey || !this.vaultPath || !this.hasVault()) {
       throw new Error('Kho dữ liệu đang bị khóa hoặc chưa khởi tạo.');
     }
 
@@ -111,7 +149,7 @@ export class VaultService {
   }
 
   public saveVaultData(data: VaultData): { success: boolean; error?: string } {
-    if (!this.currentMasterKey) {
+    if (!this.currentMasterKey || !this.vaultPath) {
       return { success: false, error: 'Kho dữ liệu đang bị khóa.' };
     }
 

@@ -80,19 +80,19 @@ app.on('window-all-closed', () => {
 
 function setupIpcHandlers() {
   /* ================= Local Vault Encrypted Storage ================= */
-  ipcMain.handle('vault:check-status', async () => {
+  ipcMain.handle('vault:check-status', async (_, dbPath: string | null) => {
     return {
-      hasVault: vaultService.hasVault(),
+      hasVault: vaultService.hasVault(dbPath),
       isUnlocked: vaultService.isUnlocked()
     };
   });
 
-  ipcMain.handle('vault:init', async (_, passphrase: string) => {
-    return vaultService.initVault(passphrase);
+  ipcMain.handle('vault:init', async (_, { dbPath, passphrase, keyFileContent }) => {
+    return vaultService.initVault(dbPath, passphrase, keyFileContent);
   });
 
-  ipcMain.handle('vault:unlock', async (_, passphrase: string) => {
-    return vaultService.unlockVault(passphrase);
+  ipcMain.handle('vault:unlock', async (_, { dbPath, passphrase, keyFileContent }) => {
+    return vaultService.unlockVault(dbPath, passphrase, keyFileContent);
   });
 
   ipcMain.handle('vault:get-data', async () => {

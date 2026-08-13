@@ -1,7 +1,7 @@
 export interface ElectronAPI {
-  vaultCheckStatus: () => Promise<{ hasVault: boolean; isUnlocked: boolean }>;
-  vaultInit: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
-  vaultUnlock: (passphrase: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+  vaultCheckStatus: (dbPath: string | null) => Promise<{ hasVault: boolean; isUnlocked: boolean }>;
+  vaultInit: (dbPath: string, passphrase: string, keyFileContent?: string) => Promise<{ success: boolean; error?: string }>;
+  vaultUnlock: (dbPath: string, passphrase: string, keyFileContent?: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   vaultGetData: () => Promise<any>;
   vaultSaveData: (data: any) => Promise<{ success: boolean; error?: string }>;
   vaultLock: () => Promise<{ success: boolean }>;

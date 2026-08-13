@@ -2,9 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
   /* Vault & Security APIs */
-  vaultCheckStatus: () => ipcRenderer.invoke('vault:check-status'),
-  vaultInit: (passphrase: string) => ipcRenderer.invoke('vault:init', passphrase),
-  vaultUnlock: (passphrase: string) => ipcRenderer.invoke('vault:unlock', passphrase),
+  vaultCheckStatus: (dbPath: string | null) => ipcRenderer.invoke('vault:check-status', dbPath),
+  vaultInit: (dbPath: string, passphrase: string, keyFileContent?: string) => ipcRenderer.invoke('vault:init', { dbPath, passphrase, keyFileContent }),
+  vaultUnlock: (dbPath: string, passphrase: string, keyFileContent?: string) => ipcRenderer.invoke('vault:unlock', { dbPath, passphrase, keyFileContent }),
   vaultGetData: () => ipcRenderer.invoke('vault:get-data'),
   vaultSaveData: (data: any) => ipcRenderer.invoke('vault:save-data', data),
   vaultLock: () => ipcRenderer.invoke('vault:lock'),
