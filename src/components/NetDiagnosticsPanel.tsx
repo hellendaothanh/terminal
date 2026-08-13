@@ -19,6 +19,10 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
   const [maxHops, setMaxHops] = useState(20);
   const [mtrCount, setMtrCount] = useState(5);
 
+  React.useEffect(() => {
+    alert("NetDiagnosticsPanel mounted!");
+  }, []);
+
   const handleRunDiagnostics = async () => {
     if (!host) {
       setDiagnosticsOutput('Vui lòng nhập Host/IP của máy chủ trước khi chạy chẩn đoán.');
@@ -48,7 +52,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
   };
 
   return (
-    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', color: 'var(--text-main)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto' }}>
+    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100%', color: 'var(--text-main)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
@@ -61,7 +65,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', gap: '24px', flex: '1 1 auto', minHeight: '450px' }}>
         {/* Left Side: Controls */}
         <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
