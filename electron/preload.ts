@@ -139,5 +139,9 @@ contextBridge.exposeInMainWorld('api', {
 
   /* File Dialog APIs */
   openFileDialog: () => ipcRenderer.invoke('dialog:open-file'),
-  saveFileDialog: (defaultName: string, content: string) => ipcRenderer.invoke('dialog:save-file', { defaultName, content })
+  saveFileDialog: (defaultName: string, content: string) => ipcRenderer.invoke('dialog:save-file', { defaultName, content }),
+
+  /* App Updates APIs */
+  appVersion: () => ipcRenderer.invoke('app:version'),
+  appOpenUrl: (url: string) => ipcRenderer.invoke('app:open-url', url)
 });

@@ -573,4 +573,15 @@ function setupIpcHandlers() {
       return `Diagnostics error: ${e.message}`;
     }
   });
+
+  /* ================= App Update Handlers ================= */
+  ipcMain.handle('app:version', () => {
+    return app.getVersion();
+  });
+
+  ipcMain.handle('app:open-url', async (_, url: string) => {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
+    return { success: true };
+  });
 }

@@ -113,6 +113,13 @@ export const translations = {
     aiBaseUrl: 'Custom Base URL (REST Endpoint)',
     testApiKey: 'Kiểm Tra API Key',
     saveSettings: 'Lưu Cài Đặt',
+    currentVersion: 'Phiên bản hiện tại',
+    checkForUpdates: 'Kiểm tra cập nhật',
+    checkingUpdates: 'Đang kiểm tra...',
+    latestVersion: 'Bạn đang sử dụng phiên bản mới nhất.',
+    newVersionAvailable: 'Có phiên bản mới {version}!',
+    downloadUpdate: 'Tải về & Cập nhật',
+    updateError: 'Lỗi kiểm tra cập nhật.',
 
     // Key Manager Modal
     keyManagerTitle: 'Quản Lý Khóa SSH Key Vault',
@@ -497,6 +504,13 @@ export const translations = {
     aiBaseUrl: 'Custom Base URL (REST Endpoint)',
     testApiKey: 'Test API Key',
     saveSettings: 'Save Settings',
+    currentVersion: 'Current Version',
+    checkForUpdates: 'Check for updates',
+    checkingUpdates: 'Checking...',
+    latestVersion: 'You are using the latest version.',
+    newVersionAvailable: 'New version {version} is available!',
+    downloadUpdate: 'Download & Update',
+    updateError: 'Error checking for updates.',
 
     // Key Manager Modal
     keyManagerTitle: 'SSH Key Vault Manager',

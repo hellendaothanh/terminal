@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TerminalSettings, HashiCorpVaultConfig, AISettings } from '../types';
 import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles, Key, ArrowUpDown, Lock } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
@@ -24,6 +24,70 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { t } = useTranslation(settings);
   const [activeTab, setActiveTab] = useState<'general' | 'hashicorp' | 'ai'>('general');
+
+  // App Version & Update State
+  const [appVer, setAppVer] = useState('1.5.6');
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<{
+    type: 'info' | 'success' | 'error';
+    message: string;
+    downloadUrl?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isOpen && window.api.appVersion) {
+      window.api.appVersion().then((version) => {
+        setAppVer(version);
+      }).catch(err => {
+        console.error('Failed to get app version:', err);
+      });
+    }
+    setUpdateStatus(null);
+    setCheckingUpdates(false);
+  }, [isOpen]);
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdates(true);
+    setUpdateStatus({ type: 'info', message: t('checkingUpdates') });
+    try {
+      const response = await fetch('https://api.github.com/repos/hellendaothanh/terminal/releases/latest');
+      if (!response.ok) {
+        throw new Error('Github API connection failed');
+      }
+      const data = await response.json();
+      const latestTag = data.tag_name;
+      const downloadUrl = data.html_url;
+
+      const cleanLatest = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
+      const cleanCurrent = appVer.startsWith('v') ? appVer.substring(1) : appVer;
+
+      if (cleanLatest !== cleanCurrent) {
+        setUpdateStatus({
+          type: 'success',
+          message: t('newVersionAvailable').replace('{version}', latestTag),
+          downloadUrl: downloadUrl
+        });
+      } else {
+        setUpdateStatus({
+          type: 'success',
+          message: t('latestVersion')
+        });
+      }
+    } catch (e) {
+      setUpdateStatus({
+        type: 'error',
+        message: t('updateError')
+      });
+    } finally {
+      setCheckingUpdates(false);
+    }
+  };
+
+  const handleDownloadUpdate = () => {
+    if (updateStatus && updateStatus.downloadUrl && window.api.appOpenUrl) {
+      window.api.appOpenUrl(updateStatus.downloadUrl);
+    }
+  };
 
   // HashiCorp Vault Form State
   const [vaultConfig, setVaultConfig] = useState<HashiCorpVaultConfig>(
@@ -241,6 +305,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
                   <option value="en">🇺🇸 English</option>
                 </select>
+              </div>
+
+              {/* App Version & Auto-update Section */}
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                border: '1px dashed var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                    {t('currentVersion')}: <span style={{ color: 'var(--accent-primary)' }}>v{appVer}</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleCheckUpdates}
+                    disabled={checkingUpdates}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px', height: '28px' }}
+                  >
+                    {checkingUpdates ? <RefreshCw size={12} className="spin" /> : <RefreshCw size={12} />}
+                    <span style={{ marginLeft: '4px' }}>{t('checkForUpdates')}</span>
+                  </button>
+                </div>
+
+                {updateStatus && (
+                  <div style={{
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    padding: '8px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: updateStatus.type === 'success'
+                      ? 'rgba(34, 197, 94, 0.1)'
+                      : updateStatus.type === 'error'
+                        ? 'rgba(239, 68, 68, 0.1)'
+                        : 'rgba(59, 130, 246, 0.1)',
+                    color: updateStatus.type === 'success'
+                      ? 'var(--accent-success)'
+                      : updateStatus.type === 'error'
+                        ? 'var(--accent-danger)'
+                        : 'var(--accent-primary)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {updateStatus.type === 'success' ? <Check size={14} /> : updateStatus.type === 'error' ? <AlertCircle size={14} /> : <RefreshCw size={14} className="spin" />}
+                      <span>{updateStatus.message}</span>
+                    </div>
+                    {updateStatus.downloadUrl && (
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={handleDownloadUpdate}
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', height: '26px' }}
+                      >
+                        {t('downloadUpdate')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>

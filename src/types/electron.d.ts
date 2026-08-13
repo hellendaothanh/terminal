@@ -95,6 +95,9 @@ export interface ElectronAPI {
 
   openFileDialog: () => Promise<{ path: string; content: string } | null>;
   saveFileDialog: (defaultName: string, content: string) => Promise<string | null>;
+
+  appVersion: () => Promise<string>;
+  appOpenUrl: (url: string) => Promise<{ success: boolean }>;
 }
 
 declare global {
