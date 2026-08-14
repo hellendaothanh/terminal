@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, Bookmark, Share2, Users, Radio, Lock, Globe } from 'lucide-react';
+import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, ChevronUp, Bookmark, Share2, Users, Radio, Lock, Globe } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
@@ -1074,6 +1074,7 @@ Formatting requirements:
     platform?: string;
   }
 
+  const [showLiveViewersPopover, setShowLiveViewersPopover] = useState(false);
   const [activeViewers, setActiveViewers] = useState<LiveViewer[]>([]);
 
   // Cleanup WebRTC Peer on unmount or stop
@@ -1089,6 +1090,7 @@ Formatting requirements:
       peerInstanceRef.current = null;
     }
     setActiveViewers([]);
+    setShowLiveViewersPopover(false);
   };
 
   useEffect(() => {
@@ -1422,26 +1424,161 @@ Formatting requirements:
             <span>{copyStatus === 'pasted' ? t('pastedSuccess') : 'Paste'}</span>
           </button>
 
-          <button
-            onClick={() => setIsShareModalOpen(true)}
-            style={{
-              background: isLiveShared ? 'rgba(239, 68, 68, 0.15)' : 'none',
-              border: isLiveShared ? '1px solid rgba(239, 68, 68, 0.4)' : 'none',
-              borderRadius: '4px',
-              padding: '2px 6px',
-              color: isLiveShared ? 'var(--accent-danger)' : 'var(--text-muted)',
-              cursor: 'pointer',
+          {/* Live Share Button with Dropdown Viewers Popover */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.75rem',
+              background: isLiveShared ? 'rgba(239, 68, 68, 0.15)' : 'none',
+              border: isLiveShared ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid transparent',
+              borderRadius: '4px',
               transition: 'all 0.2s ease'
-            }}
-            title={t('liveShareTooltip')}
-          >
-            {isLiveShared ? <Radio size={13} className="spin" /> : <Share2 size={13} />}
-            <span>{isLiveShared ? t('liveSharingBadge') : t('liveShareBtn')}</span>
-          </button>
+            }}>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '2px 4px 2px 6px',
+                  color: isLiveShared ? 'var(--accent-danger)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.75rem'
+                }}
+                title={t('liveShareTooltip')}
+              >
+                {isLiveShared ? <Radio size={13} className="spin" /> : <Share2 size={13} />}
+                <span>{isLiveShared ? `${t('liveSharingBadge')} (${activeViewers.length})` : t('liveShareBtn')}</span>
+              </button>
+
+              {isLiveShared && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLiveViewersPopover(!showLiveViewersPopover);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderLeft: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: 'var(--accent-danger)',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title={t('liveActiveViewersTitle')}
+                >
+                  {showLiveViewersPopover ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
+              )}
+            </div>
+
+            {/* Quick Live Viewers Popover (Like CPU/RAM metrics overlay) */}
+            {isLiveShared && showLiveViewersPopover && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '6px',
+                width: '320px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: 'var(--shadow-lg)',
+                padding: '12px',
+                zIndex: 100,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <Users size={13} style={{ color: 'var(--accent-danger)' }} />
+                    <span>{t('liveActiveViewersTitle')}</span>
+                  </div>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: '8px',
+                    backgroundColor: activeViewers.length > 0 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                    color: activeViewers.length > 0 ? 'var(--accent-success)' : 'var(--text-muted)'
+                  }}>
+                    {activeViewers.length} online
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{t('liveViewerModeLabel')}</span>
+                  <span style={{ fontWeight: 600, color: shareMode === 'READONLY' ? 'var(--accent-primary)' : 'var(--accent-warning)' }}>
+                    {shareMode === 'READONLY' ? t('liveShareReadonlyTitle') : t('liveShareInteractiveTitle')}
+                  </span>
+                </div>
+
+                {activeViewers.length === 0 ? (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic', padding: '6px 0', textAlign: 'center' }}>
+                    {t('liveNoViewersYet')}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {activeViewers.map((viewer, idx) => (
+                      <div
+                        key={viewer.id || idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '4px',
+                          padding: '6px 8px',
+                          fontSize: '0.72rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-success)' }} />
+                          <span style={{ fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>
+                            {viewer.ip}
+                          </span>
+                          <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>
+                            ({viewer.platform || 'Web'})
+                          </span>
+                        </div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                          {viewer.joinedAt}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowLiveViewersPopover(false);
+                    setIsShareModalOpen(true);
+                  }}
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '4px 8px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    marginTop: '4px'
+                  }}
+                >
+                  <Share2 size={11} />
+                  <span>{t('liveShareModalTitle')}</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setShowQuickCommands(!showQuickCommands)}
