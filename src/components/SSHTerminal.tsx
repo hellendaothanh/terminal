@@ -836,6 +836,18 @@ Formatting requirements:
     const removeSshDataListener = window.api.onSshData((_, payload) => {
       if (payload.sessionId === sessionId) {
         term.write(payload.data);
+        
+        // Broadcast terminal output to all connected WebRTC Live Pairing peers
+        if (activeConnectionsRef.current && activeConnectionsRef.current.length > 0) {
+          activeConnectionsRef.current.forEach((conn) => {
+            if (conn && conn.open) {
+              try {
+                conn.send({ type: 'DATA', payload: payload.data });
+              } catch (_) {}
+            }
+          });
+        }
+
         // Strip ANSI escape codes to keep clean readable text
         const cleanChunk = payload.data.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '');
         recentOutputRef.current = (recentOutputRef.current + cleanChunk).slice(-15000);
@@ -847,6 +859,17 @@ Formatting requirements:
       if (payload.sessionId === sessionId) {
         setIsConnected(false);
         term.writeln(`\r\n\x1b[31m[${t('sshSessionEnded')}]\x1b[0m`);
+
+        // Notify WebRTC peers that session ended
+        if (activeConnectionsRef.current && activeConnectionsRef.current.length > 0) {
+          activeConnectionsRef.current.forEach((conn) => {
+            if (conn && conn.open) {
+              try {
+                conn.send({ type: 'CLOSED' });
+              } catch (_) {}
+            }
+          });
+        }
       }
     });
 
@@ -997,21 +1020,108 @@ Formatting requirements:
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareMode, setShareMode] = useState<'READONLY' | 'INTERACTIVE'>('READONLY');
   const [shareLink, setShareLink] = useState('');
+  const [shareKey, setShareKey] = useState('');
   const [isLiveShared, setIsLiveShared] = useState(false);
+  const peerInstanceRef = useRef<any>(null);
+  const activeConnectionsRef = useRef<any[]>([]);
+
+  // Cleanup WebRTC Peer on unmount or stop
+  const cleanupPeer = () => {
+    if (activeConnectionsRef.current) {
+      activeConnectionsRef.current.forEach((conn) => {
+        try { conn.close(); } catch (_) {}
+      });
+      activeConnectionsRef.current = [];
+    }
+    if (peerInstanceRef.current) {
+      try { peerInstanceRef.current.destroy(); } catch (_) {}
+      peerInstanceRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanupPeer();
+    };
+  }, []);
 
   const handleStartLiveShare = () => {
-    const roomId = `pair_${sessionId.slice(0, 8)}_${Math.random().toString(36).substring(2, 7)}`;
+    cleanupPeer();
+
+    // Generate strong, cryptographically secure 256-bit / 32-char Access Key
+    const secureKey = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Unpredictable Room ID
+    const randomSalt = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 8);
+    const roomId = `omni_${sessionId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6)}_${randomSalt}`;
+
+    setShareKey(secureKey);
+
+    // Initialize PeerJS Host Server
+    const PeerClass = (window as any).Peer;
+    if (PeerClass) {
+      try {
+        const peer = new PeerClass(roomId);
+        peerInstanceRef.current = peer;
+
+        peer.on('open', (id: string) => {
+          console.log('[Live Share Host] WebRTC Peer Room opened:', id);
+        });
+
+        peer.on('connection', (conn: any) => {
+          console.log('[Live Share Host] New remote viewer connected:', conn.peer);
+          
+          conn.on('open', () => {
+            // Verify access key handshake
+            conn.on('data', (data: any) => {
+              if (data && data.type === 'AUTH') {
+                if (data.key === secureKey) {
+                  activeConnectionsRef.current.push(conn);
+                  conn.send({ type: 'AUTH_OK', mode: shareMode });
+                  showToast('success', t('liveViewerJoined'));
+                } else {
+                  conn.send({ type: 'AUTH_FAILED', message: 'Invalid Access Key' });
+                  conn.close();
+                }
+              } else if (data && data.type === 'INPUT') {
+                // If interactive mode, execute input
+                if (shareMode === 'INTERACTIVE' && data.payload) {
+                  window.api.sshWrite(sessionId, data.payload);
+                }
+              }
+            });
+          });
+
+          conn.on('close', () => {
+            activeConnectionsRef.current = activeConnectionsRef.current.filter(c => c !== conn);
+          });
+        });
+
+        peer.on('error', (err: any) => {
+          console.error('[Live Share Host] Peer error:', err);
+        });
+      } catch (e) {
+        console.error('Failed to init PeerJS Host:', e);
+      }
+    }
+
     const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim()) 
       ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '') 
       : 'https://hellendaothanh.github.io/terminal';
-    const url = `${baseUrl}?room=${roomId}&mode=${shareMode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
+    
+    // Construct encrypted URL with room and secret key
+    const url = `${baseUrl}?room=${roomId}&key=${secureKey}&mode=${shareMode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
     setShareLink(url);
     setIsLiveShared(true);
     showToast('success', shareMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
   };
 
   const handleStopLiveShare = () => {
+    cleanupPeer();
     setShareLink('');
+    setShareKey('');
     setIsLiveShared(false);
     setIsShareModalOpen(false);
     showToast('empty', t('liveShareStopped'));

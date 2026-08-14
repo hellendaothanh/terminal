@@ -167,6 +167,7 @@ export const translations = {
     liveShareReadonlyStarted: 'Đã bắt đầu chia sẻ Live Terminal (Chế độ Chỉ Đọc)!',
     liveShareInteractiveStarted: 'Đã bắt đầu chia sẻ Live Terminal (Chế độ Điều Khiển Chung)!',
     liveShareStopped: 'Đã dừng phiên chia sẻ Live Terminal.',
+    liveViewerJoined: 'Một người xem mới vừa tham gia phiên Live qua Web!',
 
     // Key Manager Modal
     keyManagerTitle: 'Quản Lý Khóa SSH Key Vault',
@@ -680,6 +681,7 @@ export const translations = {
     liveShareReadonlyStarted: 'Live terminal sharing started in Read-Only mode!',
     liveShareInteractiveStarted: 'Live terminal sharing started in Interactive mode!',
     liveShareStopped: 'Live terminal sharing stopped.',
+    liveViewerJoined: 'A new remote viewer joined your live terminal session via Web!',
 
     // Key Manager Modal
     keyManagerTitle: 'SSH Key Vault Manager',
