@@ -138,6 +138,21 @@
 ### 29. 👁️ Password Visibility Toggles (Show / Hide Password)
 * **Visual Password Verification:** Integrated eye toggle icons (`👁️` / `👁️‍🗨️`) across all credential fields (Master Vault Passphrase, SSH ReAuth, Server Passwords, SSH Key Import Passphrase, Command Guard Approvals, and HashiCorp Vault / AI API Keys).
 
+### 30. ⌨️ Interactive Ghost-Text Inline Autocomplete (Fig / Warp style)
+* **Real-Time Predictive Overlay:** Ghost-text suggestions appear directly in the terminal cursor coordinates based on command history and system context.
+* **1-Key Acceptance:** Press `Tab` or `Right Arrow (→)` to accept suggestions immediately; press `Esc` to dismiss.
+
+### 31. 🛡️ Workspace & Environment Isolation
+* **Color Tagging & Visual Boundaries:** Color indicators on the server list and tabs (`Production = Red`, `Staging = Yellow`, `Dev = Green`).
+* **Production Danger Zone Warning:** Fullscreen red glowing perimeter and top warning banner alert to prevent catastrophic unintended command execution on live production servers.
+
+### 32. 📡 Quick Web-based Remote Share (Live Pairing & Zero-Install Web Client)
+* **P2P Real-Time Streaming:** Share live terminal sessions via WebRTC with 256-bit cryptographically secure token handshakes.
+* **Read-Only & Interactive Modes:** Teammates can watch in real time or collaborate and co-type directly via browser on GitHub Pages or custom self-hosted Web relay servers.
+
+### 33. 📐 Custom UI Density (Compact Mode)
+* **Optimized for Small Screens:** Easily switch to Compact Mode in Settings to reduce toolbar heights, sidebar widths, and tab paddings for maximum terminal real-estate.
+
 ---
 
 ## 🔮 Roadmap & Future Features

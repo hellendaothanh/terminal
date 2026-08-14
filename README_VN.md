@@ -138,6 +138,21 @@
 ### 29. 👁️ Nút Xem / Ẩn Mật Khẩu (Password Visibility Toggle)
 * **Kiểm Tra Trực Quan Mật Khẩu Đã Gõ:** Tích hợp nút con mắt (`👁️` / `👁️‍🗨️`) trên toàn bộ các ô mật khẩu: Master Vault Passphrase, Xác thực lại SSH, Form Server, Khóa SSH Private Key, Phê duyệt lệnh nguy hiểm, HashiCorp Vault Token/Secret ID và AI API Key.
 
+### 30. ⌨️ Gợi Ý Lệnh Mờ Trực Tiếp Trên Terminal (Ghost-Text Autocomplete Fig/Warp)
+* **Gợi Ý Real-Time Theo Tọa Độ Con Trỏ:** Hiển thị chữ mờ (Ghost text) ngay tại vị trí đang gõ lệnh dựa trên lịch sử lệnh và ngữ cảnh máy chủ.
+* **Chấp Nhận Lệnh 1 Phím Bấm:** Nhấn phím `Tab` hoặc `Mũi tên phải (→)` để điền nhanh toàn bộ lệnh; nhấn `Esc` để hủy gợi ý.
+
+### 31. 🛡️ Cô Lập Môi Trường Làm Việc (Workspace & Environment Isolation)
+* **Phân Biệt Bằng Thẻ Màu Trực Quan:** Đánh dấu viền màu rõ rệt trên danh sách máy chủ và Tab Bar (`Production = Viền đỏ`, `Staging = Viền vàng`, `Dev = Viền xanh`).
+* **Cảnh Báo Vùng Nguy Hiểm Production:** Khi kết nối máy chủ Production, màn hình Terminal tự động kích hoạt viền đỏ rực bao quanh cùng thanh cảnh báo đỉnh đầu nhấp nháy liên tục để ngăn chặn hoàn toàn thao tác gõ nhầm lệnh nguy hiểm.
+
+### 32. 📡 Chia Sẻ Phiên Terminal Trực Tiếp Qua Web (Live Pairing & Remote Debugging)
+* **Phát Sóng P2P Thời Gian Thực (WebRTC):** Chia sẻ màn hình Terminal tức thì mà không cần cài đặt thêm phần mềm, bảo mật bằng mã khóa ngẫu nhiên 256-bit (Cryptographic Key).
+* **Hai Chế Độ Phân Quyền:** Hỗ trợ **Chỉ Đọc (Read-Only)** để theo dõi hoặc **Tương Tác Chung (Interactive Pairing)** để cùng đồng nghiệp gõ lệnh và fix bug trực tiếp qua GitHub Pages hoặc Private Relay Server.
+
+### 33. 📐 Tùy Chỉnh Mật Độ Giao Diện (Compact Mode Cho Màn Hình Nhỏ)
+* **Tối Ưu Không Gian:** Cho phép bật chế độ thu gọn (Compact Mode) trong Cài đặt để thu nhỏ thanh công cụ, sidebar và tab bar, gia tăng tối đa diện tích hiển thị của Terminal.
+
 ---
 
 ## 🔮 Kế Hoạch Phát Triển (Roadmap)
