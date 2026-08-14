@@ -75,7 +75,7 @@
     "socks": "^2.8.9",
     "socks-server": "^0.0.2",
     "ssh2": "^1.15.0",
-    "ssh2-sftp-client": "^10.0.3"
+    "ssh2-sftp-client": "^12.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
