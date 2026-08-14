@@ -619,6 +619,7 @@ Formatting requirements:
     const fitAddon = new FitAddon();
     const webLinksAddon = new WebLinksAddon();
 
+    fitAddonRef.current = fitAddon;
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
 
@@ -631,6 +632,7 @@ Formatting requirements:
         (term as any)._core?._renderService
       ) {
         fitAddon.fit();
+        window.api.sshResize(sessionId, term.cols, term.rows);
       }
     } catch (e) {
       console.warn('Initial fit failed:', e);
@@ -885,12 +887,18 @@ Formatting requirements:
 
     const handleResize = () => {
       safeFit();
+      if (terminalRef.current) {
+        terminalRef.current.scrollToBottom();
+      }
     };
 
     const resizeObserver = new ResizeObserver(() => {
       handleResize();
+      // Double check after small delay for smooth layout transitions
+      setTimeout(handleResize, 60);
     });
     resizeObserver.observe(containerRef.current);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       dataListener.dispose();
@@ -898,6 +906,7 @@ Formatting requirements:
       removeSshDataListener();
       removeSshClosedListener();
       resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
       term.dispose();
       window.api.sshDisconnect(sessionId);
     };
