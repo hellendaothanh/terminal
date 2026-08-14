@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OmniTerminal - Live Remote Pairing Stream</title>
+  <!-- Embedded Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <!-- XTerm CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
   <!-- PeerJS WebRTC Library -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <!-- XTerm JS & Addons -->
+  <!-- XTerm JS & Addons UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.8.0/lib/addon-fit.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.9.0/lib/addon-web-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -115,7 +117,8 @@
       : '🔒 Read-Only Live Stream (Observer Mode)';
 
     // Init XTerm.js
-    const term = new Terminal({
+    const TerminalClass = window.Terminal || Terminal;
+    const term = new TerminalClass({
       fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace',
       fontSize: 14,
       cursorBlink: mode === 'interactive',
@@ -128,14 +131,22 @@
       }
     });
 
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.loadAddon(new WebLinksAddon.WebLinksAddon());
+    let fitAddon = null;
+    if (window.FitAddon && window.FitAddon.FitAddon) {
+      fitAddon = new window.FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+    }
+
+    if (window.WebLinksAddon && window.WebLinksAddon.WebLinksAddon) {
+      term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+    }
 
     const container = document.getElementById('terminal-container');
     term.open(container);
-    fitAddon.fit();
-    window.addEventListener('resize', () => fitAddon.fit());
+    if (fitAddon) {
+      setTimeout(() => fitAddon.fit(), 50);
+      window.addEventListener('resize', () => fitAddon.fit());
+    }
 
     term.writeln('\x1b[36m[OmniTerminal Live Stream]\x1b[0m Connecting to WebRTC Room: \x1b[33m' + room + '\x1b[0m ...');
 
