@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, HardDrive, Activity, Network, RefreshCw, AlertTriangle, ChevronDown, ChevronUp, Server } from 'lucide-react';
 import { ServerConfig, SSHKey } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 export interface ServerMetrics {
   cpuUsage: number; // Percentage 0-100
@@ -24,6 +25,7 @@ interface ServerMetricsDashboardProps {
   refreshIntervalMs?: number; // Default 3000ms
   compact?: boolean;
   vaultConfig?: any;
+  language?: 'vi' | 'en';
 }
 
 export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
@@ -31,8 +33,10 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
   keyObj,
   refreshIntervalMs = 3000,
   compact = false,
-  vaultConfig
+  vaultConfig,
+  language = 'vi'
 }) => {
+  const { t } = useTranslation({ language } as any);
   const [metrics, setMetrics] = useState<ServerMetrics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -159,14 +163,14 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
             setMetrics(parsed);
             setError(null);
           } else {
-            setError('Không thể phân tích dữ liệu metrics');
+            setError(t('cannotParseMetrics'));
           }
         } else {
-          setError(item.error || item.output || 'Lỗi kết nối SSH');
+          setError(item.error || item.output || t('sshConnectionError'));
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Lỗi lấy thông số máy chủ');
+      setError(err.message || t('fetchMetricsError'));
     } finally {
       setLoading(false);
     }
@@ -352,7 +356,7 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
                   alignItems: 'center'
                 }}
               >
-                <span>Hệ điều hành:</span>
+                <span>{t('operatingSystem')}</span>
                 <strong style={{ color: 'var(--text-main)' }}>{metrics.osInfo}</strong>
               </div>
             )}
@@ -428,7 +432,7 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
                 <Activity size={16} style={{ color: 'var(--accent-primary)' }} />
-                <span>Chi tiết tài nguyên (Real-time Metrics)</span>
+                <span>{t('resourceDetails')}</span>
                 {loading && <RefreshCw size={12} className="spin" style={{ color: 'var(--text-muted)' }} />}
               </div>
               <button
@@ -496,13 +500,13 @@ export const ServerMetricsDashboard: React.FC<ServerMetricsDashboardProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
           <Activity size={16} style={{ color: 'var(--accent-primary)' }} />
-          <span>Giám Sát Tài Nguyên Máy Chủ (Real-time Metrics)</span>
+          <span>{t('serverResourceMonitoring')}</span>
           {loading && <RefreshCw size={12} className="spin" style={{ color: 'var(--text-muted)' }} />}
         </div>
 
         {metrics && (
           <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-            Cập nhật: {new Date(metrics.timestamp).toLocaleTimeString()}
+            {t('updatedAt')} {new Date(metrics.timestamp).toLocaleTimeString()}
           </span>
         )}
       </div>

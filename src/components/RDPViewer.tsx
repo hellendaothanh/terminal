@@ -341,7 +341,8 @@ export const RDPViewer: React.FC<RDPViewerProps> = ({
       <ReAuthModal
         isOpen={isReAuthOpen}
         server={currentServer}
-        errorMsg={error || 'Kết nối RDP thất bại'}
+        errorMsg={error || (settings?.language === 'vi' ? 'Kết nối RDP thất bại' : 'RDP connection failed')}
+        language={settings?.language}
         onRetry={handleRetryAuth}
         onClose={() => setIsReAuthOpen(false)}
       />

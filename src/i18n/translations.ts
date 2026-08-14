@@ -414,7 +414,65 @@ export const translations = {
     ceConnectBtn: 'Kết Nối',
     multiLogTail: 'Theo Dõi Log Hàng Loạt (Multi-Log)',
     teamSync: 'Đồng Bộ Nhóm (Team Sync)',
-    pluginManager: 'Quản Lý Plugin'
+    pluginManager: 'Quản Lý Plugin',
+
+    // SSH Terminal & Controls
+    reconnect: 'Kết nối lại',
+    reconnectTooltip: 'Thực hiện kết nối lại SSH phiên này',
+    reconnecting: 'Đang thực hiện kết nối lại...',
+    disconnectedStatus: '(Đã ngắt kết nối)',
+    sshSessionEnded: 'Phiên kết nối SSH đã kết thúc. Bấm "Kết nối lại" để mở lại phiên',
+    changePassword: 'Đổi Mật Khẩu',
+    quickCommands: 'Lệnh thường dùng',
+    quickCommandsTooltip: 'Mở thư viện lệnh thông dụng (Red Hat, Ubuntu, Postgres, Kafka...)',
+    copySuccess: 'Đã Copy!',
+    copyEmpty: 'Chưa chọn văn bản',
+    copyTooltip: 'Bôi đen văn bản trong terminal rồi bấm Copy',
+    copyToastSuccess: 'Đã copy {count} ký tự vào Clipboard!',
+    copyToastEmpty: 'Vui lòng bôi đen (chọn) văn bản trong terminal trước khi bấm Copy.',
+    pastedSuccess: 'Đã Dán!',
+    pasteTooltip: 'Dán từ Clipboard vào Terminal',
+    pasteToastSuccess: 'Đã dán {count} ký tự từ Clipboard!',
+    pasteToastEmpty: 'Clipboard hiện đang trống.',
+    pasteToastError: 'Không thể truy cập Clipboard.',
+    scrollToBottom: 'Cuộn xuống dưới',
+    scrollToBottomTooltip: 'Cuộn xuống dưới cùng',
+    commonCommandsLibrary: 'Thư Viện Lệnh Thường Dùng',
+
+    // Server Metrics
+    resourceDetails: 'Chi tiết tài nguyên (Real-time Metrics)',
+    serverResourceMonitoring: 'Giám Sát Tài Nguyên Máy Chủ (Real-time Metrics)',
+    updatedAt: 'Cập nhật:',
+    operatingSystem: 'Hệ điều hành:',
+    cannotParseMetrics: 'Không thể phân tích dữ liệu metrics',
+    sshConnectionError: 'Lỗi kết nối SSH',
+    fetchMetricsError: 'Lỗi lấy thông số máy chủ',
+
+    // ReAuth Modal
+    authFailedTitle: 'Xác Thực Thất Bại - Nhập Lại Mật Khẩu',
+    authFailedConnectTo: 'Không thể kết nối tới',
+    authFailedDetail: 'Lỗi chi tiết:',
+    enterNewServerPassword: 'Nhập Mật Khẩu Mới Cho Server',
+    enterPasswordPlaceholder: 'Nhập mật khẩu SSH / RDP đúng...',
+    savePasswordToVault: 'Cập nhật và lưu mật khẩu mới này vào Kho Dữ Liệu (Vault)',
+    retryConnection: 'Thử Kết Nối Lại',
+
+    // Command Guard Modal
+    commandGuardTitle: '⚠️ Command Guard: Phê Duyệt Lệnh Nguy Hiểm',
+    commandGuardWarning: 'CẢNH BÁO BẢO MẬT:',
+    commandGuardRiskText: 'Hệ thống phát hiện bạn sắp thực thi câu lệnh có mức độ rủi ro',
+    commandGuardAuthReq: 'Yêu cầu xác thực bảo mật trước khi tiếp tục.',
+    commandGuardContentLabel: 'Nội dung câu lệnh yêu cầu phê duyệt:',
+    commandGuardMethodLabel: 'Phương thức xác thực phê duyệt:',
+    commandGuardOtpMethod: 'Mã Xác Thực OTP',
+    commandGuardPassphrasePlaceholder: 'Master Passphrase giải mã Vault...',
+    commandGuardOtpLabel: 'Nhập Mã Xác Thực OTP (6 Chữ Số):',
+    commandGuardOtpPlaceholder: 'Ví dụ: 123456',
+    commandGuardPassphraseReq: 'Vui lòng nhập Master Passphrase để phê duyệt lệnh!',
+    commandGuardOtpInvalid: 'Mã OTP không hợp lệ (phải gồm 6 chữ số)!',
+    commandGuardCancel: 'Hủy / Hủy Bỏ Lệnh',
+    commandGuardConfirm: 'Xác Nhận & Cho Phép Chạy',
+    commandGuardBlockedMsg: '[Lệnh nguy hiểm bị hủy bởi Command Guard]'
   },
   en: {
     // App & Header
@@ -829,6 +887,64 @@ export const translations = {
     ceConnectBtn: 'Connect',
     multiLogTail: 'Multi-Log Tail Aggregator',
     teamSync: 'Team Sync & Share',
-    pluginManager: 'Plugin Manager'
+    pluginManager: 'Plugin Manager',
+
+    // SSH Terminal & Controls
+    reconnect: 'Reconnect',
+    reconnectTooltip: 'Reconnect this SSH session',
+    reconnecting: 'Reconnecting...',
+    disconnectedStatus: '(Disconnected)',
+    sshSessionEnded: 'SSH session closed. Click "Reconnect" to restart session',
+    changePassword: 'Change Password',
+    quickCommands: 'Quick Commands',
+    quickCommandsTooltip: 'Open common command library (Red Hat, Ubuntu, Postgres, Kafka...)',
+    copySuccess: 'Copied!',
+    copyEmpty: 'No text selected',
+    copyTooltip: 'Select text in terminal and click Copy',
+    copyToastSuccess: 'Copied {count} characters to Clipboard!',
+    copyToastEmpty: 'Please highlight (select) text in terminal before clicking Copy.',
+    pastedSuccess: 'Pasted!',
+    pasteTooltip: 'Paste from Clipboard into Terminal',
+    pasteToastSuccess: 'Pasted {count} characters from Clipboard!',
+    pasteToastEmpty: 'Clipboard is currently empty.',
+    pasteToastError: 'Could not access Clipboard.',
+    scrollToBottom: 'Scroll to Bottom',
+    scrollToBottomTooltip: 'Scroll to bottom',
+    commonCommandsLibrary: 'Common Commands Library',
+
+    // Server Metrics
+    resourceDetails: 'Resource Details (Real-time Metrics)',
+    serverResourceMonitoring: 'Server Resource Monitoring (Real-time Metrics)',
+    updatedAt: 'Updated:',
+    operatingSystem: 'Operating System:',
+    cannotParseMetrics: 'Could not parse metrics data',
+    sshConnectionError: 'SSH connection error',
+    fetchMetricsError: 'Failed to fetch server metrics',
+
+    // ReAuth Modal
+    authFailedTitle: 'Authentication Failed - Re-enter Password',
+    authFailedConnectTo: 'Cannot connect to',
+    authFailedDetail: 'Error detail:',
+    enterNewServerPassword: 'Enter New Password for Server',
+    enterPasswordPlaceholder: 'Enter correct SSH / RDP password...',
+    savePasswordToVault: 'Update and save this new password to Vault',
+    retryConnection: 'Retry Connection',
+
+    // Command Guard Modal
+    commandGuardTitle: '⚠️ Command Guard: High-Risk Command Approval',
+    commandGuardWarning: 'SECURITY WARNING:',
+    commandGuardRiskText: 'System detected that you are executing a command with risk level',
+    commandGuardAuthReq: 'Security authentication required before proceeding.',
+    commandGuardContentLabel: 'Command content requesting approval:',
+    commandGuardMethodLabel: 'Approval authentication method:',
+    commandGuardOtpMethod: 'OTP Authenticator Code',
+    commandGuardPassphrasePlaceholder: 'Master Passphrase to decrypt Vault...',
+    commandGuardOtpLabel: 'Enter OTP Code (6 Digits):',
+    commandGuardOtpPlaceholder: 'e.g. 123456',
+    commandGuardPassphraseReq: 'Please enter Master Passphrase to approve command!',
+    commandGuardOtpInvalid: 'Invalid OTP code (must be 6 digits)!',
+    commandGuardCancel: 'Cancel / Abort Command',
+    commandGuardConfirm: 'Confirm & Allow Run',
+    commandGuardBlockedMsg: '[Dangerous command cancelled by Command Guard]'
   }
 };

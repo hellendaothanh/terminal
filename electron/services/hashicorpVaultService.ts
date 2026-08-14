@@ -57,7 +57,7 @@ export class HashiCorpVaultService {
         );
 
         req.on('error', (err) => {
-          reject(new Error(`Không thể kết nối đến máy chủ HashiCorp Vault: ${err.message}`));
+          reject(new Error(`Cannot connect to HashiCorp Vault server: ${err.message}`));
         });
 
         if (requestBody) {
@@ -66,7 +66,7 @@ export class HashiCorpVaultService {
 
         req.end();
       } catch (err: any) {
-        reject(new Error(`Lỗi địa chỉ URL HashiCorp Vault: ${err.message}`));
+        reject(new Error(`Invalid HashiCorp Vault URL: ${err.message}`));
       }
     });
   }
@@ -105,7 +105,7 @@ export class HashiCorpVaultService {
     } catch (err: any) {
       return {
         success: false,
-        error: err.message || 'Không thể kết nối đến máy chủ HashiCorp Vault.'
+        error: err.message || 'Cannot connect to HashiCorp Vault server.'
       };
     }
   }
@@ -117,7 +117,7 @@ export class HashiCorpVaultService {
   ): Promise<{ success: boolean; secret?: string; error?: string }> {
     try {
       if (!config || !config.url) {
-        return { success: false, error: 'Chưa cấu hình thông tin máy chủ HashiCorp Vault.' };
+        return { success: false, error: 'HashiCorp Vault configuration is missing.' };
       }
 
       const baseUrl = config.url.replace(/\/+$/, '');
@@ -138,7 +138,7 @@ export class HashiCorpVaultService {
       }
 
       if (!token) {
-        return { success: false, error: 'Thiếu Vault Token hoặc AppRole Credential.' };
+        return { success: false, error: 'Missing Vault Token or AppRole Credentials.' };
       }
 
       // Format KV Secret Path (Supports KV v1 & KV v2)
@@ -171,7 +171,7 @@ export class HashiCorpVaultService {
       if (!targetValue) {
         return {
           success: false,
-          error: `Không tìm thấy khóa "${keyName}" trong secret path "${secretPath}". Danh sách khóa khả dụng: [${Object.keys(dataObj).join(', ')}]`
+          error: `Key "${keyName}" not found in secret path "${secretPath}". Available keys: [${Object.keys(dataObj).join(', ')}]`
         };
       }
 
@@ -182,7 +182,7 @@ export class HashiCorpVaultService {
     } catch (err: any) {
       return {
         success: false,
-        error: err.message || `Lỗi lấy secret từ HashiCorp Vault (${secretPath}).`
+        error: err.message || `Failed to fetch secret from HashiCorp Vault (${secretPath}).`
       };
     }
   }

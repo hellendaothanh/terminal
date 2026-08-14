@@ -10,6 +10,7 @@ import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
 import { CommandGuardApprovalModal } from './CommandGuardApprovalModal';
 import { QuickCommandsPanel } from './QuickCommandsPanel';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface SSHTerminalProps {
   sessionId: string;
@@ -301,7 +302,7 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
       .then((res) => {
         setConnecting(false);
         if (!res.success) {
-          setError(res.error || 'Kết nối SSH thất bại.');
+          setError(res.error || (settings.language === 'vi' ? 'Kết nối SSH thất bại.' : 'SSH connection failed.'));
           term.writeln(`\r\n\x1b[31mError: ${res.error}\x1b[0m\r\n`);
           setIsReAuthOpen(true);
         } else {
@@ -428,7 +429,7 @@ Please:
     if (terminalRef.current) {
       terminalRef.current.clear();
     }
-    showToast('success', 'Đang thực hiện kết nối lại...');
+    showToast('success', t('reconnecting'));
     startConnection(currentServer);
   };
 
@@ -519,7 +520,7 @@ Please:
     const removeSshClosedListener = window.api.onSshClosed((_, payload) => {
       if (payload.sessionId === sessionId) {
         setIsConnected(false);
-        term.writeln('\r\n\x1b[31m[Phiên kết nối SSH đã kết thúc. Bấm "Kết nối lại" để mở lại phiên]\x1b[0m');
+        term.writeln(`\r\n\x1b[31m[${t('sshSessionEnded')}]\x1b[0m`);
       }
     });
 
@@ -576,16 +577,18 @@ Please:
     }
   }, [fontSize]);
 
+  const { t } = useTranslation(settings);
+
   const handleCopy = () => {
     if (terminalRef.current && terminalRef.current.hasSelection()) {
       const selection = terminalRef.current.getSelection();
       if (selection && selection.trim().length > 0) {
         navigator.clipboard.writeText(selection);
-        showToast('success', `Đã copy ${selection.length} ký tự vào Clipboard!`);
+        showToast('success', t('copyToastSuccess').replace('{count}', String(selection.length)));
         return;
       }
     }
-    showToast('empty', 'Vui lòng bôi đen (chọn) văn bản trong terminal trước khi bấm Copy.');
+    showToast('empty', t('copyToastEmpty'));
   };
 
   const handlePaste = async () => {
@@ -593,12 +596,12 @@ Please:
       const text = await navigator.clipboard.readText();
       if (text) {
         window.api.sshWrite(sessionId, text);
-        showToast('pasted', `Đã dán ${text.length} ký tự từ Clipboard!`);
+        showToast('pasted', t('pasteToastSuccess').replace('{count}', String(text.length)));
       } else {
-        showToast('empty', 'Clipboard hiện đang trống.');
+        showToast('empty', t('pasteToastEmpty'));
       }
     } catch (e) {
-      showToast('empty', 'Không thể truy cập Clipboard.');
+      showToast('empty', t('pasteToastError'));
     }
   };
 
@@ -660,12 +663,12 @@ Please:
           </span>
           <span>({currentServer.username}@{currentServer.host})</span>
           {!isConnected && !connecting && (
-            <span style={{ color: 'var(--accent-danger)', fontSize: '0.72rem' }}>(Đã ngắt kết nối)</span>
+            <span style={{ color: 'var(--accent-danger)', fontSize: '0.72rem' }}>{t('disconnectedStatus')}</span>
           )}
         </div>
 
         {/* Real-time Server Metrics Widget */}
-        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} vaultConfig={settings.hashicorpVault} />
+        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} vaultConfig={settings.hashicorpVault} language={settings.language} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Reconnect Button */}
@@ -684,10 +687,10 @@ Please:
               gap: '4px',
               fontWeight: 500
             }}
-            title="Thực hiện kết nối lại SSH phiên này"
+            title={t('reconnectTooltip')}
           >
             <RotateCcw size={12} />
-            <span>Kết nối lại</span>
+            <span>{t('reconnect')}</span>
           </button>
 
           {error && (
@@ -707,7 +710,7 @@ Please:
               }}
             >
               <KeyRound size={12} />
-              <span>Đổi Mật Khẩu</span>
+              <span>{t('changePassword')}</span>
             </button>
           )}
 
@@ -727,10 +730,10 @@ Please:
               fontSize: '0.75rem',
               transition: 'all 0.2s ease'
             }}
-            title="Bôi đen văn bản trong terminal rồi bấm Copy"
+            title={t('copyTooltip')}
           >
             {copyStatus === 'success' ? <Check size={13} /> : copyStatus === 'empty' ? <AlertCircle size={13} /> : <Copy size={13} />}
-            <span>{copyStatus === 'success' ? 'Đã Copy!' : copyStatus === 'empty' ? 'Chưa chọn văn bản' : 'Copy'}</span>
+            <span>{copyStatus === 'success' ? t('copySuccess') : copyStatus === 'empty' ? t('copyEmpty') : 'Copy'}</span>
           </button>
 
           {/* Dynamic Paste Button */}
@@ -749,10 +752,10 @@ Please:
               fontSize: '0.75rem',
               transition: 'all 0.2s ease'
             }}
-            title="Dán từ Clipboard vào Terminal"
+            title={t('pasteTooltip')}
           >
             {copyStatus === 'pasted' ? <Check size={13} /> : <Clipboard size={13} />}
-            <span>{copyStatus === 'pasted' ? 'Đã Dán!' : 'Paste'}</span>
+            <span>{copyStatus === 'pasted' ? t('pastedSuccess') : 'Paste'}</span>
           </button>
 
           <button
@@ -770,10 +773,10 @@ Please:
               fontSize: '0.75rem',
               transition: 'all 0.2s ease'
             }}
-            title="Mở thư viện lệnh thông dụng (Red Hat, Ubuntu, Postgres, Kafka...)"
+            title={t('quickCommandsTooltip')}
           >
             <Bookmark size={13} />
-            <span>Lệnh thường dùng</span>
+            <span>{t('quickCommands')}</span>
           </button>
 
           <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)', margin: '0 4px' }} />
@@ -834,10 +837,10 @@ Please:
                 fontWeight: 500,
                 animation: 'fadeIn 0.2s ease-out'
               }}
-              title={settings.language === 'vi' ? 'Cuộn xuống dưới cùng' : 'Scroll to bottom'}
+              title={t('scrollToBottomTooltip')}
             >
               <ChevronDown size={14} />
-              <span>{settings.language === 'vi' ? 'Cuộn xuống dưới' : 'Scroll to Bottom'}</span>
+              <span>{t('scrollToBottom')}</span>
             </button>
           )}
         </div>
@@ -851,12 +854,12 @@ Please:
                 // If it ends with a space (e.g. systemctl restart ), write it but don't enter
                 const needsEnter = !cmd.endsWith(' ');
                 window.api.sshWrite(sessionId, cmd + (needsEnter ? '\n' : ''));
-                showToast('success', needsEnter ? 'Đã chạy lệnh!' : 'Đã chèn lệnh vào terminal!');
+                showToast('success', settings.language === 'vi' ? (needsEnter ? 'Đã chạy lệnh!' : 'Đã chèn lệnh vào terminal!') : (needsEnter ? 'Command executed!' : 'Command inserted into terminal!'));
               }
             }}
             onCopy={(cmd) => {
               navigator.clipboard.writeText(cmd);
-              showToast('success', 'Đã copy lệnh vào Clipboard!');
+              showToast('success', settings.language === 'vi' ? 'Đã copy lệnh vào Clipboard!' : 'Command copied to Clipboard!');
             }}
           />
         )}
@@ -966,6 +969,7 @@ Please:
           isOpen={guardModalOpen}
           commandOrQuery={pendingCommand.command}
           riskLevel={pendingCommand.risk}
+          language={settings.language}
           onApprove={() => {
             if (terminalRef.current) {
               window.api.sshWrite(sessionId, pendingCommand.command + '\r');
@@ -975,7 +979,7 @@ Please:
           }}
           onCancel={() => {
             if (terminalRef.current) {
-              terminalRef.current.write('\r\n\x1b[31m[Lệnh nguy hiểm bị hủy bởi Command Guard]\x1b[0m\r\n');
+              terminalRef.current.write(`\r\n\x1b[31m${t('commandGuardBlockedMsg')}\x1b[0m\r\n`);
             }
             setGuardModalOpen(false);
             setPendingCommand(null);
@@ -987,7 +991,8 @@ Please:
       <ReAuthModal
         isOpen={isReAuthOpen}
         server={currentServer}
-        errorMsg={error || 'Xác thực thất bại'}
+        errorMsg={error || (settings.language === 'vi' ? 'Xác thực thất bại' : 'Authentication failed')}
+        language={settings.language}
         onRetry={handleRetryAuth}
         onClose={() => setIsReAuthOpen(false)}
       />

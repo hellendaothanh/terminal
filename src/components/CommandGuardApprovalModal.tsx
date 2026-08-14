@@ -8,6 +8,7 @@ interface CommandGuardApprovalModalProps {
   riskLevel: 'HIGH' | 'MEDIUM';
   onApprove: () => void;
   onCancel: () => void;
+  language?: 'vi' | 'en';
 }
 
 export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps> = ({
@@ -15,8 +16,10 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
   commandOrQuery,
   riskLevel,
   onApprove,
-  onCancel
+  onCancel,
+  language = 'vi'
 }) => {
+  const { t } = useTranslation({ language } as any);
   const [authMethod, setAuthMethod] = useState<'passphrase' | 'otp'>('passphrase');
   const [passphrase, setPassphrase] = useState<string>('');
   const [otpCode, setOtpCode] = useState<string>('');
@@ -30,14 +33,14 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
 
     if (authMethod === 'passphrase') {
       if (!passphrase) {
-        setError('Vui lòng nhập Master Passphrase để phê duyệt lệnh!');
+        setError(t('commandGuardPassphraseReq'));
         return;
       }
       // Verify master passphrase via API or simulation
       onApprove();
     } else {
       if (!otpCode || otpCode.trim().length !== 6) {
-        setError('Mã OTP không hợp lệ (phải gồm 6 chữ số)!');
+        setError(t('commandGuardOtpInvalid'));
         return;
       }
       onApprove();
@@ -52,7 +55,7 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-danger)' }}>
             <ShieldAlert size={22} />
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>
-              ⚠️ Command Guard: Phê Duyệt Lệnh Nguy Hiểm
+              {t('commandGuardTitle')}
             </h3>
           </div>
           <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -63,12 +66,12 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px' }}>
             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '10px 12px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', fontSize: '0.78rem' }}>
-              <strong>CẢNH BÁO BẢO MẬT:</strong> Hệ thống phát hiện bạn sắp thực thi câu lệnh có mức độ rủi ro <strong style={{ textTransform: 'uppercase' }}>{riskLevel}</strong>. Yêu cầu xác thực bảo mật trước khi tiếp tục.
+              <strong>{t('commandGuardWarning')}</strong> {t('commandGuardRiskText')} <strong style={{ textTransform: 'uppercase' }}>{riskLevel}</strong>. {t('commandGuardAuthReq')}
             </div>
 
             <div>
               <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                Nội dung câu lệnh yêu cầu phê duyệt:
+                {t('commandGuardContentLabel')}
               </label>
               <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '10px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.8rem', color: '#a7f3d0', border: '1px solid var(--border-subtle)', wordBreak: 'break-all' }}>
                 {commandOrQuery}
@@ -78,7 +81,7 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
             {/* Auth Method Switcher */}
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                Phương thức xác thực phê duyệt:
+                {t('commandGuardMethodLabel')}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <button
@@ -99,7 +102,7 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
                     gap: '6px'
                   }}
                 >
-                  <Lock size={14} /> Master Passphrase
+                  <Lock size={14} /> {t('passphraseLabel')}
                 </button>
 
                 <button
@@ -120,7 +123,7 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
                     gap: '6px'
                   }}
                 >
-                  <KeyRound size={14} /> Mã Xác Thực OTP
+                  <KeyRound size={14} /> {t('commandGuardOtpMethod')}
                 </button>
               </div>
             </div>
@@ -128,12 +131,12 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
             {authMethod === 'passphrase' ? (
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Nhập Master Passphrase:
+                  {t('passphraseLabel')}:
                 </label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="Master Passphrase giải mã Vault..."
+                  placeholder={t('commandGuardPassphrasePlaceholder')}
                   value={passphrase}
                   onChange={(e) => setPassphrase(e.target.value)}
                   autoFocus
@@ -142,12 +145,12 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
             ) : (
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Nhập Mã Xác Thực OTP (6 Chữ Số):
+                  {t('commandGuardOtpLabel')}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Ví dụ: 123456"
+                  placeholder={t('commandGuardOtpPlaceholder')}
                   maxLength={6}
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
@@ -166,11 +169,11 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
 
           <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
             <button type="button" className="btn-secondary" onClick={onCancel}>
-              Hủy / Hủy Bỏ Lệnh
+              {t('commandGuardCancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--accent-danger)' }}>
               <Check size={14} />
-              <span>Xác Nhận & Cho Phép Chạy</span>
+              <span>{t('commandGuardConfirm')}</span>
             </button>
           </div>
         </form>
