@@ -84,7 +84,7 @@
     "@types/react-dom": "^19.2.4",
     "@types/ssh2": "^1.11.10",
     "@types/ssh2-sftp-client": "^9.0.5",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "electron": "^43.4.0",
     "electron-builder": "^26.15.3",
     "eslint-plugin-security": "^4.0.1",
