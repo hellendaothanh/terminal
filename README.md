@@ -153,6 +153,10 @@
 ### 33. 📐 Custom UI Density (Compact Mode)
 * **Optimized for Small Screens:** Easily switch to Compact Mode in Settings to reduce toolbar heights, sidebar widths, and tab paddings for maximum terminal real-estate.
 
+### 34. 🔄 Responsive Window Resizing & Viewport Auto-Fit
+* **Seamless Screen Transitions:** Automatically recalculates PTY window dimensions (`cols` & `rows`) with debounce when toggling between fullscreen and windowed modes.
+* **Auto-Scroll to Cursor/Prompt:** Guarantees bottom-line prompt visibility and prevents active command lines from getting cut off when shrinking the application window.
+
 ---
 
 ## 🔮 Roadmap & Future Features

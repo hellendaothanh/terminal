@@ -153,6 +153,10 @@
 ### 33. 📐 Tùy Chỉnh Mật Độ Giao Diện (Compact Mode Cho Màn Hình Nhỏ)
 * **Tối Ưu Không Gian:** Cho phép bật chế độ thu gọn (Compact Mode) trong Cài đặt để thu nhỏ thanh công cụ, sidebar và tab bar, gia tăng tối đa diện tích hiển thị của Terminal.
 
+### 34. 🔄 Tự Động Co Giãn & Khớp Kích Thước Cửa Sổ (Responsive Viewport Auto-Fit)
+* **Chuyển Đổi Kích Thước Mượt Mà:** Tự động tính toán lại số cột và dòng (`cols`/`rows`) của PTY khi bạn phóng to toàn màn hình hoặc thu nhỏ cửa sổ ứng dụng.
+* **Tự Động Cuộn Về Dấu Nhắc Lệnh:** Chống mất góc nhìn hoặc khuất dòng lệnh ở đáy màn hình khi thu nhỏ cửa sổ, đảm bảo con trỏ và nội dung mới nhất luôn hiển thị trọn vẹn.
+
 ---
 
 ## 🔮 Kế Hoạch Phát Triển (Roadmap)
