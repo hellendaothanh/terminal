@@ -186,6 +186,18 @@
       modeBanner.style.color = isInteractive ? '#fde047' : '#93c5fd';
     };
 
+    // Auto-detect client public IP for host tracking
+    let clientIp = 'Unknown IP';
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => { if (data && data.ip) clientIp = data.ip; })
+      .catch(() => {
+        fetch('https://ipapi.co/json/')
+          .then(res => res.json())
+          .then(data => { if (data && data.ip) clientIp = data.ip; })
+          .catch(() => {});
+      });
+
     peer.on('open', (peerId) => {
       term.writeln('\x1b[90m[P2P]\x1b[0m Client ID: ' + peerId);
       conn = peer.connect(room, { reliable: true });
@@ -195,8 +207,14 @@
         statusBox.className = 'status-badge status-live';
         document.getElementById('status-text').innerText = '● AUTHENTICATING...';
         
-        // Send Cryptographic Access Token Handshake
-        conn.send({ type: 'AUTH', key });
+        // Send Cryptographic Access Token Handshake with client IP & user agent info
+        conn.send({ 
+          type: 'AUTH', 
+          key, 
+          ip: clientIp, 
+          userAgent: navigator.userAgent,
+          platform: navigator.platform 
+        });
       });
 
       conn.on('data', (data) => {

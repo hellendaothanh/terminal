@@ -1067,6 +1067,15 @@ Formatting requirements:
     }
   };
 
+  interface LiveViewer {
+    id: string;
+    ip: string;
+    joinedAt: string;
+    platform?: string;
+  }
+
+  const [activeViewers, setActiveViewers] = useState<LiveViewer[]>([]);
+
   // Cleanup WebRTC Peer on unmount or stop
   const cleanupPeer = () => {
     if (activeConnectionsRef.current) {
@@ -1079,6 +1088,7 @@ Formatting requirements:
       try { peerInstanceRef.current.destroy(); } catch (_) {}
       peerInstanceRef.current = null;
     }
+    setActiveViewers([]);
   };
 
   useEffect(() => {
@@ -1131,9 +1141,20 @@ Formatting requirements:
               if (data && data.type === 'AUTH') {
                 if (data.key === secureKey) {
                   activeConnectionsRef.current.push(conn);
+                  
+                  const viewerIp = data.ip || conn.peer || '127.0.0.1';
+                  const viewerItem: LiveViewer = {
+                    id: conn.peer,
+                    ip: viewerIp,
+                    joinedAt: new Date().toLocaleTimeString(),
+                    platform: data.platform || 'Web'
+                  };
+
+                  setActiveViewers((prev) => [...prev.filter(v => v.id !== conn.peer), viewerItem]);
+
                   // Enforce current host-authorized permission mode, not the client's self-claimed mode!
                   conn.send({ type: 'AUTH_OK', mode: shareModeRef.current });
-                  showToast('success', t('liveViewerJoined'));
+                  showToast('success', t('liveViewerJoined').replace('{ip}', viewerIp));
                 } else {
                   conn.send({ type: 'AUTH_FAILED', message: 'Invalid Access Key' });
                   conn.close();
@@ -1152,6 +1173,13 @@ Formatting requirements:
 
           conn.on('close', () => {
             activeConnectionsRef.current = activeConnectionsRef.current.filter(c => c !== conn);
+            setActiveViewers((prev) => {
+              const leavingViewer = prev.find(v => v.id === conn.peer);
+              if (leavingViewer) {
+                showToast('empty', t('liveViewerLeft').replace('{ip}', leavingViewer.ip));
+              }
+              return prev.filter(v => v.id !== conn.peer);
+            });
           });
         });
 
@@ -1954,6 +1982,67 @@ Formatting requirements:
                   <div style={{ fontSize: '0.72rem', color: 'var(--accent-success)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Radio size={12} className="spin" />
                     <span>{t('liveShareActiveStatus')}</span>
+                  </div>
+
+                  {/* Connected Viewers & IP Address Dashboard */}
+                  <div style={{
+                    marginTop: '12px',
+                    paddingTop: '10px',
+                    borderTop: '1px dashed var(--border-subtle)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Users size={13} style={{ color: 'var(--accent-primary)' }} />
+                        {t('liveActiveViewersTitle')}:
+                      </span>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        backgroundColor: activeViewers.length > 0 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                        color: activeViewers.length > 0 ? 'var(--accent-success)' : 'var(--text-muted)'
+                      }}>
+                        {activeViewers.length} online
+                      </span>
+                    </div>
+
+                    {activeViewers.length === 0 ? (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic', padding: '4px 0' }}>
+                        {t('liveNoViewersYet')}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto', marginTop: '6px' }}>
+                        {activeViewers.map((viewer, idx) => (
+                          <div
+                            key={viewer.id || idx}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              backgroundColor: 'var(--bg-secondary)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '4px',
+                              padding: '6px 8px',
+                              fontSize: '0.72rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-success)' }} />
+                              <span style={{ fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>
+                                {viewer.ip}
+                              </span>
+                              <span style={{ color: 'var(--text-dim)', fontSize: '0.68rem' }}>
+                                ({viewer.platform || 'Web'})
+                              </span>
+                            </div>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>
+                              {viewer.joinedAt}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
