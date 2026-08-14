@@ -54,9 +54,11 @@ export const TabBar: React.FC<TabBarProps> = ({
     }
   };
 
+  const isCompact = settings?.uiDensity === 'compact';
+
   return (
     <div style={{
-      height: '40px',
+      height: isCompact ? '32px' : '40px',
       backgroundColor: 'var(--bg-secondary)', // Matches secondary panel
       borderBottom: '1px solid var(--border-subtle)',
       display: 'flex',
@@ -74,13 +76,13 @@ export const TabBar: React.FC<TabBarProps> = ({
             border: 'none',
             color: isSidebarCollapsed ? 'var(--accent-primary)' : 'var(--text-muted)',
             cursor: 'pointer',
-            padding: '6px',
+            padding: isCompact ? '4px' : '6px',
             borderRadius: '4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: '6px',
-            marginBottom: '4px'
+            marginBottom: isCompact ? '2px' : '4px'
           }}
           title={isSidebarCollapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
@@ -91,24 +93,32 @@ export const TabBar: React.FC<TabBarProps> = ({
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100%' }}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTabId;
+          const tabEnv = tab.server?.environment;
+          const tabEnvBorderTop = tabEnv === 'PRODUCTION' 
+            ? '2px solid var(--env-prod)' 
+            : tabEnv === 'STAGING' 
+              ? '2px solid var(--env-staging)' 
+              : isActive 
+                ? '2px solid var(--accent-primary)' 
+                : '2px solid transparent';
 
           return (
             <div
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
               style={{
-                height: isActive ? '34px' : '30px',
-                padding: '0 14px',
+                height: isCompact ? (isActive ? '28px' : '24px') : (isActive ? '34px' : '30px'),
+                padding: isCompact ? '0 10px' : '0 14px',
                 backgroundColor: isActive ? 'var(--bg-primary)' : 'transparent', // Matches workspace background
                 color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
-                borderTop: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                borderTop: tabEnvBorderTop,
                 borderLeft: isActive ? '1px solid var(--border-subtle)' : '1px solid transparent',
                 borderRight: isActive ? '1px solid var(--border-subtle)' : '1px solid transparent',
-                borderRadius: '8px 8px 0 0',
+                borderRadius: '6px 6px 0 0',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                fontSize: '0.8rem',
+                fontSize: isCompact ? '0.75rem' : '0.8rem',
                 fontWeight: isActive ? 600 : 400,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -119,6 +129,16 @@ export const TabBar: React.FC<TabBarProps> = ({
             >
               {getTabIcon(tab.type)}
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {tabEnv && (
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    marginRight: '4px',
+                    color: tabEnv === 'PRODUCTION' ? 'var(--env-prod)' : tabEnv === 'STAGING' ? 'var(--env-staging)' : 'var(--env-dev)'
+                  }}>
+                    [{tabEnv[0]}]
+                  </span>
+                )}
                 {tab.type === 'PASSWORD_MANAGER' ? t('passwords') :
                  tab.type === 'OTP_MANAGER' ? t('otpAuth') :
                  tab.type === 'TUNNEL_MANAGER' ? t('sshTunnels') :

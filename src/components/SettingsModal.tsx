@@ -310,6 +310,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </select>
               </div>
 
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  📐 {t('uiDensityLabel')}
+                </label>
+                <select
+                  className="input-field"
+                  value={settings.uiDensity || 'comfortable'}
+                  onChange={(e) => onSaveSettings({ ...settings, uiDensity: e.target.value as 'compact' | 'comfortable' })}
+                >
+                  <option value="comfortable">{t('densityComfortable')}</option>
+                  <option value="compact">{t('densityCompact')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                  📡 {t('liveShareRelayUrlLabel')}
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="https://hellendaothanh.github.io/terminal/live or https://your-domain.com"
+                  value={settings.liveShareRelayUrl || ''}
+                  onChange={(e) => onSaveSettings({ ...settings, liveShareRelayUrl: e.target.value })}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
+                  {t('liveShareRelayUrlHelp')}
+                </span>
+              </div>
+
               {/* App Version & Auto-update Section */}
               <div style={{
                 marginTop: '16px',

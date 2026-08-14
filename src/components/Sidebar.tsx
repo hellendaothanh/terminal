@@ -139,18 +139,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </button>
   );
 
+  const isCompact = settings?.uiDensity === 'compact';
+
   return (
     <div style={{ display: 'flex', height: '100%', backgroundColor: 'var(--bg-primary)', userSelect: 'none' }}>
       
       {/* 1. Activity Rail (Leftmost) */}
       <div style={{ 
-        width: '54px', 
+        width: isCompact ? '44px' : '54px', 
         borderRight: '1px solid var(--border-subtle)', 
         backgroundColor: 'var(--bg-secondary)', 
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        paddingTop: '12px',
+        paddingTop: isCompact ? '8px' : '12px',
         zIndex: 10
       }}>
         <ActivityIcon id="SERVERS" icon={Server} tooltip={t('servers')} />
@@ -162,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 2. Secondary Panel (Collapsible) */}
       {!isCollapsed && (
         <div style={{ 
-          width: '260px', 
+          width: isCompact ? '220px' : '260px', 
           backgroundColor: 'var(--bg-tertiary)', 
           borderRight: '1px solid var(--border-subtle)', 
           display: 'flex', 
@@ -171,8 +173,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}>
           
           {/* Header */}
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-            <h2 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '0.5px' }}>
+          <div style={{ padding: isCompact ? '10px 12px' : '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <h2 style={{ fontSize: isCompact ? '0.78rem' : '0.85rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '0.5px' }}>
               {activePane === 'SERVERS' ? t('servers') : activePane === 'SECURITY' ? 'Security & Identity' : activePane === 'DATABASES' ? 'Databases' : 'DevOps & Tools'}
             </h2>
           </div>

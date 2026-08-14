@@ -208,6 +208,8 @@ export interface TerminalSettings {
   cursorBlink: boolean;
   scrollback: number;
   language?: 'vi' | 'en';
+  uiDensity?: 'compact' | 'comfortable';
+  liveShareRelayUrl?: string;
   teamSync?: TeamSyncConfig;
   hashicorpVault?: HashiCorpVaultConfig;
   ai?: AISettings;

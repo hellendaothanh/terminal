@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniTerminal - Live Remote Pairing Stream</title>
+  <!-- XTerm CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
+  <!-- PeerJS WebRTC Library -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- XTerm JS & Addons -->
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.8.0/lib/addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.9.0/lib/addon-web-links.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0e1015;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      height: 48px;
+      background-color: #161922;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      user-select: none;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-live { background-color: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-connecting { background-color: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .status-ended { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    #terminal-container {
+      flex: 1;
+      padding: 10px;
+      background-color: #1e222a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .banner-readonly {
+      background-color: rgba(59, 130, 246, 0.12);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span style="color: #3b82f6;">⚡</span>
+      <span>OmniTerminal Live Web Stream</span>
+      <span id="server-name" style="color: #94a3b8; font-size: 0.82rem; font-weight: 400; margin-left: 8px;"></span>
+    </div>
+    <div id="status-container" class="status-badge status-connecting">
+      <span class="pulse-dot"></span>
+      <span id="status-text">Connecting to Live Session...</span>
+    </div>
+  </header>
+
+  <div id="mode-banner" class="banner-readonly" style="display: none;">
+    <span id="mode-desc">🔒 Mode: Read-Only (Screen viewing only)</span>
+    <span style="font-size: 0.72rem; color: #64748b;">OmniTerminal WebRTC P2P</span>
+  </div>
+
+  <div id="terminal-container"></div>
+
+  <script>
+    // URL Params parser
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get('room') || 'pair_demo_room';
+    const mode = (params.get('mode') || 'readonly').toLowerCase();
+    const server = params.get('server') || 'Remote Server';
+
+    document.getElementById('server-name').innerText = `(${server})`;
+    const modeBanner = document.getElementById('mode-banner');
+    modeBanner.style.display = 'flex';
+    document.getElementById('mode-desc').innerText = mode === 'interactive' 
+      ? '👥 Interactive Live Pairing (Full Typing Allowed)' 
+      : '🔒 Read-Only Live Stream (Observer Mode)';
+
+    // Init XTerm.js
+    const term = new Terminal({
+      fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace',
+      fontSize: 14,
+      cursorBlink: mode === 'interactive',
+      disableStdin: mode === 'readonly',
+      theme: {
+        background: '#1e222a',
+        foreground: '#abb2bf',
+        cursor: '#528bff',
+        selectionBackground: '#3e4451'
+      }
+    });
+
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.loadAddon(new WebLinksAddon.WebLinksAddon());
+
+    const container = document.getElementById('terminal-container');
+    term.open(container);
+    fitAddon.fit();
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    term.writeln('\x1b[36m[OmniTerminal Live Stream]\x1b[0m Connecting to WebRTC Room: \x1b[33m' + room + '\x1b[0m ...');
+
+    // WebRTC PeerJS connection
+    const peer = new Peer();
+    let conn = null;
+
+    peer.on('open', (peerId) => {
+      conn = peer.connect(room, { reliable: true });
+
+      conn.on('open', () => {
+        const statusBox = document.getElementById('status-container');
+        statusBox.className = 'status-badge status-live';
+        document.getElementById('status-text').innerText = '● LIVE CONNECTED';
+        term.writeln('\x1b[32m[Connected]\x1b[0m Synchronizing live terminal stream...\r\n');
+        
+        // Handshake
+        conn.send({ type: 'JOIN', mode });
+      });
+
+      conn.on('data', (data) => {
+        if (typeof data === 'string') {
+          term.write(data);
+        } else if (data && data.type === 'DATA') {
+          term.write(data.payload);
+        }
+      });
+
+      conn.on('close', () => {
+        const statusBox = document.getElementById('status-container');
+        statusBox.className = 'status-badge status-ended';
+        document.getElementById('status-text').innerText = '✕ SESSION DISCONNECTED';
+        term.writeln('\r\n\x1b[31m[Session Ended]\x1b[0m The host has stopped live sharing.');
+      });
+
+      conn.on('error', (err) => {
+        console.error('Peer connection error:', err);
+      });
+    });
+
+    peer.on('error', (err) => {
+      console.warn('Peer error (fallback simulation mode):', err);
+      const statusBox = document.getElementById('status-container');
+      statusBox.className = 'status-badge status-live';
+      document.getElementById('status-text').innerText = '● LIVE READY';
+      term.writeln('\x1b[33m[Notice]\x1b[0m Ready for peer connection on Room: ' + room);
+    });
+
+    if (mode === 'interactive') {
+      term.onData((inputData) => {
+        if (conn && conn.open) {
+          conn.send({ type: 'INPUT', payload: inputData });
+        }
+      });
+    }
+  </script>
+</body>
+</html>

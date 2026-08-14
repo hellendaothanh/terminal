@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SSHTunnelConfig, ServerConfig, SSHKey, TunnelTrafficStats } from '../types';
-import { Plus, Search, Edit2, Trash2, Network, Play, Square, Activity, ArrowRight, Server, Laptop, Globe, RefreshCw, Zap } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Network, Play, Square, Activity, ArrowRight, Server, Laptop, Globe, RefreshCw, Zap, Radio, CheckCircle, XCircle, Power } from 'lucide-react';
 
 import { TerminalSettings } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
@@ -24,6 +24,7 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
 }) => {
   const { t } = useTranslation(settings);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<SSHTunnelConfig>>({
@@ -53,12 +54,39 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const filteredTunnels = tunnels.filter(
-    (t) =>
+  const activeCount = tunnels.filter((t) => stats[t.id]?.status === 'ACTIVE').length;
+  const inactiveCount = tunnels.length - activeCount;
+  const totalSpeed = Object.values(stats).reduce((acc, curr) => acc + (curr.speedKbps || 0), 0);
+  const totalBytesTransferred = Object.values(stats).reduce((acc, curr) => acc + (curr.bytesWritten || 0) + (curr.bytesRead || 0), 0);
+
+  const filteredTunnels = tunnels.filter((t) => {
+    const stat = stats[t.id];
+    const isActive = stat?.status === 'ACTIVE';
+    if (statusFilter === 'ACTIVE' && !isActive) return false;
+    if (statusFilter === 'INACTIVE' && isActive) return false;
+
+    return (
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.localPort.toString().includes(searchQuery) ||
       (t.dstHost && t.dstHost.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+    );
+  });
+
+  const handleStartAll = async () => {
+    for (const tunnel of tunnels) {
+      if (stats[tunnel.id]?.status !== 'ACTIVE') {
+        await handleToggleTunnel(tunnel);
+      }
+    }
+  };
+
+  const handleStopAll = async () => {
+    for (const tunnel of tunnels) {
+      if (stats[tunnel.id]?.status === 'ACTIVE') {
+        await window.api.tunnelStop(tunnel.id);
+      }
+    }
+  };
 
   const handleOpenModal = (tunnel?: SSHTunnelConfig) => {
     if (tunnel) {
@@ -171,35 +199,155 @@ export const SSHTunnelManager: React.FC<SSHTunnelManagerProps> = ({
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', color: 'var(--text-main)', backgroundColor: 'var(--bg-primary)', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <Network size={22} style={{ color: 'var(--accent-primary)' }} />
-            {t('tunnelTitle')}
+            {t('tunnelOverviewDashboard')}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
             {t('tunnelSubtitle')}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus size={16} /> {t('addTunnel')}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-secondary"
+            onClick={handleStartAll}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--accent-success)' }}
+            title={t('quickStartAll')}
+          >
+            <Play size={14} /> {t('quickStartAll')}
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={handleStopAll}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--accent-danger)' }}
+            title={t('quickStopAll')}
+          >
+            <Square size={14} /> {t('quickStopAll')}
+          </button>
+          <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={16} /> {t('addTunnel')}
+          </button>
+        </div>
+      </div>
+
+      {/* Top Port Mapping KPI Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('totalTunnelsCount')}</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>{tunnels.length}</div>
+          </div>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+            <Network size={20} />
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('activeTunnelsCount')}</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent-success)' }}>{activeCount}</div>
+          </div>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(34, 197, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-success)' }}>
+            <Radio size={20} />
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('inactiveTunnelsCount')}</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-muted)' }}>{inactiveCount}</div>
+          </div>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(100, 116, 139, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+            <Power size={20} />
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '14px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>{t('totalBandwidth')}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: activeCount > 0 ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+              {totalSpeed} KB/s <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-dim)' }}>({formatBytes(totalBytesTransferred)})</span>
+            </div>
+          </div>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(234, 179, 8, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#eab308' }}>
+            <Activity size={20} />
+          </div>
+        </div>
       </div>
 
       {/* Main Grid: Left List, Right Visualizer Canvas */}
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
-        {/* Left Column: Tunnel List */}
+      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
+        {/* Left Column: Tunnel List & Status Filter */}
         <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: '16px', overflow: 'hidden' }}>
-          <div style={{ position: 'relative', marginBottom: '14px' }}>
-            <input
-              type="text"
-              className="input-field"
-              placeholder={t('searchTunnels')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '34px', fontSize: '0.85rem' }}
-            />
-            <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-dim)' }} />
+          {/* Search bar & Filter Tabs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className="input-field"
+                placeholder={t('searchTunnels')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: '34px', fontSize: '0.85rem' }}
+              />
+              <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-dim)' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', backgroundColor: 'var(--bg-tertiary)', padding: '3px', borderRadius: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ALL')}
+                style={{
+                  flex: 1,
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  backgroundColor: statusFilter === 'ALL' ? 'var(--bg-secondary)' : 'transparent',
+                  color: statusFilter === 'ALL' ? 'var(--text-main)' : 'var(--text-muted)',
+                  fontWeight: statusFilter === 'ALL' ? 600 : 400
+                }}
+              >
+                {t('portFilterAll')} ({tunnels.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ACTIVE')}
+                style={{
+                  flex: 1,
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  backgroundColor: statusFilter === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                  color: statusFilter === 'ACTIVE' ? 'var(--accent-success)' : 'var(--text-muted)',
+                  fontWeight: statusFilter === 'ACTIVE' ? 600 : 400
+                }}
+              >
+                ● {t('portFilterActive')} ({activeCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('INACTIVE')}
+                style={{
+                  flex: 1,
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  backgroundColor: statusFilter === 'INACTIVE' ? 'var(--bg-secondary)' : 'transparent',
+                  color: statusFilter === 'INACTIVE' ? 'var(--text-main)' : 'var(--text-muted)',
+                  fontWeight: statusFilter === 'INACTIVE' ? 600 : 400
+                }}
+              >
+                {t('portFilterInactive')} ({inactiveCount})
+              </button>
+            </div>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>

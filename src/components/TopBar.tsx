@@ -30,12 +30,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   onToggleLanguage
 }) => {
   const { t, lang } = useTranslation(settings);
+  const isCompact = settings?.uiDensity === 'compact';
 
   return (
     <div
       className="glass-panel"
       style={{
-        height: '52px',
+        height: isCompact ? '42px' : '52px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',

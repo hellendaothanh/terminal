@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, Bookmark } from 'lucide-react';
+import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, Bookmark, Share2, Users, Radio, Lock, Globe } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
@@ -190,6 +190,13 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
   const [aiSuggestedCommand, setAiSuggestedCommand] = useState<string>('');
   const [detectedOs, setDetectedOs] = useState<string | null>(null);
   const recentOutputRef = useRef<string>('');
+
+  // Ghost Text / Inline Autocomplete States
+  const [ghostText, setGhostText] = useState<string>('');
+  const [ghostPosition, setGhostPosition] = useState<{ x: number; y: number } | null>(null);
+  const ghostTextRef = useRef<string>('');
+  const currentInputRef = useRef<string>('');
+  const historyCommandsRef = useRef<string[]>([]);
 
   const HIGH_RISK_COMMANDS = ['rm -rf', 'drop database', 'drop table', 'truncate', 'chmod 777', 'mkfs', 'dd if=', 'shutdown', 'reboot', 'systemctl stop'];
 
@@ -630,10 +637,101 @@ Formatting requirements:
     }
 
     terminalRef.current = term;
-    fitAddonRef.current = fitAddon;
+    // Helper to calculate and update inline Ghost-Text suggestion (Warp/Fig style)
+    const updateGhostText = (typed: string, history: string[]) => {
+      const trimmed = typed.trim().toLowerCase();
+      if (!trimmed || trimmed.length < 2) {
+        setGhostText('');
+        ghostTextRef.current = '';
+        setGhostPosition(null);
+        return;
+      }
 
-    // Keyboard Shortcuts: Ctrl+Shift+C (Copy), Ctrl+Shift+V (Paste), Ctrl+C when text is selected (Copy)
+      const COMMON_CMD_LIST = [
+        'ping -c 4 8.8.8.8',
+        'ping -c 4 google.com',
+        'df -h',
+        'free -h',
+        'uptime',
+        'ip a',
+        'ss -tulpn',
+        'netstat -tulpn',
+        'top -b -n 1',
+        'htop',
+        'cat /etc/os-release',
+        'uname -a',
+        'journalctl -xe --no-pager -n 50',
+        'journalctl -xe',
+        'systemctl status',
+        'systemctl list-units --type=service --state=running',
+        'docker ps -a',
+        'docker stats --no-stream',
+        'docker-compose ps',
+        'docker-compose up -d',
+        'kubectl get pods -A',
+        'kubectl get nodes -o wide',
+        'tail -n 50 /var/log/syslog',
+        'tail -n 50 /var/log/messages',
+        'tail -n 50 /var/log/nginx/error.log',
+        'ps aux --sort=-%mem | head -n 10',
+        'ps aux --sort=-%cpu | head -n 10',
+        'whoami',
+        'id',
+        'pwd',
+        'ls -la'
+      ];
+
+      const allCandidates = Array.from(new Set([...(history || []).slice().reverse(), ...COMMON_CMD_LIST]));
+      const matched = allCandidates.find((cmd) => cmd.toLowerCase().startsWith(trimmed) && cmd.length > typed.length);
+
+      if (matched) {
+        const remaining = matched.slice(typed.length);
+        setGhostText(remaining);
+        ghostTextRef.current = remaining;
+
+        // Position ghost text right after current cursor location
+        const core = (term as any)._core;
+        const cellWidth = core?._renderService?.dimensions?.actualCellWidth || (fontSize * 0.6);
+        const cellHeight = core?._renderService?.dimensions?.actualCellHeight || (fontSize * 1.25);
+        const buffer = term.buffer.active;
+        const cursorX = buffer.cursorX;
+        const cursorY = buffer.cursorY;
+
+        setGhostPosition({
+          x: cursorX * cellWidth + 8,
+          y: cursorY * cellHeight + 8
+        });
+      } else {
+        setGhostText('');
+        ghostTextRef.current = '';
+        setGhostPosition(null);
+      }
+    };
+
+    // Keyboard Shortcuts: Ctrl+Shift+C (Copy), Ctrl+Shift+V (Paste), Ctrl+C when text is selected (Copy), Tab/Right-Arrow (Accept Ghost Text)
     term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+      // Tab or Right-Arrow: Accept ghost text suggestion (like Fig / Warp / Fish shell)
+      if ((event.key === 'Tab' || event.key === 'ArrowRight') && ghostTextRef.current && ghostTextRef.current.length > 0) {
+        if (event.type === 'keydown') {
+          const toInsert = ghostTextRef.current;
+          window.api.sshWrite(sessionId, toInsert);
+          lineBuf += toInsert;
+          currentInputRef.current = lineBuf;
+          setCurrentInput(lineBuf);
+          setGhostText('');
+          ghostTextRef.current = '';
+          setGhostPosition(null);
+        }
+        return false; // Prevent tab navigation / default terminal tab
+      }
+
+      // Escape: Dismiss ghost text suggestion
+      if (event.key === 'Escape' && ghostTextRef.current) {
+        setGhostText('');
+        ghostTextRef.current = '';
+        setGhostPosition(null);
+      }
+
       // Ctrl+Shift+C / Cmd+Shift+C => Copy selection
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'C' || event.key === 'c')) {
         if (event.type === 'keydown') {
@@ -693,7 +791,11 @@ Formatting requirements:
       // Reset buffer on control keys that alter the command or navigate history (Escape, Tab, Ctrl+C, Ctrl+D)
       if (data.includes('\x1b') || data.includes('\t') || data.includes('\x03') || data.includes('\x04')) {
         lineBuf = '';
+        currentInputRef.current = '';
         setCurrentInput('');
+        setGhostText('');
+        ghostTextRef.current = '';
+        setGhostPosition(null);
         return;
       }
 
@@ -707,17 +809,27 @@ Formatting requirements:
         if (isValidCmd) {
           setHistoryCommands((prev) => {
             const filtered = prev.filter(c => c !== trimmed);
-            return [...filtered, trimmed].slice(-50);
+            const updated = [...filtered, trimmed].slice(-50);
+            historyCommandsRef.current = updated;
+            return updated;
           });
         }
         lineBuf = '';
+        currentInputRef.current = '';
         setCurrentInput('');
+        setGhostText('');
+        ghostTextRef.current = '';
+        setGhostPosition(null);
       } else if (data === '\x7f' || data === '\b') {
         lineBuf = lineBuf.slice(0, -1);
+        currentInputRef.current = lineBuf;
         setCurrentInput(lineBuf);
+        updateGhostText(lineBuf, historyCommandsRef.current);
       } else if (data.length === 1 && data >= ' ') {
         lineBuf += data;
+        currentInputRef.current = lineBuf;
         setCurrentInput(lineBuf);
+        updateGhostText(lineBuf, historyCommandsRef.current);
       }
     });
 
@@ -881,8 +993,95 @@ Formatting requirements:
     startConnection(updated);
   };
 
+  // Remote Web Share / Live Pairing states
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareMode, setShareMode] = useState<'READONLY' | 'INTERACTIVE'>('READONLY');
+  const [shareLink, setShareLink] = useState('');
+  const [isLiveShared, setIsLiveShared] = useState(false);
+
+  const handleStartLiveShare = () => {
+    const roomId = `pair_${sessionId.slice(0, 8)}_${Math.random().toString(36).substring(2, 7)}`;
+    const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim()) 
+      ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '') 
+      : 'https://hellendaothanh.github.io/terminal';
+    const url = `${baseUrl}?room=${roomId}&mode=${shareMode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
+    setShareLink(url);
+    setIsLiveShared(true);
+    showToast('success', shareMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
+  };
+
+  const handleStopLiveShare = () => {
+    setShareLink('');
+    setIsLiveShared(false);
+    setIsShareModalOpen(false);
+    showToast('empty', t('liveShareStopped'));
+  };
+
+  const envColor = currentServer.environment === 'PRODUCTION' 
+    ? 'var(--env-prod)' 
+    : currentServer.environment === 'STAGING' 
+      ? 'var(--env-staging)' 
+      : 'var(--env-dev)';
+
+  const envBorder = currentServer.environment === 'PRODUCTION'
+    ? '2px solid rgba(244, 63, 94, 0.7)'
+    : currentServer.environment === 'STAGING'
+      ? '2px solid rgba(234, 179, 8, 0.7)'
+      : '1px solid var(--border-subtle)';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: THEMES[settings.theme]?.background || '#1e222a', position: 'relative' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+      backgroundColor: THEMES[settings.theme]?.background || '#1e222a',
+      position: 'relative',
+      border: envBorder,
+      boxShadow: currentServer.environment === 'PRODUCTION' ? 'inset 0 0 15px rgba(244, 63, 94, 0.15)' : 'none'
+    }}>
+      {/* Environment Isolation Warning Banner for Production / Staging */}
+      {currentServer.environment === 'PRODUCTION' && (
+        <div style={{
+          backgroundColor: 'rgba(244, 63, 94, 0.15)',
+          borderBottom: '1px solid rgba(244, 63, 94, 0.4)',
+          color: '#fca5a5',
+          padding: '3px 12px',
+          fontSize: '0.72rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontWeight: 600,
+          letterSpacing: '0.5px'
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f43f5e', animation: 'pulse 1.5s infinite' }} />
+            ⚠️ {t('prodEnvironmentWarning')}
+          </span>
+          <span style={{ fontSize: '0.68rem', opacity: 0.85, textTransform: 'uppercase' }}>PRODUCTION ISOLATION MODE</span>
+        </div>
+      )}
+
+      {currentServer.environment === 'STAGING' && (
+        <div style={{
+          backgroundColor: 'rgba(234, 179, 8, 0.12)',
+          borderBottom: '1px solid rgba(234, 179, 8, 0.35)',
+          color: '#fde047',
+          padding: '2px 12px',
+          fontSize: '0.7rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontWeight: 500
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#eab308' }} />
+            ⚡ {t('stagingEnvironmentNotice')}
+          </span>
+          <span style={{ fontSize: '0.68rem', opacity: 0.85, textTransform: 'uppercase' }}>STAGING ISOLATION</span>
+        </div>
+      )}
+
       {/* Toast Notification Bar */}
       {toastMessage && (
         <div style={{
@@ -909,7 +1108,7 @@ Formatting requirements:
 
       {/* Quick Terminal Control Bar */}
       <div style={{
-        height: '32px',
+        height: settings.uiDensity === 'compact' ? '28px' : '32px',
         backgroundColor: 'var(--bg-tertiary)',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
@@ -920,6 +1119,19 @@ Formatting requirements:
         color: 'var(--text-muted)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              padding: '1px 6px',
+              borderRadius: '3px',
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              backgroundColor: currentServer.environment === 'PRODUCTION' ? 'rgba(244, 63, 94, 0.25)' : currentServer.environment === 'STAGING' ? 'rgba(234, 179, 8, 0.25)' : 'rgba(34, 197, 94, 0.2)',
+              color: envColor,
+              border: `1px solid ${envColor}`
+            }}
+          >
+            {currentServer.environment}
+          </span>
           <span style={{ color: isConnected ? 'var(--accent-success)' : 'var(--accent-danger)', fontWeight: 600 }}>
             ● {currentServer.name}
           </span>
@@ -1021,6 +1233,27 @@ Formatting requirements:
           </button>
 
           <button
+            onClick={() => setIsShareModalOpen(true)}
+            style={{
+              background: isLiveShared ? 'rgba(239, 68, 68, 0.15)' : 'none',
+              border: isLiveShared ? '1px solid rgba(239, 68, 68, 0.4)' : 'none',
+              borderRadius: '4px',
+              padding: '2px 6px',
+              color: isLiveShared ? 'var(--accent-danger)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              transition: 'all 0.2s ease'
+            }}
+            title={t('liveShareTooltip')}
+          >
+            {isLiveShared ? <Radio size={13} className="spin" /> : <Share2 size={13} />}
+            <span>{isLiveShared ? t('liveSharingBadge') : t('liveShareBtn')}</span>
+          </button>
+
+          <button
             onClick={() => setShowQuickCommands(!showQuickCommands)}
             style={{
               background: showQuickCommands ? 'rgba(59, 130, 246, 0.15)' : 'none',
@@ -1074,6 +1307,45 @@ Formatting requirements:
               overflow: 'hidden'
             }}
           />
+
+          {/* Interactive Ghost-Text Autocomplete Overlay (Warp / Fig style) */}
+          {ghostText && ghostPosition && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${ghostPosition.x}px`,
+                top: `${ghostPosition.y}px`,
+                pointerEvents: 'none',
+                fontFamily: settings.fontFamily || 'JetBrains Mono, monospace',
+                fontSize: `${fontSize}px`,
+                lineHeight: 1.25,
+                color: 'rgba(255, 255, 255, 0.35)',
+                whiteSpace: 'pre',
+                zIndex: 40,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>{ghostText}</span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  backgroundColor: 'rgba(59, 130, 246, 0.25)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  color: '#93c5fd',
+                  borderRadius: '3px',
+                  padding: '1px 4px',
+                  fontFamily: 'sans-serif',
+                  pointerEvents: 'auto',
+                  fontWeight: 600,
+                  userSelect: 'none'
+                }}
+              >
+                Tab ⇥
+              </span>
+            </div>
+          )}
 
           {/* Right-Click Context Menu */}
           {contextMenu.visible && (
@@ -1399,6 +1671,162 @@ Formatting requirements:
             setPendingCommand(null);
           }}
         />
+      )}
+
+      {/* Quick Web-based Remote Share (Live Pairing) Modal */}
+      {isShareModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100
+        }}>
+          <div style={{
+            width: '480px',
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: 'var(--shadow-xl)',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--bg-tertiary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Share2 size={18} style={{ color: 'var(--accent-primary)' }} />
+                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t('liveShareModalTitle')}</span>
+              </div>
+              <button
+                onClick={() => setIsShareModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {t('liveShareModalDesc')}
+              </p>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-dim)', display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('liveShareModeLabel')}
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div
+                    onClick={() => setShareMode('READONLY')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: 'var(--radius-md)',
+                      border: shareMode === 'READONLY' ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                      backgroundColor: shareMode === 'READONLY' ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-surface)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.82rem', color: shareMode === 'READONLY' ? 'var(--accent-primary)' : 'var(--text-main)' }}>
+                      <Lock size={14} /> {t('liveShareReadonlyTitle')}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('liveShareReadonlyDesc')}</span>
+                  </div>
+
+                  <div
+                    onClick={() => setShareMode('INTERACTIVE')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: 'var(--radius-md)',
+                      border: shareMode === 'INTERACTIVE' ? '2px solid var(--accent-warning)' : '1px solid var(--border-subtle)',
+                      backgroundColor: shareMode === 'INTERACTIVE' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-surface)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.82rem', color: shareMode === 'INTERACTIVE' ? 'var(--accent-warning)' : 'var(--text-main)' }}>
+                      <Users size={14} /> {t('liveShareInteractiveTitle')}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('liveShareInteractiveDesc')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {isLiveShared && shareLink && (
+                <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                    {t('liveShareUrlLabel')}
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={shareLink}
+                      readOnly
+                      style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}
+                    />
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareLink);
+                        showToast('success', t('copySuccess'));
+                      }}
+                      style={{ padding: '0 12px', fontSize: '0.75rem' }}
+                    >
+                      <Copy size={13} />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--accent-success)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Radio size={12} className="spin" />
+                    <span>{t('liveShareActiveStatus')}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-tertiary)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px'
+            }}>
+              {isLiveShared ? (
+                <button
+                  className="btn-secondary"
+                  onClick={handleStopLiveShare}
+                  style={{ color: 'var(--accent-danger)' }}
+                >
+                  {t('liveShareStopBtn')}
+                </button>
+              ) : (
+                <>
+                  <button className="btn-secondary" onClick={() => setIsShareModalOpen(false)}>
+                    {t('cancel')}
+                  </button>
+                  <button className="btn-primary" onClick={handleStartLiveShare}>
+                    <Share2 size={14} />
+                    <span>{t('liveShareStartBtn')}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ReAuth Password Modal */}

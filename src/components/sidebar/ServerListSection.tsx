@@ -70,20 +70,28 @@ export const ServerListSection: React.FC<ServerListSectionProps> = ({
               {/* Servers under Environment */}
               {!isCollapsed && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px', paddingLeft: '8px' }}>
-                  {envServers.map((server) => (
-                    <div
-                      key={server.id}
-                      style={{
-                        backgroundColor: 'var(--bg-tertiary)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
+                  {envServers.map((server) => {
+                    const serverEnvBorder = server.environment === 'PRODUCTION' 
+                      ? '3px solid var(--env-prod)' 
+                      : server.environment === 'STAGING' 
+                        ? '3px solid var(--env-staging)' 
+                        : '3px solid var(--env-dev)';
+
+                    return (
+                      <div
+                        key={server.id}
+                        style={{
+                          backgroundColor: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-subtle)',
+                          borderLeft: serverEnvBorder,
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
@@ -239,8 +247,9 @@ export const ServerListSection: React.FC<ServerListSectionProps> = ({
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
               )}
             </div>
           );
