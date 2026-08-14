@@ -188,6 +188,8 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiExplanation, setAiExplanation] = useState<string>('');
   const [aiSuggestedCommand, setAiSuggestedCommand] = useState<string>('');
+  const [detectedOs, setDetectedOs] = useState<string | null>(null);
+  const recentOutputRef = useRef<string>('');
 
   const HIGH_RISK_COMMANDS = ['rm -rf', 'drop database', 'drop table', 'truncate', 'chmod 777', 'mkfs', 'dd if=', 'shutdown', 'reboot', 'systemctl stop'];
 
@@ -198,6 +200,22 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
   };
 
   const ANOMALY_KEYWORDS = [
+    'option requires an argument',
+    'requires an argument',
+    'unrecognized option',
+    'invalid option',
+    'invalid argument',
+    'syntax error',
+    'SyntaxError',
+    'command not found',
+    'not found',
+    'no such file or directory',
+    'No such file or directory',
+    'Permission denied',
+    'Permission Denied',
+    'permission denied',
+    'Access denied',
+    'Access Denied',
     'OutOfMemory',
     'Out of memory',
     'OOMKilled',
@@ -205,27 +223,22 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
     'Connection refused',
     'Segmentation Fault',
     'segmentation fault',
-    'Permission denied',
-    'Permission Denied',
-    'permission denied',
     'FATAL ERROR',
     'Panic: ',
-    'SyntaxError',
     'Uncaught Exception',
-    'command not found',
-    'not found',
-    'no such file or directory',
     'Cannot find module',
     'is not recognized as an internal or external command',
-    'Access denied',
     'fatal:',
-    'FAILED'
+    'FAILED',
+    'failed to start',
+    'Unit not found',
+    'could not find unit'
   ];
 
   const checkAnomalyLogs = (text: string) => {
     for (const kw of ANOMALY_KEYWORDS) {
       if (text.includes(kw)) {
-        setAnomalyAlert(settings.language === 'vi' ? `Phát hiện lỗi log: "${kw}"` : `Log error detected: "${kw}"`);
+        setAnomalyAlert(settings.language === 'vi' ? `Phát hiện lỗi log: "${kw}"` : `Error detected in logs: "${kw}"`);
         break;
       }
     }
@@ -234,6 +247,9 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
   // Copy / Paste Toast Notification Feedback State
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'empty' | 'pasted'>('idle');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
 
   const showToast = (status: 'success' | 'empty' | 'pasted', message: string) => {
     setCopyStatus(status);
@@ -312,9 +328,36 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
       });
   };
 
-  const handleTriggerAutofix = async () => {
+  const getTerminalBufferText = (): string => {
+    if (terminalRef.current) {
+      const selection = terminalRef.current.getSelection();
+      if (selection && selection.trim().length > 0) {
+        return selection;
+      }
+      const buffer = terminalRef.current.buffer.active;
+      const lines: string[] = [];
+      const start = Math.max(0, buffer.length - 40);
+      for (let i = start; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        if (line) {
+          const str = line.translateToString(true);
+          if (str.trim().length > 0) lines.push(str);
+        }
+      }
+      if (lines.length > 0) {
+        return lines.join('\n');
+      }
+    }
+    if (recentOutputRef.current && recentOutputRef.current.trim().length > 0) {
+      return recentOutputRef.current.trim().split('\n').slice(-30).join('\n');
+    }
     const bufferGetter = (window as any).__activeBuffers?.[sessionId];
-    const textContext = bufferGetter ? bufferGetter().text : '';
+    return bufferGetter ? bufferGetter().text : '';
+  };
+
+  const handleTriggerAutofix = async () => {
+    const textContext = getTerminalBufferText();
+    const osInfo = detectedOs ? `Operating System: ${detectedOs}` : `Host: ${currentServer.host}`;
 
     setShowAiPanel(true);
     setAiLoading(true);
@@ -323,21 +366,28 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
 
     const isVi = settings.language === 'vi';
     const prompt = isVi
-      ? `Bạn là chuyên gia DevOps và Quản trị Hệ thống. Hãy phân tích lỗi/sự cố trong log Terminal SSH sau:
-${textContext}
+      ? `Bạn là chuyên gia DevOps và Quản trị Hệ thống.
+[Thông tin máy chủ]: ${osInfo}
+[Log Terminal SSH / Lỗi sự cố]:
+${textContext || 'Vui lòng kiểm tra và hỗ trợ phân tích sự cố lệnh gần nhất trên máy chủ.'}
 
-Hãy thực hiện:
-1. Giải thích nguyên nhân sự cố ngắn gọn (2-3 câu).
-2. Đề xuất câu lệnh Unix/Shell sửa đổi chính xác. Đặt câu lệnh này DUY NHẤT trong khối code block markdown dạng \`\`\`bash ... \`\`\`.`
-      : `You are a DevOps and System Administration expert. Diagnose the failure/error in this SSH Terminal output:
-${textContext}
+Yêu cầu định dạng:
+1. Giải thích nguyên nhân sự cố ngắn gọn (2-3 câu). ĐẶC BIỆT LƯU Ý sử dụng đúng trình quản lý gói phù hợp với Hệ điều hành ${detectedOs || 'của máy chủ'} (ví dụ: dùng dnf/yum cho Rocky Linux, RHEL, CentOS, AlmaLinux, Fedora; dùng apt cho Ubuntu/Debian; dùng apk cho Alpine; hoặc pip cho Python).
+2. Đề xuất DUY NHẤT một khối câu lệnh Unix/Shell hoàn chỉnh và chính xác nhất cho hệ điều hành này để khắc phục sự cố. Khối lệnh PHẢI nằm trọn vẹn bên trong cặp 3 dấu backticks \`\`\`bash ... \`\`\`. Không chèn thêm các ký tự thừa ngoài cú pháp markdown tiêu chuẩn.`
+      : `You are a senior DevOps and System Administration expert.
+[Target Server Info]: ${osInfo}
+[SSH Terminal Log / Command Failure]:
+${textContext || 'Please analyze the recent command failure and system log on this server.'}
 
-Please:
-1. Explain the cause of the failure briefly (2-3 sentences).
-2. Propose the corrected Unix/Shell command. Place the suggested command ONLY inside a markdown code block like \`\`\`bash ... \`\`\`.`;
+Formatting requirements:
+1. Explain the cause of the failure briefly (2-3 sentences). IMPORTANT: Use the exact package manager suitable for the detected OS (${detectedOs || 'the target server'}) (e.g. use dnf/yum for Rocky Linux, RHEL, CentOS, AlmaLinux, Fedora; apt for Debian/Ubuntu; apk for Alpine; or pip for Python packages).
+2. Provide EXACTLY ONE single, complete, and accurate Unix/Shell command block tailored to this OS to resolve the issue. The command block MUST be fully enclosed in triple backticks \`\`\`bash ... \`\`\`. Do not include unclosed backticks or random symbols outside standard markdown syntax.`;
 
     try {
-      const config = settings.ai || { provider: 'gemini', enabled: true, model: 'gemini-1.5-flash', apiKey: '' };
+      const config = {
+        ...(settings.ai || { provider: 'gemini', enabled: true, model: 'gemini-1.5-flash', apiKey: '' }),
+        language: settings.language || 'vi'
+      };
       const reply = await window.api.aiSendMessage(prompt, config);
       setAiExplanation(reply);
 
@@ -353,26 +403,35 @@ Please:
   };
 
   const renderFormattedExplanation = (content: string) => {
-    const lines = content.split('\n');
-    
+    // 1. Separate code blocks (```...```) from regular markdown text
+    const blockRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
     const renderInline = (text: string) => {
-      const inlineRegex = /(\*\*.*?\*\*|`.*?`)/g;
+      // Inline markdown: **bold**, `code`, *italic*
+      const inlineRegex = /(\*\*.*?\*\*|`.*?`|\*.*?\*)/g;
       const parts = text.split(inlineRegex);
       return parts.map((sub, sIdx) => {
-        if (sub.startsWith('**') && sub.endsWith('**')) {
+        if (sub.startsWith('**') && sub.endsWith('**') && sub.length >= 4) {
           return <strong key={sIdx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>{sub.slice(2, -2)}</strong>;
         }
-        if (sub.startsWith('`') && sub.endsWith('`')) {
+        if (sub.startsWith('*') && sub.endsWith('*') && sub.length >= 2 && !sub.startsWith('**')) {
+          return <em key={sIdx} style={{ color: 'var(--text-main)', fontStyle: 'italic' }}>{sub.slice(1, -1)}</em>;
+        }
+        if (sub.startsWith('`') && sub.endsWith('`') && sub.length >= 2) {
           return (
             <code
               key={sIdx}
               style={{
                 backgroundColor: 'var(--bg-tertiary)',
-                color: '#f43f5e',
-                padding: '2px 4px',
+                color: '#38bdf8',
+                padding: '2px 5px',
                 borderRadius: '4px',
-                fontSize: '0.75rem',
-                fontFamily: 'monospace'
+                fontSize: '0.74rem',
+                fontFamily: 'monospace',
+                border: '1px solid var(--border-subtle)'
               }}
             >
               {sub.slice(1, -1)}
@@ -383,45 +442,149 @@ Please:
       });
     };
 
-    return lines.map((line, idx) => {
-      const trimmed = line.trim();
-      if (!trimmed) return <br key={idx} />;
+    const renderTextSection = (rawText: string, keyOffset: number) => {
+      const lines = rawText.split('\n');
+      return lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={`${keyOffset}-${idx}`} style={{ height: '4px' }} />;
 
-      // Horizontal dividers
-      if (/^(?:---+|\*\*\*+|___+)$/.test(trimmed)) {
-        return <hr key={idx} style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '8px 0' }} />;
-      }
+        // Horizontal dividers
+        if (/^(?:---+|\*\*\*+|___+)$/.test(trimmed)) {
+          return <hr key={`${keyOffset}-${idx}`} style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '8px 0' }} />;
+        }
 
-      // Headings
-      const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
-      if (headingMatch) {
-        const level = headingMatch[1].length;
-        const text = headingMatch[2];
-        const fontSize = level === 1 ? '1.1rem' : level === 2 ? '1rem' : '0.85rem';
+        // Headings (e.g. #, ##, ###, or numbered headings like 1. Cause of the Failure)
+        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+          const level = headingMatch[1].length;
+          const text = headingMatch[2];
+          const fontSize = level === 1 ? '0.95rem' : level === 2 ? '0.88rem' : '0.82rem';
+          return (
+            <h4 key={`${keyOffset}-${idx}`} style={{ fontSize, fontWeight: 700, color: 'var(--accent-primary)', margin: '8px 0 3px 0' }}>
+              {renderInline(text)}
+            </h4>
+          );
+        }
+
+        const numberedHeadingMatch = line.match(/^(\d+\.\s+[A-Za-zÀ-ỹ\s]+)$/);
+        if (numberedHeadingMatch) {
+          return (
+            <h4 key={`${keyOffset}-${idx}`} style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-primary)', margin: '8px 0 3px 0' }}>
+              {renderInline(numberedHeadingMatch[1])}
+            </h4>
+          );
+        }
+
+        // Bullet list items
+        const listMatch = line.match(/^(\*|-|\+)\s+(.+)$/);
+        if (listMatch) {
+          return (
+            <div key={`${keyOffset}-${idx}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', margin: '2px 0 2px 10px', color: 'var(--text-main)' }}>
+              <span style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', lineHeight: '1.2' }}>•</span>
+              <span style={{ lineHeight: '1.4' }}>{renderInline(listMatch[2])}</span>
+            </div>
+          );
+        }
+
         return (
-          <h4 key={idx} style={{ fontSize, fontWeight: 600, color: 'var(--text-main)', margin: '8px 0 4px 0' }}>
-            {text}
-          </h4>
+          <p key={`${keyOffset}-${idx}`} style={{ margin: '3px 0', lineHeight: '1.45', color: 'var(--text-main)' }}>
+            {renderInline(line)}
+          </p>
+        );
+      });
+    };
+
+    let blockIdx = 0;
+    while ((match = blockRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        const textBefore = content.substring(lastIndex, match.index);
+        elements.push(
+          <div key={`text-${blockIdx}`}>
+            {renderTextSection(textBefore, blockIdx * 1000)}
+          </div>
         );
       }
 
-      // List items
-      const listMatch = line.match(/^(\*|-|\+)\s+(.+)$/);
-      if (listMatch) {
-        const text = listMatch[2];
-        return (
-          <li key={idx} style={{ marginLeft: '12px', listStyleType: 'disc', margin: '3px 0', color: 'var(--text-main)' }}>
-            {renderInline(text)}
-          </li>
-        );
-      }
+      const lang = match[1] || 'bash';
+      const code = match[2].trim();
 
-      return (
-        <p key={idx} style={{ margin: '3px 0', lineHeight: '1.4' }}>
-          {renderInline(line)}
-        </p>
+      elements.push(
+        <div
+          key={`code-${blockIdx}`}
+          style={{
+            margin: '6px 0',
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '6px',
+            overflow: 'hidden'
+          }}
+        >
+          {lang && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '2px 8px',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              fontSize: '0.65rem',
+              color: 'var(--text-dim)',
+              borderBottom: '1px solid var(--border-subtle)',
+              fontFamily: 'monospace'
+            }}>
+              <span>{lang}</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(code);
+                  showToast('success', t('copyToastSuccess').replace('{count}', String(code.length)));
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-dim)',
+                  cursor: 'pointer',
+                  fontSize: '0.68rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+              >
+                <Copy size={11} />
+                <span>{t('copySuccess') ? 'Copy' : 'Copy'}</span>
+              </button>
+            </div>
+          )}
+          <pre
+            style={{
+              margin: 0,
+              padding: '8px 10px',
+              fontFamily: 'monospace',
+              fontSize: '0.74rem',
+              color: '#38bdf8',
+              backgroundColor: 'transparent',
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all'
+            }}
+          >
+            {code}
+          </pre>
+        </div>
       );
-    });
+
+      lastIndex = blockRegex.lastIndex;
+      blockIdx++;
+    }
+
+    if (lastIndex < content.length) {
+      const remainingText = content.substring(lastIndex);
+      elements.push(
+        <div key={`text-final`}>
+          {renderTextSection(remainingText, blockIdx * 1000)}
+        </div>
+      );
+    }
+
+    return elements;
   };
 
   const handleReconnect = () => {
@@ -469,6 +632,54 @@ Please:
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
 
+    // Keyboard Shortcuts: Ctrl+Shift+C (Copy), Ctrl+Shift+V (Paste), Ctrl+C when text is selected (Copy)
+    term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+      // Ctrl+Shift+C / Cmd+Shift+C => Copy selection
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'C' || event.key === 'c')) {
+        if (event.type === 'keydown') {
+          if (term.hasSelection()) {
+            const selection = term.getSelection();
+            if (selection) {
+              navigator.clipboard.writeText(selection);
+              showToast('success', t('copyToastSuccess').replace('{count}', String(selection.length)));
+            }
+          }
+        }
+        return false;
+      }
+
+      // Ctrl+C with active text selection => Copy to clipboard without sending SIGINT
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && (event.key === 'c' || event.key === 'C')) {
+        if (term.hasSelection()) {
+          if (event.type === 'keydown') {
+            const selection = term.getSelection();
+            if (selection) {
+              navigator.clipboard.writeText(selection);
+              showToast('success', t('copyToastSuccess').replace('{count}', String(selection.length)));
+            }
+          }
+          return false; // Prevent sending SIGINT when user intends to copy selected text
+        }
+      }
+
+      // Ctrl+Shift+V / Cmd+Shift+V / Ctrl+V => Paste from clipboard directly into terminal
+      if ((event.ctrlKey || event.metaKey) && (event.key === 'v' || event.key === 'V')) {
+        if (event.type === 'keydown') {
+          navigator.clipboard.readText().then((text) => {
+            if (text) {
+              window.api.sshWrite(sessionId, text);
+              showToast('pasted', t('pasteToastSuccess').replace('{count}', String(text.length)));
+            }
+          }).catch(() => {
+            showToast('empty', t('pasteToastError'));
+          });
+        }
+        return false;
+      }
+
+      return true;
+    });
+
     const scrollListener = term.onScroll(() => {
       const buffer = term.buffer.active;
       const hasScrolledUp = buffer.viewportY < buffer.baseY;
@@ -513,6 +724,9 @@ Please:
     const removeSshDataListener = window.api.onSshData((_, payload) => {
       if (payload.sessionId === sessionId) {
         term.write(payload.data);
+        // Strip ANSI escape codes to keep clean readable text
+        const cleanChunk = payload.data.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '');
+        recentOutputRef.current = (recentOutputRef.current + cleanChunk).slice(-15000);
         checkAnomalyLogs(payload.data);
       }
     });
@@ -525,6 +739,14 @@ Please:
     });
 
     startConnection(currentServer);
+
+    // Light background detection of Server OS for AI contextual awareness
+    const detectOsCmd = `if [ -f /etc/os-release ]; then . /etc/os-release; echo "$NAME $VERSION"; elif [ -f /etc/redhat-release ]; then cat /etc/redhat-release; else uname -s; fi`;
+    window.api.multiExecSsh([currentServer], detectOsCmd, [], settings.hashicorpVault).then((res: any[]) => {
+      if (res && res[0] && res[0].status === 'SUCCESS' && res[0].output) {
+        setDetectedOs(res[0].output.trim());
+      }
+    }).catch((e: any) => console.warn('OS detection failed silently:', e));
 
     const handleResize = () => {
       safeFit();
@@ -579,6 +801,17 @@ Please:
 
   const { t } = useTranslation(settings);
 
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu((prev) => ({ ...prev, visible: false }));
+      }
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [contextMenu.visible]);
+
   const handleCopy = () => {
     if (terminalRef.current && terminalRef.current.hasSelection()) {
       const selection = terminalRef.current.getSelection();
@@ -602,6 +835,35 @@ Please:
       }
     } catch (e) {
       showToast('empty', t('pasteToastError'));
+    }
+  };
+
+  const handleClearTerminal = () => {
+    if (terminalRef.current) {
+      terminalRef.current.clear();
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (terminalRef.current) {
+      terminalRef.current.selectAll();
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      visible: true
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Middle-click (mouse button 1) paste like typical Linux terminal / PuTTY / iTerm
+    if (e.button === 1) {
+      e.preventDefault();
+      handlePaste();
     }
   };
 
@@ -799,7 +1061,11 @@ Please:
 
       {/* Terminal Container with side-by-side Quick Commands Panel */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
-        <div style={{ flex: 1, padding: '8px', overflow: 'hidden', minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div 
+          style={{ flex: 1, padding: '8px', overflow: 'hidden', minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}
+          onContextMenu={handleContextMenu}
+          onMouseDown={handleMouseDown}
+        >
           <div
             ref={containerRef}
             style={{
@@ -808,6 +1074,141 @@ Please:
               overflow: 'hidden'
             }}
           />
+
+          {/* Right-Click Context Menu */}
+          {contextMenu.visible && (
+            <div
+              style={{
+                position: 'fixed',
+                top: `${contextMenu.y}px`,
+                left: `${contextMenu.x}px`,
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '6px',
+                boxShadow: 'var(--shadow-xl)',
+                padding: '4px',
+                zIndex: 1000,
+                minWidth: '160px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                animation: 'fadeIn 0.1s ease-out'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  handleCopy();
+                  setContextMenu((prev) => ({ ...prev, visible: false }));
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  background: 'none',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Copy size={13} style={{ color: 'var(--accent-primary)' }} />
+                <span>{t('menuCopy')}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: 'var(--text-dim)' }}>Ctrl+Shift+C</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handlePaste();
+                  setContextMenu((prev) => ({ ...prev, visible: false }));
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  background: 'none',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Clipboard size={13} style={{ color: 'var(--accent-success)' }} />
+                <span>{t('menuPaste')}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: 'var(--text-dim)' }}>Ctrl+V</span>
+              </button>
+
+              <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '2px 0' }} />
+
+              <button
+                onClick={() => {
+                  handleSelectAll();
+                  setContextMenu((prev) => ({ ...prev, visible: false }));
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  background: 'none',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Bookmark size={13} style={{ color: 'var(--text-muted)' }} />
+                <span>{t('menuSelectAll')}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleClearTerminal();
+                  setContextMenu((prev) => ({ ...prev, visible: false }));
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 10px',
+                  background: 'none',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'var(--accent-danger)',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <RotateCcw size={13} />
+                <span>{t('menuClear')}</span>
+              </button>
+            </div>
+          )}
 
           {/* Scroll-to-bottom Helper Button */}
           {showScrollBottom && (
@@ -951,7 +1352,20 @@ Please:
         onClearAnomalyAlert={() => setAnomalyAlert(null)}
         onSelectSuggestion={(suggestion) => {
           if (terminalRef.current) {
-            window.api.sshWrite(sessionId, suggestion);
+            let toWrite = suggestion;
+            // If current typed input is a prefix of suggestion (e.g. currentInput = "ping", suggestion = "ping -c 4 8.8.8.8"),
+            // only write the remaining part (" -c 4 8.8.8.8") so it does not duplicate into "pingping -c 4 8.8.8.8".
+            if (currentInput && suggestion.toLowerCase().startsWith(currentInput.toLowerCase())) {
+              toWrite = suggestion.slice(currentInput.length);
+            } else if (currentInput && currentInput.length > 0) {
+              // If user typed something that is not a prefix, backspace the typed chars first, then write full suggestion
+              const backspaces = '\b \b'.repeat(currentInput.length);
+              window.api.sshWrite(sessionId, '\x08'.repeat(currentInput.length));
+              toWrite = suggestion;
+            }
+            if (toWrite) {
+              window.api.sshWrite(sessionId, toWrite);
+            }
             setCurrentInput(suggestion);
           }
         }}

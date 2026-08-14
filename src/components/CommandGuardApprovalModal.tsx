@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Lock, KeyRound, Check, X, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Lock, KeyRound, Check, X, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface CommandGuardApprovalModalProps {
@@ -22,6 +22,7 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
   const { t } = useTranslation({ language } as any);
   const [authMethod, setAuthMethod] = useState<'passphrase' | 'otp'>('passphrase');
   const [passphrase, setPassphrase] = useState<string>('');
+  const [showPassphrase, setShowPassphrase] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -133,14 +134,37 @@ export const CommandGuardApprovalModal: React.FC<CommandGuardApprovalModalProps>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
                   {t('passphraseLabel')}:
                 </label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder={t('commandGuardPassphrasePlaceholder')}
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  autoFocus
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassphrase ? 'text' : 'password'}
+                    className="input-field"
+                    placeholder={t('commandGuardPassphrasePlaceholder')}
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    autoFocus
+                    style={{ paddingRight: '36px', width: '100%' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassphrase(!showPassphrase)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '8px',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-dim)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '2px'
+                    }}
+                    title={showPassphrase ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
             ) : (
               <div>

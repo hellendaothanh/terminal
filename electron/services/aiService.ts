@@ -75,18 +75,27 @@ export class AIService {
         return { success: false, error: 'Tính năng AI chưa được kích hoạt trong Cài Đặt.' };
       }
 
-      const systemPrompt = `Bạn là OmniTerminal AI Assistant - một chuyên gia DevOps, Linux System Admin, và Database Administrator cấp cao.
+      const isEn = (settings as any).language === 'en';
+      const systemPrompt = isEn
+        ? `You are OmniTerminal AI Assistant - a senior DevOps, Linux System Administrator, and Database Administrator expert.
+Your mission is to assist users in analyzing SSH terminal logs, diagnosing system errors, optimizing SQL queries, writing shell scripts, and providing autofix commands.
+Always respond in clear, accurate English and formatted with Markdown (with clean code blocks).`
+        : `Bạn là OmniTerminal AI Assistant - một chuyên gia DevOps, Linux System Admin, và Database Administrator cấp cao.
 Nhiệm vụ của bạn là hỗ trợ người dùng phân tích thông tin trên terminal SSH, giải thích lỗi hệ thống, tối ưu hóa câu lệnh SQL, viết script Linux shell và phân tích log.
 Hãy trả lời bằng Tiếng Việt rõ ràng, ngắn gọn, chuẩn xác và định dạng Markdown (code snippet đầy đủ).`;
 
       let fullPrompt = userPrompt;
       if (contextSnippet && contextSnippet.trim()) {
-        fullPrompt = `[Dữ Liệu Ngữ Cảnh Bối Cảnh Thực Tế (Terminal Log / SQL Result / Error)]:
+        const contextHeader = isEn
+          ? `[Actual Context Data (Terminal Log / Command Error / SQL Result)]:`
+          : `[Dữ Liệu Ngữ Cảnh Bối Cảnh Thực Tế (Terminal Log / SQL Result / Error)]:`;
+        const userHeader = isEn ? `[User Request]:` : `[Yêu Cầu Của Người Dùng]:`;
+        fullPrompt = `${contextHeader}
 \`\`\`
 ${contextSnippet.trim()}
 \`\`\`
 
-[Yêu Cầu Của Người Dùng]:
+${userHeader}
 ${userPrompt}`;
       }
 

@@ -438,6 +438,10 @@ export const translations = {
     scrollToBottom: 'Cuộn xuống dưới',
     scrollToBottomTooltip: 'Cuộn xuống dưới cùng',
     commonCommandsLibrary: 'Thư Viện Lệnh Thường Dùng',
+    menuCopy: 'Sao chép (Copy)',
+    menuPaste: 'Dán (Paste)',
+    menuClear: 'Xóa màn hình (Clear)',
+    menuSelectAll: 'Chọn tất cả (Select All)',
 
     // Server Metrics
     resourceDetails: 'Chi tiết tài nguyên (Real-time Metrics)',
@@ -911,6 +915,10 @@ export const translations = {
     scrollToBottom: 'Scroll to Bottom',
     scrollToBottomTooltip: 'Scroll to bottom',
     commonCommandsLibrary: 'Common Commands Library',
+    menuCopy: 'Copy',
+    menuPaste: 'Paste',
+    menuClear: 'Clear Buffer',
+    menuSelectAll: 'Select All',
 
     // Server Metrics
     resourceDetails: 'Resource Details (Real-time Metrics)',

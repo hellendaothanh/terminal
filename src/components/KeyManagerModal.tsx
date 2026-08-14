@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SSHKey, TerminalSettings } from '../types';
-import { Key, Plus, Copy, Trash2, X, Check, ShieldCheck } from 'lucide-react';
+import { Key, Plus, Copy, Trash2, X, Check, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface KeyManagerModalProps {
@@ -33,6 +33,7 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
   const [importKeyName, setImportKeyName] = useState('');
   const [importPrivateKey, setImportPrivateKey] = useState('');
   const [importPassphrase, setImportPassphrase] = useState('');
+  const [showImportPassphrase, setShowImportPassphrase] = useState(false);
 
   if (!isOpen) return null;
 
@@ -252,13 +253,36 @@ export const KeyManagerModal: React.FC<KeyManagerModalProps> = ({
                   </div>
                   <div>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Passphrase (Optional)</label>
-                    <input
-                      type="password"
-                      className="input-field"
-                      placeholder="Passphrase"
-                      value={importPassphrase}
-                      onChange={(e) => setImportPassphrase(e.target.value)}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showImportPassphrase ? 'text' : 'password'}
+                        className="input-field"
+                        placeholder="Passphrase"
+                        value={importPassphrase}
+                        onChange={(e) => setImportPassphrase(e.target.value)}
+                        style={{ paddingRight: '36px', width: '100%' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowImportPassphrase(!showImportPassphrase)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '8px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-dim)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px'
+                        }}
+                        title={showImportPassphrase ? 'Ẩn Passphrase' : 'Hiện Passphrase'}
+                      >
+                        {showImportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

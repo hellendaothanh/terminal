@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TerminalSettings, HashiCorpVaultConfig, AISettings } from '../types';
-import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles, Key, ArrowUpDown, Lock } from 'lucide-react';
+import { Settings, X, Shield, Check, AlertCircle, RefreshCw, Bot, Sparkles, Key, ArrowUpDown, Lock, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface SettingsModalProps {
@@ -24,6 +24,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { t } = useTranslation(settings);
   const [activeTab, setActiveTab] = useState<'general' | 'hashicorp' | 'ai'>('general');
+  const [showVaultToken, setShowVaultToken] = useState(false);
+  const [showVaultSecretId, setShowVaultSecretId] = useState(false);
+  const [showAiApiKey, setShowAiApiKey] = useState(false);
 
   // App Version & Update State
   const [appVer, setAppVer] = useState('1.5.6');
@@ -451,13 +454,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                     {t('vaultClientToken')}
                   </label>
-                  <input
-                    type="password"
-                    className="input-field"
-                    placeholder="hvs.CAES..."
-                    value={vaultConfig.token || ''}
-                    onChange={(e) => setVaultConfig({ ...vaultConfig, token: e.target.value })}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showVaultToken ? 'text' : 'password'}
+                      className="input-field"
+                      placeholder="hvs.CAES..."
+                      value={vaultConfig.token || ''}
+                      onChange={(e) => setVaultConfig({ ...vaultConfig, token: e.target.value })}
+                      style={{ paddingRight: '36px', width: '100%' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowVaultToken(!showVaultToken)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '8px',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-dim)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '2px'
+                      }}
+                      title={showVaultToken ? 'Ẩn token' : 'Hiện token'}
+                    >
+                      {showVaultToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -473,13 +499,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Secret ID</label>
-                    <input
-                      type="password"
-                      className="input-field"
-                      placeholder="••••••••"
-                      value={vaultConfig.secretId || ''}
-                      onChange={(e) => setVaultConfig({ ...vaultConfig, secretId: e.target.value })}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showVaultSecretId ? 'text' : 'password'}
+                        className="input-field"
+                        placeholder="••••••••"
+                        value={vaultConfig.secretId || ''}
+                        onChange={(e) => setVaultConfig({ ...vaultConfig, secretId: e.target.value })}
+                        style={{ paddingRight: '36px', width: '100%' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowVaultSecretId(!showVaultSecretId)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '8px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-dim)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px'
+                        }}
+                        title={showVaultSecretId ? 'Ẩn Secret ID' : 'Hiện Secret ID'}
+                      >
+                        {showVaultSecretId ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -578,13 +627,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                   {t('aiApiKey')}
                 </label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="AI API Key (AIZA... or sk-...)"
-                  value={aiConfig.apiKey}
-                  onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showAiApiKey ? 'text' : 'password'}
+                    className="input-field"
+                    placeholder="AI API Key (AIZA... or sk-...)"
+                    value={aiConfig.apiKey}
+                    onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
+                    style={{ paddingRight: '36px', width: '100%' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAiApiKey(!showAiApiKey)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '8px',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-dim)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '2px'
+                    }}
+                    title={showAiApiKey ? 'Ẩn API Key' : 'Hiện API Key'}
+                  >
+                    {showAiApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               {aiConfig.provider === 'custom' && (

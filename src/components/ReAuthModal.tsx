@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ServerConfig } from '../types';
-import { KeyRound, AlertTriangle, RefreshCw, X, ShieldCheck } from 'lucide-react';
+import { KeyRound, AlertTriangle, RefreshCw, X, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface ReAuthModalProps {
@@ -22,6 +22,7 @@ export const ReAuthModal: React.FC<ReAuthModalProps> = ({
 }) => {
   const { t } = useTranslation({ language } as any);
   const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [saveToVault, setSaveToVault] = useState(true);
 
   if (!isOpen) return null;
@@ -68,16 +69,36 @@ export const ReAuthModal: React.FC<ReAuthModalProps> = ({
               </label>
               <div style={{ position: 'relative' }}>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   className="input-field"
                   placeholder={t('enterPasswordPlaceholder')}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoFocus
                   required
-                  style={{ paddingLeft: '36px' }}
+                  style={{ paddingLeft: '36px', paddingRight: '36px', width: '100%' }}
                 />
                 <KeyRound size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--text-dim)' }} />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '8px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-dim)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2px'
+                  }}
+                  title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ShieldCheck, KeyRound, ArrowRight, AlertCircle, Globe, Database, FileKey, FolderOpen, Plus, Check } from 'lucide-react';
+import { Lock, ShieldCheck, KeyRound, ArrowRight, AlertCircle, Globe, Database, FileKey, FolderOpen, Plus, Check, Eye, EyeOff } from 'lucide-react';
 import { Language } from '../i18n/translations';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -21,7 +21,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({
   const [dbPath, setDbPath] = useState(localStorage.getItem('omni_vault_db_path') || '');
   const [dbExists, setDbExists] = useState(false);
   const [passphrase, setPassphrase] = useState('');
+  const [showPassphrase, setShowPassphrase] = useState(false);
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
+  const [showConfirmPassphrase, setShowConfirmPassphrase] = useState(false);
   const [useKeyFile, setUseKeyFile] = useState(false);
   const [keyPath, setKeyPath] = useState('');
   const [keyContent, setKeyContent] = useState('');
@@ -232,15 +234,35 @@ export const LockScreen: React.FC<LockScreenProps> = ({
             </label>
             <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showPassphrase ? 'text' : 'password'}
                 className="input-field"
                 placeholder="••••••••••••"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
                 autoFocus
-                style={{ paddingLeft: '38px', width: '100%' }}
+                style={{ paddingLeft: '38px', paddingRight: '38px', width: '100%' }}
               />
               <KeyRound size={16} style={inputIconStyle} />
+              <button
+                type="button"
+                onClick={() => setShowPassphrase(!showPassphrase)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '10px',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-dim)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2px'
+                }}
+                title={showPassphrase ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
@@ -251,14 +273,34 @@ export const LockScreen: React.FC<LockScreenProps> = ({
               </label>
               <div style={{ position: 'relative' }}>
                 <input
-                  type="password"
+                  type={showConfirmPassphrase ? 'text' : 'password'}
                   className="input-field"
                   placeholder="••••••••••••"
                   value={confirmPassphrase}
                   onChange={(e) => setConfirmPassphrase(e.target.value)}
-                  style={{ paddingLeft: '38px', width: '100%' }}
+                  style={{ paddingLeft: '38px', paddingRight: '38px', width: '100%' }}
                 />
                 <KeyRound size={16} style={inputIconStyle} />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassphrase(!showConfirmPassphrase)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '10px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-dim)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2px'
+                  }}
+                  title={showConfirmPassphrase ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showConfirmPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
           )}

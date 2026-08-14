@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ServerConfig, SSHKey, Protocol, AuthType, Environment, DBType, TerminalSettings } from '../types';
-import { Server, X, Shield, Check, AlertCircle, RefreshCw, Database, Activity } from 'lucide-react';
+import { Server, X, Shield, Check, AlertCircle, RefreshCw, Database, Activity, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface ServerModalProps {
@@ -30,6 +30,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   const [username, setUsername] = useState('root');
   const [authType, setAuthType] = useState<AuthType>('password');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [privateKeyId, setPrivateKeyId] = useState('');
   const [vaultSecretPath, setVaultSecretPath] = useState('');
   const [vaultKeyName, setVaultKeyName] = useState('password');
@@ -515,13 +516,36 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                       {protocol === 'S3' ? 'Secret Access Key' : t('password')}
                     </label>
-                    <input
-                      type="password"
-                      className="input-field"
-                      placeholder="••••••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="input-field"
+                        placeholder="••••••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        style={{ paddingRight: '36px', width: '100%' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '8px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-dim)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px'
+                        }}
+                        title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 )}
 

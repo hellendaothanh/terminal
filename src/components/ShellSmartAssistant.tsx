@@ -16,27 +16,47 @@ interface AutoCompletionBarProps {
 }
 
 const COMMON_COMMANDS = [
-  'systemctl status ',
-  'systemctl restart ',
-  'journalctl -u ',
-  'journalctl -xe',
-  'docker ps -a',
-  'docker logs --tail 100 ',
-  'docker-compose up -d',
-  'kubectl get pods -A',
-  'kubectl logs -f ',
+  'ping -c 4 8.8.8.8',
+  'ping -c 4 google.com',
   'df -h',
   'free -h',
+  'uptime',
+  'ip a',
+  'ss -tulpn',
+  'netstat -tulpn',
   'top -b -n 1',
   'htop',
-  'netstat -tulpn',
-  'ss -tulpn',
-  'tail -f /var/log/syslog',
-  'tail -f /var/log/nginx/error.log',
   'cat /etc/os-release',
-  'ip a',
-  'ping -c 4 8.8.8.8'
+  'uname -a',
+  'journalctl -xe --no-pager -n 50',
+  'journalctl -xe',
+  'systemctl status',
+  'systemctl list-units --type=service --state=running',
+  'docker ps -a',
+  'docker stats --no-stream',
+  'docker-compose ps',
+  'docker-compose up -d',
+  'kubectl get pods -A',
+  'kubectl get nodes -o wide',
+  'tail -n 50 /var/log/syslog',
+  'tail -n 50 /var/log/messages',
+  'tail -n 50 /var/log/nginx/error.log',
+  'ps aux --sort=-%mem | head -n 10',
+  'ps aux --sort=-%cpu | head -n 10',
+  'whoami',
+  'id',
+  'pwd',
+  'ls -la'
 ];
+
+// List of well-known Linux base commands
+const KNOWN_BASE_COMMANDS = new Set([
+  'sudo', 'systemctl', 'journalctl', 'docker', 'docker-compose', 'kubectl', 'ping',
+  'df', 'free', 'top', 'htop', 'netstat', 'ss', 'tail', 'cat', 'ip', 'ps', 'grep',
+  'curl', 'wget', 'git', 'ssh', 'scp', 'tar', 'unzip', 'chmod', 'chown', 'find',
+  'ls', 'cd', 'pwd', 'mkdir', 'rm', 'cp', 'mv', 'uptime', 'uname', 'whoami', 'id',
+  'mongosh', 'psql', 'mysql', 'redis-cli', 'vault', 'patronictl', 'gitlab-ctl'
+]);
 
 export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
   currentInput,
@@ -55,25 +75,32 @@ export const ShellSmartAssistant: React.FC<AutoCompletionBarProps> = ({
   const getSuggestions = (): string[] => {
     const trimmed = currentInput.trim().toLowerCase();
     
-    // Clean and validate history commands to filter out any garbage
+    // Clean and validate history commands to filter out typos or invalid single/weird characters
     const cleanHistory = (historyCommands || [])
       .map(cmd => cmd.trim())
       .filter(cmd => {
-        return cmd.length >= 2 && 
-               cmd.length <= 150 && 
-               !/[\x00-\x1F\x7F-\x9F]/.test(cmd) &&
-               !/^[a-zA-Z]$/.test(cmd);
+        if (!cmd || cmd.length < 2 || cmd.length > 150) return false;
+        if (/[\x00-\x1F\x7F-\x9F]/.test(cmd)) return false;
+        // Filter out accidental typo commands like "qping", "wcat" by checking if single word command is unknown
+        const firstWord = cmd.split(/\s+/)[0].toLowerCase();
+        if (firstWord.startsWith('q') && firstWord.length > 2 && KNOWN_BASE_COMMANDS.has(firstWord.slice(1))) {
+          // Likely accidental 'q' prefix when exiting less/vim/pager
+          return false;
+        }
+        return true;
       });
 
     const allCandidates = Array.from(new Set([...cleanHistory.reverse(), ...COMMON_COMMANDS]));
 
     if (!trimmed) {
-      return allCandidates.slice(0, 5);
+      return allCandidates.slice(0, 6);
     }
 
-    return allCandidates
-      .filter((cmd) => cmd.toLowerCase().includes(trimmed))
-      .slice(0, 5);
+    // Match suggestions that start with input first, then contains input
+    const startsWith = allCandidates.filter(cmd => cmd.toLowerCase().startsWith(trimmed));
+    const contains = allCandidates.filter(cmd => !cmd.toLowerCase().startsWith(trimmed) && cmd.toLowerCase().includes(trimmed));
+
+    return [...startsWith, ...contains].slice(0, 6);
   };
 
   const suggestions = getSuggestions();
