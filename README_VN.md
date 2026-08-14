@@ -146,9 +146,11 @@
 * **Phân Biệt Bằng Thẻ Màu Trực Quan:** Đánh dấu viền màu rõ rệt trên danh sách máy chủ và Tab Bar (`Production = Viền đỏ`, `Staging = Viền vàng`, `Dev = Viền xanh`).
 * **Cảnh Báo Vùng Nguy Hiểm Production:** Khi kết nối máy chủ Production, màn hình Terminal tự động kích hoạt viền đỏ rực bao quanh cùng thanh cảnh báo đỉnh đầu nhấp nháy liên tục để ngăn chặn hoàn toàn thao tác gõ nhầm lệnh nguy hiểm.
 
-### 32. 📡 Chia Sẻ Phiên Terminal Trực Tiếp Qua Web (Live Pairing & Remote Debugging)
+### 32. 📡 Chia Sẻ Phiên Terminal Trực Tiếp Qua Web (Live Pairing & Theo Dõi IP Người Xem)
+* **Bảo Mật Quyền Hạn Zero-Trust (Server-Side Enforcement):** Phân quyền nghiêm ngặt phía Host; ngăn chặn hoàn toàn việc người xem can thiệp URL hay tự ý chèn phím gõ lệnh khi đang ở chế độ Chỉ Đọc.
 * **Phát Sóng P2P Thời Gian Thực (WebRTC):** Chia sẻ màn hình Terminal tức thì mà không cần cài đặt thêm phần mềm, bảo mật bằng mã khóa ngẫu nhiên 256-bit (Cryptographic Key).
-* **Hai Chế Độ Phân Quyền:** Hỗ trợ **Chỉ Đọc (Read-Only)** để theo dõi hoặc **Tương Tác Chung (Interactive Pairing)** để cùng đồng nghiệp gõ lệnh và fix bug trực tiếp qua GitHub Pages hoặc Private Relay Server.
+* **Đếm Kết Nối & Bảng Theo Dõi IP Trực Tiếp (Live Viewers Dropdown):** Bộ đếm số người xem trực tuyến với menu thả xuống (Quick Popover) ngay trên thanh công cụ Terminal hiển thị rõ ràng Địa chỉ IP Public, thiết bị/nền tảng và thời gian kết nối.
+* **Chuyển Quyền Linh Hoạt Thời Gian Thực:** Chuyển đổi giữa **Chỉ Đọc (Read-Only)** và **Tương Tác Chung (Interactive)** ngay trong lúc phát sóng, tự động đồng bộ trạng thái bàn phím tới tất cả các viewer đang mở.
 
 ### 33. 📐 Tùy Chỉnh Mật Độ Giao Diện (Compact Mode Cho Màn Hình Nhỏ)
 * **Tối Ưu Không Gian:** Cho phép bật chế độ thu gọn (Compact Mode) trong Cài đặt để thu nhỏ thanh công cụ, sidebar và tab bar, gia tăng tối đa diện tích hiển thị của Terminal.

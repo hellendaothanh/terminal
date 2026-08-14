@@ -146,9 +146,11 @@
 * **Color Tagging & Visual Boundaries:** Color indicators on the server list and tabs (`Production = Red`, `Staging = Yellow`, `Dev = Green`).
 * **Production Danger Zone Warning:** Fullscreen red glowing perimeter and top warning banner alert to prevent catastrophic unintended command execution on live production servers.
 
-### 32. 📡 Quick Web-based Remote Share (Live Pairing & Zero-Install Web Client)
+### 32. 📡 Quick Web-based Remote Share (Live Pairing & Real-Time Viewer Tracking)
+* **Zero-Trust Host Permission Control:** Strict server-side validation ensures only the Host can dictate Read-Only or Interactive rights; prevents client-side URL tampering or unauthorized keyboard input injection.
 * **P2P Real-Time Streaming:** Share live terminal sessions via WebRTC with 256-bit cryptographically secure token handshakes.
-* **Read-Only & Interactive Modes:** Teammates can watch in real time or collaborate and co-type directly via browser on GitHub Pages or custom self-hosted Web relay servers.
+* **Live Viewers & IP Address Tracker:** Real-time online viewer counter with a non-intrusive toolbar dropdown popover displaying connected remote IP addresses, platforms, and join timestamps.
+* **Dynamic Mode Switching:** Instantly toggle between Read-Only and Interactive modes with immediate real-time permission synchronization to all connected viewers.
 
 ### 33. 📐 Custom UI Density (Compact Mode)
 * **Optimized for Small Screens:** Easily switch to Compact Mode in Settings to reduce toolbar heights, sidebar widths, and tab paddings for maximum terminal real-estate.
