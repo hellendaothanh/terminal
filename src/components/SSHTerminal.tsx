@@ -247,9 +247,14 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
     try {
       if (fitAddonRef.current && terminalRef.current && containerRef.current) {
         const container = containerRef.current;
-        if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+        const term = terminalRef.current;
+        if (
+          container.offsetWidth > 0 &&
+          container.offsetHeight > 0 &&
+          (term as any)._core?._renderService
+        ) {
           fitAddonRef.current.fit();
-          window.api.sshResize(sessionId, terminalRef.current.cols, terminalRef.current.rows);
+          window.api.sshResize(sessionId, term.cols, term.rows);
         }
       }
     } catch (e) {
@@ -448,7 +453,12 @@ Please:
 
     term.open(containerRef.current);
     try {
-      if (containerRef.current && containerRef.current.offsetWidth > 0 && containerRef.current.offsetHeight > 0) {
+      if (
+        containerRef.current &&
+        containerRef.current.offsetWidth > 0 &&
+        containerRef.current.offsetHeight > 0 &&
+        (term as any)._core?._renderService
+      ) {
         fitAddon.fit();
       }
     } catch (e) {

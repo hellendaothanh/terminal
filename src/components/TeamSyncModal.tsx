@@ -19,6 +19,7 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
   onSaveSettings,
   onMergeVaultData
 }) => {
+  const isVi = settings.language === 'vi';
   const [provider, setProvider] = useState<'GIST' | 'S3'>(settings.teamSync?.provider || 'GIST');
   
   // Gist config
@@ -58,27 +59,27 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
   const handlePush = async () => {
     setStatusMessage(null);
     if (!teamPassphrase) {
-      setStatusMessage({ type: 'error', text: 'Vui lòng nhập Team Passphrase để mã hóa.' });
+      setStatusMessage({ type: 'error', text: isVi ? 'Vui lòng nhập Team Passphrase để mã hóa.' : 'Please enter the Team Passphrase to encrypt.' });
       return;
     }
 
     try {
-      setStatusMessage({ type: 'loading', text: 'Đang mã hóa Vault...' });
+      setStatusMessage({ type: 'loading', text: isVi ? 'Đang mã hóa Vault...' : 'Encrypting Vault...' });
       const exportRes = await window.api.vaultExportEncrypted(vaultData, teamPassphrase);
       
       if (!exportRes.success || !exportRes.jsonContent) {
-        throw new Error(exportRes.error || 'Mã hóa Vault thất bại.');
+        throw new Error(exportRes.error || (isVi ? 'Mã hóa Vault thất bại.' : 'Vault encryption failed.'));
       }
 
       const config = saveConfigToSettings();
-      setStatusMessage({ type: 'loading', text: 'Đang Push lên Cloud...' });
+      setStatusMessage({ type: 'loading', text: isVi ? 'Đang Push lên Cloud...' : 'Pushing to Cloud...' });
       
       const pushRes = await window.api.syncPush(config, exportRes.jsonContent);
       if (!pushRes.success) {
-        throw new Error(pushRes.error || 'Push lên Cloud thất bại.');
+        throw new Error(pushRes.error || (isVi ? 'Push lên Cloud thất bại.' : 'Push to Cloud failed.'));
       }
 
-      setStatusMessage({ type: 'success', text: 'Đẩy (Push) lên Cloud thành công! Dữ liệu của bạn đã được mã hóa an toàn.' });
+      setStatusMessage({ type: 'success', text: isVi ? 'Đẩy (Push) lên Cloud thành công! Dữ liệu của bạn đã được mã hóa an toàn.' : 'Push to Cloud successful! Your data has been securely encrypted.' });
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message });
     }
@@ -87,31 +88,31 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
   const handlePull = async () => {
     setStatusMessage(null);
     if (!teamPassphrase) {
-      setStatusMessage({ type: 'error', text: 'Vui lòng nhập Team Passphrase để giải mã.' });
+      setStatusMessage({ type: 'error', text: isVi ? 'Vui lòng nhập Team Passphrase để giải mã.' : 'Please enter the Team Passphrase to decrypt.' });
       return;
     }
 
     try {
       const config = saveConfigToSettings();
-      setStatusMessage({ type: 'loading', text: 'Đang Pull từ Cloud...' });
+      setStatusMessage({ type: 'loading', text: isVi ? 'Đang Pull từ Cloud...' : 'Pulling from Cloud...' });
       
       const pullRes = await window.api.syncPull(config);
       if (!pullRes.success || !pullRes.encryptedPayload) {
-        throw new Error(pullRes.error || 'Kéo từ Cloud thất bại.');
+        throw new Error(pullRes.error || (isVi ? 'Kéo từ Cloud thất bại.' : 'Pulling from Cloud failed.'));
       }
 
-      setStatusMessage({ type: 'loading', text: 'Đang giải mã và Merge (Gộp)...' });
+      setStatusMessage({ type: 'loading', text: isVi ? 'Đang giải mã và Merge (Gộp)...' : 'Decrypting and Merging...' });
       
       const importRes = await window.api.vaultImportEncrypted(pullRes.encryptedPayload, teamPassphrase);
       
       if (!importRes.success || !importRes.data) {
-        throw new Error(importRes.error || 'Giải mã hoặc import thất bại. Vui lòng kiểm tra lại Team Passphrase.');
+        throw new Error(importRes.error || (isVi ? 'Giải mã hoặc import thất bại. Vui lòng kiểm tra lại Team Passphrase.' : 'Decryption or import failed. Please verify the Team Passphrase.'));
       }
 
       // Execute Merge
       onMergeVaultData(importRes.data);
       
-      setStatusMessage({ type: 'success', text: 'Pull và Merge thành công!' });
+      setStatusMessage({ type: 'success', text: isVi ? 'Pull và Merge thành công!' : 'Pull and Merge successful!' });
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message });
     }
@@ -162,12 +163,18 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
                 <div className="form-group">
                   <label>Gist ID</label>
                   <input type="text" value={gistId} onChange={e => setGistId(e.target.value)} placeholder="e.g. 5f3d4a..." className="input-field" />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Mở GitHub Gist, tạo mới một gist với tên file bất kỳ, sau đó copy ID trên URL.</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {isVi 
+                      ? 'Mở GitHub Gist, tạo mới một gist với tên file bất kỳ, sau đó copy ID trên URL.' 
+                      : 'Open GitHub Gist, create a new gist with any filename, then copy the ID from the URL.'}
+                  </span>
                 </div>
                 <div className="form-group">
                   <label>GitHub Personal Access Token (PAT)</label>
                   <input type="password" value={gistToken} onChange={e => setGistToken(e.target.value)} placeholder="ghp_..." className="input-field" />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Cần quyền "gist".</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {isVi ? 'Cần quyền "gist".' : 'Requires "gist" scope/permission.'}
+                  </span>
                 </div>
               </>
             ) : (
@@ -183,7 +190,7 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Endpoint URL (Tuỳ chọn cho MinIO / DO Spaces)</label>
+                  <label>{isVi ? 'Endpoint URL (Tuỳ chọn cho MinIO / DO Spaces)' : 'Endpoint URL (Optional for MinIO / DO Spaces)'}</label>
                   <input type="text" value={s3Endpoint} onChange={e => setS3Endpoint(e.target.value)} placeholder="https://..." className="input-field" />
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -197,7 +204,7 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>File Path trên S3</label>
+                  <label>{isVi ? 'File Path trên S3' : 'File Path on S3'}</label>
                   <input type="text" value={s3Path} onChange={e => setS3Path(e.target.value)} placeholder="team/omni_vault.enc.json" className="input-field" />
                 </div>
               </>
@@ -213,12 +220,14 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
                 type="password" 
                 value={teamPassphrase} 
                 onChange={e => setTeamPassphrase(e.target.value)} 
-                placeholder="Mật khẩu mã hóa E2E chung cho cả team..." 
+                placeholder={isVi ? 'Mật khẩu mã hóa E2E chung cho cả team...' : 'Shared E2E encryption passphrase for the team...'} 
                 className="input-field" 
                 style={{ borderColor: 'rgba(52, 211, 153, 0.4)' }}
               />
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
-                Mật khẩu này không được lưu lại, bạn phải nhập mỗi khi Push hoặc Pull. Toàn bộ thông tin kết nối và mật khẩu máy chủ sẽ được mã hóa chuẩn AES-256-GCM.
+                {isVi 
+                  ? 'Mật khẩu này không được lưu lại, bạn phải nhập mỗi khi Push hoặc Pull. Toàn bộ thông tin kết nối và mật khẩu máy chủ sẽ được mã hóa chuẩn AES-256-GCM.' 
+                  : 'This passphrase is not saved; you must enter it every time you Push or Pull. All connection data and server credentials will be encrypted using standard AES-256-GCM.'}
               </span>
             </div>
           </div>
@@ -249,7 +258,7 @@ export const TeamSyncModal: React.FC<TeamSyncModalProps> = ({
             onClick={onClose}
             style={{ padding: '8px 16px', borderRadius: '6px', backgroundColor: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontWeight: 500 }}
           >
-            Đóng
+            {isVi ? 'Đóng' : 'Close'}
           </button>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button

@@ -25,11 +25,11 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
 
   const handleRunDiagnostics = async () => {
     if (!host) {
-      setDiagnosticsOutput('Vui lòng nhập Host/IP của máy chủ trước khi chạy chẩn đoán.');
+      setDiagnosticsOutput(t('netDiagHostRequired'));
       return;
     }
     setDiagnosticsLoading(true);
-    setDiagnosticsOutput(`[${new Date().toLocaleTimeString()}] Đang khởi chạy chẩn đoán ${diagnosticsTool.toUpperCase()} tới ${host}...\n`);
+    setDiagnosticsOutput(`[${new Date().toLocaleTimeString()}] ` + t('netDiagStarting').replace('{tool}', diagnosticsTool.toUpperCase()).replace('{host}', host) + `\n`);
     try {
       const options = {
         packets: pingPackets,
@@ -41,7 +41,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
       const result = await window.api.netDiagnose(diagnosticsTool, host, options);
       setDiagnosticsOutput(prev => prev + result);
     } catch (err: any) {
-      setDiagnosticsOutput(prev => prev + `Lỗi: ${err.message || err}`);
+      setDiagnosticsOutput(prev => prev + `${settings?.language === 'en' ? 'Error' : 'Lỗi'}: ${err.message || err}`);
     } finally {
       setDiagnosticsLoading(false);
     }
@@ -57,10 +57,10 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
             <Activity size={22} style={{ color: 'var(--accent-primary)' }} />
-            {t('netDiagnostics') || 'Chẩn Đoán Mạng'}
+            {t('netDiagnostics')}
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Công cụ kiểm tra tình trạng đường truyền, đo độ trễ, DNS và quét cổng kết nối trực tiếp.
+            {t('netDiagDesc')}
           </p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chọn Công Cụ Chẩn Đoán (Tool):</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('netDiagSelectTool')}</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
               {(['ping', 'dns', 'ports', 'traceroute', 'mtr'] as const).map(tool => (
                 <button
@@ -108,10 +108,10 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
 
           {/* Config options */}
           <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>Cấu Hình Tác Vụ</h4>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>{t('netDiagConfig')}</h4>
             {diagnosticsTool === 'ping' && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Số gói tin (Packets):</span>
+                <span>{t('netDiagPacketsLabel')}</span>
                 <input 
                   type="number" 
                   className="input-field" 
@@ -123,7 +123,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
             )}
             {diagnosticsTool === 'dns' && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Loại bản ghi (DNS Record):</span>
+                <span>{t('netDiagDnsTypeLabel')}</span>
                 <select 
                   className="input-field" 
                   value={dnsType} 
@@ -140,7 +140,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
             )}
             {diagnosticsTool === 'ports' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span>Danh sách cổng quét (Ports):</span>
+                <span>{t('netDiagPortsLabel')}</span>
                 <input 
                   type="text" 
                   className="input-field" 
@@ -153,7 +153,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
             )}
             {diagnosticsTool === 'traceroute' && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Hops tối đa (Max Hops):</span>
+                <span>{t('netDiagMaxHopsLabel')}</span>
                 <input 
                   type="number" 
                   className="input-field" 
@@ -165,7 +165,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
             )}
             {diagnosticsTool === 'mtr' && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Số chu kỳ quét (Cycles):</span>
+                <span>{t('netDiagCyclesLabel')}</span>
                 <input 
                   type="number" 
                   className="input-field" 
@@ -186,7 +186,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
               style={{ flex: 1, height: '36px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
               {diagnosticsLoading ? <RefreshCw size={14} className="spin" /> : <Activity size={14} />}
-              <span>{diagnosticsLoading ? 'Đang chạy...' : 'Khởi chạy chẩn đoán'}</span>
+              <span>{diagnosticsLoading ? t('netDiagRunningLabel') : t('netDiagRunBtn')}</span>
             </button>
             <button
               type="button"
@@ -202,7 +202,7 @@ export const NetDiagnosticsPanel: React.FC<NetDiagnosticsPanelProps> = ({ settin
         {/* Right Side: Output Terminal Console */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Kết Quả Thực Thi (Diagnostics Console Output):</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('netDiagConsoleOutput')}</span>
           </div>
           <textarea
             readOnly

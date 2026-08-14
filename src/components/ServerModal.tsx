@@ -145,11 +145,11 @@ export const ServerModal: React.FC<ServerModalProps> = ({
 
   const handleRunDiagnostics = async () => {
     if (!host) {
-      setDiagnosticsOutput('Vui lòng nhập Host/IP của máy chủ trước khi chạy chẩn đoán.');
+      setDiagnosticsOutput(t('netDiagHostRequired'));
       return;
     }
     setDiagnosticsLoading(true);
-    setDiagnosticsOutput(`[${new Date().toLocaleTimeString()}] Đang khởi chạy chẩn đoán ${diagnosticsTool.toUpperCase()} tới ${host}...\n`);
+    setDiagnosticsOutput(`[${new Date().toLocaleTimeString()}] ` + t('netDiagStarting').replace('{tool}', diagnosticsTool.toUpperCase()).replace('{host}', host) + `\n`);
     try {
       const options = {
         packets: pingPackets,
@@ -161,7 +161,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       const result = await window.api.netDiagnose(diagnosticsTool, host, options);
       setDiagnosticsOutput(prev => prev + result);
     } catch (err: any) {
-      setDiagnosticsOutput(prev => prev + `Lỗi: ${err.message || err}`);
+      setDiagnosticsOutput(prev => prev + `${settings?.language === 'en' ? 'Error' : 'Lỗi'}: ${err.message || err}`);
     } finally {
       setDiagnosticsLoading(false);
     }
@@ -608,10 +608,10 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               {(protocol === 'SSH' || protocol === 'SFTP') && (
                 <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
-                    🌉 Cấu Hình Jump Host / Bastion Server (Multi-hop Tunnel 1-3 lớp)
+                    {t('jumpHostTitle')}
                   </label>
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                    Chọn 1 đến 3 máy chủ Bastion trung gian để tạo đường hầm SSH nhảy cóc tự động vào máy chủ trong mạng nội bộ Private Subnet.
+                    {t('jumpHostDesc')}
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -640,7 +640,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                             }}
                             style={{ height: '34px', fontSize: '0.8rem', flex: 1 }}
                           >
-                            <option value="">-- Không sử dụng Hop {hopIndex + 1} --</option>
+                            <option value="">{t('jumpHostNoHop').replace('{hopIndex}', String(hopIndex + 1))}</option>
                             {candidateServers.map((s) => (
                               <option key={s.id} value={s.id}>
                                 {s.name} ({s.username}@{s.host}:{s.port})
@@ -744,7 +744,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Activity size={18} style={{ color: 'var(--accent-primary)' }} />
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    Bộ Chẩn Đoán Mạng & Kết Nối
+                    {t('netDiagSuiteTitle') || 'Bộ Chẩn Đoán Mạng & Kết Nối'}
                   </h4>
                 </div>
 
@@ -788,7 +788,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.75rem' }}>
                   {diagnosticsTool === 'ping' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>Số gói tin (Packets):</span>
+                      <span>{t('netDiagPacketsLabel') || 'Số gói tin (Packets):'}</span>
                       <input 
                         type="number" 
                         className="input-field" 
@@ -800,7 +800,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                   )}
                   {diagnosticsTool === 'dns' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>Loại bản ghi (DNS Type):</span>
+                      <span>{t('netDiagDnsTypeLabel') || 'Loại bản ghi (DNS Type):'}</span>
                       <select 
                         className="input-field" 
                         value={dnsType} 
@@ -817,7 +817,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                   )}
                   {diagnosticsTool === 'ports' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span>Danh sách cổng quét (Ports):</span>
+                      <span>{t('netDiagPortsLabel') || 'Danh sách cổng quét (Ports):'}</span>
                       <input 
                         type="text" 
                         className="input-field" 
@@ -830,7 +830,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                   )}
                   {diagnosticsTool === 'traceroute' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>Hops tối đa (Max Hops):</span>
+                      <span>{t('netDiagMaxHopsLabel') || 'Hops tối đa (Max Hops):'}</span>
                       <input 
                         type="number" 
                         className="input-field" 
@@ -842,7 +842,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                   )}
                   {diagnosticsTool === 'mtr' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>Số chu kỳ quét (Cycles):</span>
+                      <span>{t('netDiagCyclesLabel') || 'Số chu kỳ quét (Cycles):'}</span>
                       <input 
                         type="number" 
                         className="input-field" 
@@ -863,12 +863,12 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                   style={{ width: '100%', height: '32px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                   {diagnosticsLoading ? <RefreshCw size={14} className="spin" /> : <Activity size={14} />}
-                  <span>{diagnosticsLoading ? 'Đang kiểm tra kết nối...' : 'Khởi chạy chẩn đoán'}</span>
+                  <span>{diagnosticsLoading ? (t('netDiagRunning') || 'Đang kiểm tra kết nối...') : (t('netDiagRunBtn') || 'Khởi chạy chẩn đoán')}</span>
                 </button>
 
                 {/* Console Output */}
                 <div style={{ flex: 1, minHeight: '200px', display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Kết quả chẩn đoán:</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('netDiagResultLabel') || 'Kết quả chẩn đoán:'}</span>
                   <textarea
                     readOnly
                     value={diagnosticsOutput}
