@@ -1059,11 +1059,19 @@ Formatting requirements:
 
     setShareKey(secureKey);
 
-    // Initialize PeerJS Host Server
+    // Initialize PeerJS Host Server with reliable Google STUN servers
     const PeerClass = (window as any).Peer;
     if (PeerClass) {
       try {
-        const peer = new PeerClass(roomId);
+        const peer = new PeerClass(roomId, {
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+          }
+        });
         peerInstanceRef.current = peer;
 
         peer.on('open', (id: string) => {

@@ -154,9 +154,17 @@
       term.writeln('\x1b[33m[Warning]\x1b[0m No security token provided in URL. Awaiting authorization...');
     }
 
-    // WebRTC PeerJS connection
+    // WebRTC PeerJS connection with Google STUN servers
     const PeerClass = window.Peer || Peer;
-    const peer = new PeerClass();
+    const peer = new PeerClass({
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
+    });
     let conn = null;
 
     peer.on('open', (peerId) => {
