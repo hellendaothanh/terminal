@@ -167,6 +167,25 @@
     });
     let conn = null;
 
+    // Permission state dynamically dictated by Host
+    let effectiveMode = 'readonly';
+
+    const updateTerminalInputState = (newMode) => {
+      effectiveMode = newMode.toLowerCase();
+      const isInteractive = effectiveMode === 'interactive';
+      term.options.disableStdin = !isInteractive;
+      term.options.cursorBlink = isInteractive;
+
+      document.getElementById('mode-desc').innerText = isInteractive
+        ? '👥 Interactive Live Pairing (Full Typing Allowed)' 
+        : '🔒 Read-Only Live Stream (Observer Mode)';
+      
+      const modeBanner = document.getElementById('mode-banner');
+      modeBanner.style.display = 'flex';
+      modeBanner.style.backgroundColor = isInteractive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.12)';
+      modeBanner.style.color = isInteractive ? '#fde047' : '#93c5fd';
+    };
+
     peer.on('open', (peerId) => {
       term.writeln('\x1b[90m[P2P]\x1b[0m Client ID: ' + peerId);
       conn = peer.connect(room, { reliable: true });
@@ -177,7 +196,7 @@
         document.getElementById('status-text').innerText = '● AUTHENTICATING...';
         
         // Send Cryptographic Access Token Handshake
-        conn.send({ type: 'AUTH', key, mode });
+        conn.send({ type: 'AUTH', key });
       });
 
       conn.on('data', (data) => {
@@ -187,7 +206,14 @@
           const statusBox = document.getElementById('status-container');
           statusBox.className = 'status-badge status-live';
           document.getElementById('status-text').innerText = '● LIVE CONNECTED';
+          // Set host-enforced mode
+          updateTerminalInputState(data.mode || 'readonly');
           term.writeln('\x1b[32m[Access Granted]\x1b[0m Security token verified. Synchronizing real-time terminal output...\r\n');
+        } else if (data.type === 'MODE_UPDATED') {
+          updateTerminalInputState(data.mode || 'readonly');
+          term.writeln('\r\n\x1b[33m[Permission Update]\x1b[0m Host switched session mode to: \x1b[1m' + (data.mode || 'readonly') + '\x1b[0m\r\n');
+        } else if (data.type === 'INPUT_REJECTED') {
+          term.writeln('\r\n\x1b[31m[Blocked]\x1b[0m ' + (data.message || 'Host is currently in Read-Only mode.') + '\r\n');
         } else if (data.type === 'AUTH_FAILED') {
           const statusBox = document.getElementById('status-container');
           statusBox.className = 'status-badge status-ended';
@@ -227,13 +253,12 @@
       }
     });
 
-    if (mode === 'interactive') {
-      term.onData((inputData) => {
-        if (conn && conn.open) {
-          conn.send({ type: 'INPUT', payload: inputData });
-        }
-      });
-    }
+    // Listen for terminal typing
+    term.onData((inputData) => {
+      if (conn && conn.open && effectiveMode === 'interactive') {
+        conn.send({ type: 'INPUT', payload: inputData });
+      }
+    });
   </script>
 </body>
 </html>

@@ -1028,11 +1028,44 @@ Formatting requirements:
   // Remote Web Share / Live Pairing states
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareMode, setShareMode] = useState<'READONLY' | 'INTERACTIVE'>('READONLY');
+  const shareModeRef = useRef<'READONLY' | 'INTERACTIVE'>('READONLY');
   const [shareLink, setShareLink] = useState('');
   const [shareKey, setShareKey] = useState('');
+  const [shareRoomId, setShareRoomId] = useState('');
   const [isLiveShared, setIsLiveShared] = useState(false);
   const peerInstanceRef = useRef<any>(null);
   const activeConnectionsRef = useRef<any[]>([]);
+
+  // Function to compute full live share URL
+  const getLiveShareUrl = (roomId: string, key: string, mode: 'READONLY' | 'INTERACTIVE') => {
+    const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim()) 
+      ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '') 
+      : 'https://hellendaothanh.github.io/terminal';
+    return `${baseUrl}?room=${roomId}&key=${key}&mode=${mode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
+  };
+
+  // Switch mode dynamically and update active link & permissions instantly
+  const handleSwitchShareMode = (newMode: 'READONLY' | 'INTERACTIVE') => {
+    setShareMode(newMode);
+    shareModeRef.current = newMode;
+
+    if (isLiveShared && shareRoomId && shareKey) {
+      const updatedUrl = getLiveShareUrl(shareRoomId, shareKey, newMode);
+      setShareLink(updatedUrl);
+      
+      // Notify all connected Web viewers about the permission change
+      if (activeConnectionsRef.current && activeConnectionsRef.current.length > 0) {
+        activeConnectionsRef.current.forEach((conn) => {
+          if (conn && conn.open) {
+            try {
+              conn.send({ type: 'MODE_UPDATED', mode: newMode });
+            } catch (_) {}
+          }
+        });
+      }
+      showToast('success', newMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
+    }
+  };
 
   // Cleanup WebRTC Peer on unmount or stop
   const cleanupPeer = () => {
@@ -1067,6 +1100,8 @@ Formatting requirements:
     const roomId = `omni_${sessionId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6)}_${randomSalt}`;
 
     setShareKey(secureKey);
+    setShareRoomId(roomId);
+    shareModeRef.current = shareMode;
 
     // Initialize PeerJS Host Server with reliable Google STUN servers
     const PeerClass = (window as any).Peer;
@@ -1096,16 +1131,20 @@ Formatting requirements:
               if (data && data.type === 'AUTH') {
                 if (data.key === secureKey) {
                   activeConnectionsRef.current.push(conn);
-                  conn.send({ type: 'AUTH_OK', mode: shareMode });
+                  // Enforce current host-authorized permission mode, not the client's self-claimed mode!
+                  conn.send({ type: 'AUTH_OK', mode: shareModeRef.current });
                   showToast('success', t('liveViewerJoined'));
                 } else {
                   conn.send({ type: 'AUTH_FAILED', message: 'Invalid Access Key' });
                   conn.close();
                 }
               } else if (data && data.type === 'INPUT') {
-                // If interactive mode, execute input
-                if (shareMode === 'INTERACTIVE' && data.payload) {
+                // STRICT SECURITY: Only execute input if Host is currently in INTERACTIVE mode!
+                if (shareModeRef.current === 'INTERACTIVE' && data.payload) {
                   window.api.sshWrite(sessionId, data.payload);
+                } else {
+                  // Reject un-authorized input attempts
+                  conn.send({ type: 'INPUT_REJECTED', message: 'Read-Only Mode: Typing is disabled by Host' });
                 }
               }
             });
@@ -1124,12 +1163,7 @@ Formatting requirements:
       }
     }
 
-    const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim()) 
-      ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '') 
-      : 'https://hellendaothanh.github.io/terminal';
-    
-    // Construct encrypted URL with room and secret key
-    const url = `${baseUrl}?room=${roomId}&key=${secureKey}&mode=${shareMode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
+    const url = getLiveShareUrl(roomId, secureKey, shareMode);
     setShareLink(url);
     setIsLiveShared(true);
     showToast('success', shareMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
@@ -1139,6 +1173,7 @@ Formatting requirements:
     cleanupPeer();
     setShareLink('');
     setShareKey('');
+    setShareRoomId('');
     setIsLiveShared(false);
     setIsShareModalOpen(false);
     showToast('empty', t('liveShareStopped'));
@@ -1853,7 +1888,7 @@ Formatting requirements:
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div
-                    onClick={() => setShareMode('READONLY')}
+                    onClick={() => handleSwitchShareMode('READONLY')}
                     style={{
                       padding: '12px',
                       borderRadius: 'var(--radius-md)',
@@ -1872,7 +1907,7 @@ Formatting requirements:
                   </div>
 
                   <div
-                    onClick={() => setShareMode('INTERACTIVE')}
+                    onClick={() => handleSwitchShareMode('INTERACTIVE')}
                     style={{
                       padding: '12px',
                       borderRadius: 'var(--radius-md)',
