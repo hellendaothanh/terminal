@@ -117,18 +117,26 @@
 * **Kiểm Tra Kết Nối Tiền Kết Nối:** Hỗ trợ kiểm tra tình trạng đường truyền (Đo độ trễ Ping, dò tuyến Traceroute/MTR, truy vấn DNS, hoặc quét nhanh trạng thái mở cổng Port Scanner) ngay cạnh bảng cấu hình Server/Database trước khi kết nối SSH, RDP hoặc CSDL.
 * **Tự Động Đồng Bộ Target:** Tự động điền địa chỉ IP/Tên miền đích từ form cấu hình máy chủ, giúp đơn giản hóa quy trình chẩn đoán mạng khi gặp lỗi kết nối.
 
-### 25. 🤖 Trợ Lý Sửa Lỗi Tự Động & Giải Thích Lỗi Terminal AI (Terminal AI Autofix)
-* **Chẩn Đoán Thông Minh:** Khi lệnh SSH hoặc truy vấn SQL xảy ra sự cố, tự động phát hiện mã lỗi, thu thập ngữ cảnh thực thi lỗi và đề xuất phân tích nguyên nhân sự cố bằng AI được trình bày đẹp mắt dưới dạng Markdown sạch sẽ (tiêu đề, in đậm, danh sách...).
-* **Tự Động Sửa Lỗi 1-Click:** Tự động tối ưu hóa câu lệnh đúng cú pháp và cấu hình, hỗ trợ điền và chạy lại câu lệnh tức thì chỉ với một cú nhấp chuột (1-Click Apply).
+### 25. 🤖 Trợ Lý Sửa Lỗi Tự Động & Nhận Diện OS (Terminal AI Autofix)
+* **Chẩn Đoán Thông Minh & Tự Nhận Diện OS:** Tự động nhận diện hệ điều hành máy chủ (Rocky Linux 9, RHEL, Ubuntu, Debian, Alpine...) và thu thập trực tiếp luồng log lỗi trên màn hình Terminal mà không cần copy thủ công. Nhận diện các lỗi `command not found`, thiếu tham số (`option requires an argument`), lỗi cú pháp (`invalid option`), lỗi dịch vụ (`failed to start`), quyền hạn (`Permission denied`) hay quá tải bộ nhớ (`OOMKilled`).
+* **Sửa Lỗi 1-Click & Markdown Chuẩn Đẹp:** Đưa ra câu lệnh sửa lỗi chuẩn xác theo đúng trình quản lý gói của từng hệ điều hành (`dnf`/`yum` vs `apt`/`apk`), trình bày trong khối code block tối màu sang trọng kèm nút Copy và nút 1-Click Run.
 
 ### 26. ⛵ Quản Lý Helm Chart & CRD Nâng Cao cho Kubernetes
 * **Quản Lý Helm Releases:** Hỗ trợ trực quan hóa danh sách releases, cài đặt (Install), nâng cấp (Upgrade), rollback các phiên bản cấu hình (kèm lịch sử Revision), hoặc gỡ cài đặt (Uninstall) Helm releases trực tiếp từ 3-Pane Explorer.
 * **Trình Trực Quan Hóa CRD Spec:** Liệt kê và hiển thị chi tiết các Custom Resource Definitions (CRDs) trong cluster bao gồm API Group, Scope và cấu trúc OpenAPI v3 spec dạng YAML.
 
 ### 27. 📑 Thư Viện Lệnh Thường Dùng & Quản Lý Lệnh Tự Định Nghĩa
-* **Kho Lệnh Mẫu Phong Phú:** Tích hợp sẵn bộ lệnh mẫu tiện ích cho các hệ điều hành phổ biến (Red Hat, CentOS, Ubuntu, Debian) và ứng dụng DevOps/Database (PostgreSQL, Patroni, HAProxy, Keepalived, Kafka, MongoDB, Redis, MySQL, Vault, GitLab).
+* **Kho Lệnh Mẫu Phong Phú (Bilingual):** Tích hợp sẵn bộ lệnh mẫu tiện ích song ngữ Anh - Việt cho các hệ điều hành phổ biến (Red Hat, CentOS, Ubuntu, Debian) và ứng dụng DevOps/Database (PostgreSQL, Patroni, HAProxy, Keepalived, Kafka, MongoDB, Redis, MySQL, Vault, GitLab).
 * **Quản Lý Lệnh Tự Định Nghĩa Cá Nhân:** Dễ dàng thêm mới, sửa đổi, xóa các lệnh cá nhân. Dữ liệu được lưu trữ lâu dài trong `localStorage` giúp sử dụng lại ở mọi phiên kết nối SSH.
-* **Thực Thi & Sao Chép 1-Click**: Hỗ trợ copy câu lệnh nhanh vào clipboard hoặc truyền thẳng lệnh vào terminal với cơ chế tự động xuống dòng thông minh (ngoại trừ lệnh cần điền thêm tham số).
+* **Thực Thi & Sao Chép 1-Click**: Hỗ trợ copy câu lệnh nhanh vào clipboard hoặc truyền thẳng lệnh vào terminal với cơ chế tự động xuống dòng thông minh.
+
+### 28. 🖱️ Menu Ngữ Cảnh Chuột Phải & Phím Tắt Terminal Thuận Tiện
+* **Menu Chuột Phải Trực Tiếp:** Click chuột phải ngay trong cửa sổ SSH Terminal để thực hiện nhanh: Copy, Paste, Chọn tất cả, Xóa màn hình.
+* **Phím Tắt & Chuột Giữa:** Hỗ trợ đầy đủ `Ctrl+C` (khi bôi đen để copy), `Ctrl+Shift+C`, `Ctrl+V` / `Ctrl+Shift+V` để dán, và click chuột giữa (Middle Click) để dán từ Clipboard.
+* **Gợi Ý Lệnh Thông Minh (Smart Suggestions):** Tự động so khớp tiền tố không bị lặp từ và tự động lọc bỏ các lệnh typo do phím thoát (`qping...`).
+
+### 29. 👁️ Nút Xem / Ẩn Mật Khẩu (Password Visibility Toggle)
+* **Kiểm Tra Trực Quan Mật Khẩu Đã Gõ:** Tích hợp nút con mắt (`👁️` / `👁️‍🗨️`) trên toàn bộ các ô mật khẩu: Master Vault Passphrase, Xác thực lại SSH, Form Server, Khóa SSH Private Key, Phê duyệt lệnh nguy hiểm, HashiCorp Vault Token/Secret ID và AI API Key.
 
 ---
 
@@ -181,7 +189,9 @@ Chúng tôi liên tục cải tiến và phát triển OmniTerminal. Hãy đón 
 | :--- | :--- |
 | `Cmd + B` / `Ctrl + B` | Bật / Tắt thu gọn danh sách Máy Chủ bên trái (Sidebar) |
 | `Cmd + Enter` / `Ctrl + Enter` | Thực thi câu lệnh SQL trong Console Database Explorer |
-| `Cmd + V` / `Shift + Insert` | Dán văn bản vào cửa sổ SSH Terminal |
+| `Cmd + C` / `Ctrl + Shift + C` / `Ctrl + C (Bôi đen)` | Sao chép văn bản đã chọn trong SSH Terminal |
+| `Cmd + V` / `Ctrl + V` / `Ctrl + Shift + V` | Dán văn bản vào cửa sổ SSH Terminal |
+| `Chuột Giữa` / `Chuột Phải` | Dán nhanh từ Clipboard / Mở Menu ngữ cảnh Terminal |
 | `Esc` | Đóng các khung Modal đang mở |
 
 ---

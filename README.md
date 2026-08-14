@@ -118,8 +118,8 @@
 * **Auto-Populated Targets:** Hostnames and IP addresses are automatically synchronized with the server profile configuration form for a frictionless diagnostic workflow.
 
 ### 25. 🤖 Terminal AI Autofix & Error Explainer (Bilingual EN/VI)
-* **Intelligent Diagnostics:** Captures execution history or query errors in real time when an SSH shell command or SQL query fails. Shows a contextual "AI Fix" helper card that diagnoses the root cause of the error formatted in beautiful, readable Markdown (headings, bold, lists).
-* **1-Click Autofix:** Generates standard corrected commands/queries with one-click injection and execution support, restoring system runtime without manual troubleshooting.
+* **Intelligent Diagnostics & OS Detection:** Automatically detects target server OS (Rocky Linux 9, RHEL, Ubuntu, Debian, Alpine) and captures real-time terminal output without requiring manual copying. Contextually analyzes command failures (`command not found`, missing arguments, syntax errors, service failures, permission/OOM errors).
+* **1-Click Autofix & Clean Markdown:** Generates distribution-tailored corrected commands (`dnf`/`yum` vs `apt`/`apk`) formatted in clean dark-theme code blocks with 1-click execution and copy buttons.
 
 ### 26. ⛵ Advanced Helm Release & CRD Explorer for Kubernetes
 * **Helm Charts Management:** Visual management dashboard to search, install, upgrade, rollback (with revision histories), or uninstall Helm releases in a namespace directly from the 3-Pane explorer.
@@ -129,6 +129,14 @@
 * **Bilingual Preset Commands:** Built-in template repository tailored for popular OSes (Red Hat, CentOS, Ubuntu, Debian) and common production software (PostgreSQL, Patroni, HAProxy, Keepalived, Kafka, MongoDB, Redis, MySQL, Vault, GitLab).
 * **Command Customization:** Add, edit, and delete personal commands saved locally in persistent `localStorage` and shared instantly across sessions.
 * **1-Click Execution & Copy:** Double-action triggers support copying command blocks or direct injection & execution into SSH sessions with smart line-break auto-detection.
+
+### 28. 🖱️ Native In-Terminal Context Menu & Smart Shortcuts
+* **Right-Click Context Menu:** Direct 1-click menu inside the SSH terminal window for Copy, Paste, Select All, and Clear Buffer.
+* **Standard Keybindings & Middle-Click Paste:** Full support for `Ctrl+C` (on selection), `Ctrl+Shift+C` (copy), `Ctrl+V` / `Ctrl+Shift+V` (paste), and mouse middle-click paste.
+* **Smart Auto-Completion:** Intelligent prefix-matching and sanitation that prevents command duplication and automatically removes accidental editor exit typos.
+
+### 29. 👁️ Password Visibility Toggles (Show / Hide Password)
+* **Visual Password Verification:** Integrated eye toggle icons (`👁️` / `👁️‍🗨️`) across all credential fields (Master Vault Passphrase, SSH ReAuth, Server Passwords, SSH Key Import Passphrase, Command Guard Approvals, and HashiCorp Vault / AI API Keys).
 
 ---
 
@@ -181,7 +189,9 @@ We are constantly expanding OmniTerminal. Stay tuned for upcoming features!
 | :--- | :--- |
 | `Cmd + B` / `Ctrl + B` | Toggle Collapse/Expand Left Server Sidebar |
 | `Cmd + Enter` / `Ctrl + Enter` | Execute SQL query in Database Console |
-| `Cmd + V` / `Shift + Insert` | Paste text into SSH Terminal |
+| `Cmd + C` / `Ctrl + Shift + C` / `Ctrl + C (Selection)` | Copy selected text from SSH Terminal |
+| `Cmd + V` / `Ctrl + V` / `Ctrl + Shift + V` | Paste text into SSH Terminal |
+| `Middle Click` / `Right Click` | Paste from Clipboard / Open Terminal Context Menu |
 | `Esc` | Close active modals |
 
 ---
