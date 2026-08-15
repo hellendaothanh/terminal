@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.5.22",
   "description": "Cross-platform Server & Database Management Tool integrating SSH, SFTP, RDP, MySQL, PostgreSQL, Redis, MongoDB and AI Assistant",
-  "main": "dist-electron/main.cjs",
+  "main": "dist-electron/main.js",
   "type": "module",
   "author": "Hautp",
   "scripts": {
@@ -61,7 +61,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1108.0",
     "@aws-sdk/lib-storage": "^3.1108.0",
-    "@xterm/addon-canvas": "^0.7.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/xterm": "^6.0.0",

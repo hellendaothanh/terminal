@@ -14,17 +14,13 @@ export default defineConfig({
         vite: {
           resolve: {
             alias: {
-              'pg-native': path.resolve(__dirname, './electron/stubs/pgNativeStub.cjs')
+              'pg-native': path.resolve(import.meta.dirname, './electron/stubs/pgNativeStub.cjs')
             }
           },
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['ssh2', 'ssh2-sftp-client'],
-              output: {
-                format: 'cjs',
-                entryFileNames: '[name].cjs'
-              }
+              external: ['ssh2', 'ssh2-sftp-client']
             }
           }
         }
@@ -38,11 +34,10 @@ export default defineConfig({
         vite: {
           build: {
             outDir: 'dist-electron',
-            rollupOptions: {
-              output: {
-                format: 'cjs',
-                entryFileNames: '[name].cjs'
-              }
+            lib: {
+              entry: 'electron/preload.ts',
+              formats: ['cjs'],
+              fileName: () => 'preload.js'
             }
           }
         }
@@ -52,8 +47,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      'pg-native': path.resolve(__dirname, './electron/stubs/pgNativeStub.cjs')
+      '@': path.resolve(import.meta.dirname, './src'),
+      'pg-native': path.resolve(import.meta.dirname, './electron/stubs/pgNativeStub.cjs')
     }
   },
   server: {
