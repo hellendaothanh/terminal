@@ -1,11 +1,13 @@
 import net from 'net';
-import { Client, utils } from 'ssh2';
+import ssh2 from 'ssh2';
+const { Client, utils } = ssh2;
+import type { Client as ClientType } from 'ssh2';
 import { createSocksServer } from '../utils/socks5';
 import { ServerConfig, SSHKey, SSHTunnelConfig, TunnelTrafficStats } from '../../src/types';
 
 interface ActiveTunnel {
   config: SSHTunnelConfig;
-  clients: Client[];
+  clients: ClientType[];
   localServer?: net.Server;
   socksServer?: any;
   bytesRead: number;
@@ -20,10 +22,14 @@ interface ActiveTunnel {
 
 export class SSHTunnelService {
   private activeTunnels: Map<string, ActiveTunnel> = new Map();
-  private statsTimer: NodeJS.Timeout | null = null;
+  private statsInterval?: NodeJS.Timeout;
 
   constructor() {
-    this.statsTimer = setInterval(() => {
+    this.startStatsPolling();
+  }
+
+  private startStatsPolling() {
+    this.statsInterval = setInterval(() => {
       this.activeTunnels.forEach((tunnel) => {
         const deltaRead = tunnel.bytesRead - tunnel.lastBytesRead;
         const deltaWritten = tunnel.bytesWritten - tunnel.lastBytesWritten;
@@ -59,8 +65,8 @@ export class SSHTunnelService {
       this.activeTunnels.set(config.id, activeTunnel);
 
       try {
-        let previousClient: Client | null = null;
         let previousStream: any = null;
+        let previousClient: ClientType | null = null;
 
         for (let i = 0; i < serverChain.length; i++) {
           const server = serverChain[i];

@@ -1,10 +1,12 @@
-import { Client, utils } from 'ssh2';
+import ssh2 from 'ssh2';
+const { Client, utils } = ssh2;
+import type { Client as ClientType } from 'ssh2';
 import { ServerConfig, SSHKey } from '../../src/types';
 import { WebContents } from 'electron';
 
 interface ActiveStream {
   streamId: string;
-  clients: Client[];
+  clients: ClientType[];
   status: 'ACTIVE' | 'CONNECTING' | 'ERROR' | 'STOPPED';
   error?: string;
 }
@@ -34,7 +36,7 @@ export class LogTailService {
 
       try {
         let previousStream: any = null;
-        let finalClient: Client | null = null;
+        let finalClient: ClientType | null = null;
 
         for (let i = 0; i < serverChain.length; i++) {
           const server = serverChain[i];

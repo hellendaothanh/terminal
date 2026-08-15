@@ -1,6 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { VaultService } from './services/vaultService';
 import { SSHService } from './services/sshService';
 import { SFTPService } from './services/sftpService';
@@ -44,7 +48,7 @@ function createWindow() {
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#0f131a',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true
     }

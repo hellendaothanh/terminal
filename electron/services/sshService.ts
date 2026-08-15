@@ -1,4 +1,6 @@
-import { Client, ConnectConfig, utils } from 'ssh2';
+import ssh2 from 'ssh2';
+const { Client, utils } = ssh2;
+import type { ConnectConfig, Client as ClientType } from 'ssh2';
 import { BrowserWindow } from 'electron';
 import { ServerConfig, SSHKey } from '../../src/types';
 
@@ -12,7 +14,7 @@ export interface SSHSessionOptions {
 }
 
 export class SSHService {
-  private activeSessions: Map<string, { client: Client; stream: any }> = new Map();
+  private activeSessions: Map<string, { client: ClientType; stream: any }> = new Map();
 
   private buildConnectConfig(server: ServerConfig, key?: SSHKey): { config: ConnectConfig; error?: string } {
     const connectConfig: ConnectConfig = {
@@ -66,8 +68,8 @@ export class SSHService {
     return new Promise(async (resolve) => {
       try {
         let currentStream: any = null;
-        let currentClient: Client | null = null;
-        const clientsToClean: Client[] = [];
+        let currentClient: ClientType | null = null;
+        const clientsToClean: ClientType[] = [];
 
         // If there are Jump Hosts in chain
         if (jumpChain && jumpChain.length > 0) {
