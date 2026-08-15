@@ -244,3 +244,33 @@ export interface AIMessage {
   timestamp: number;
   contextSnippet?: string;
 }
+
+export type PlaybookRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type PlaybookStepStatus = 'PENDING' | 'CHECKING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'ROLLED_BACK' | 'SKIPPED';
+
+export interface PlaybookStep {
+  id: string;
+  name: string;
+  description: string;
+  checkCommand?: string;      // Dry-run / Pre-check command (non-destructive)
+  command: string;           // Main execution command
+  rollbackCommand?: string;  // Undo/Revert command if this or subsequent steps fail
+  riskLevel: PlaybookRiskLevel;
+  timeoutSeconds?: number;
+  ignoreError?: boolean;
+  status?: PlaybookStepStatus;
+  output?: string;
+  error?: string;
+  executionTimeMs?: number;
+}
+
+export interface DevOpsPlaybook {
+  id: string;
+  title: string;
+  description: string;
+  targetEnvironment?: Environment | 'ALL';
+  steps: PlaybookStep[];
+  createdAt: number;
+  updatedAt?: number;
+}
+

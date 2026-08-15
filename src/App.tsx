@@ -30,6 +30,7 @@ import { DataPump } from './components/DataPump';
 import { DockerK8sPanel } from './components/DockerK8sPanel';
 import { CloudExplorer } from './components/CloudExplorer';
 import { NetDiagnosticsPanel } from './components/NetDiagnosticsPanel';
+import { useTranslation } from './i18n/useTranslation';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: any) {
@@ -124,6 +125,8 @@ export const App: React.FC = () => {
       language: 'vi'
     };
   });
+
+  const { t } = useTranslation(settings);
 
   useEffect(() => {
     localStorage.setItem('omni_terminal_settings', JSON.stringify(settings));
@@ -346,7 +349,7 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteServer = (serverId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa máy chủ này khỏi kho dữ liệu?')) {
+    if (confirm(t('confirmDeleteServer'))) {
       setVaultData((prev) => {
         const updated = prev.servers.filter((s) => s.id !== serverId);
         const newData = { ...prev, servers: updated };
@@ -378,7 +381,7 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteKey = (keyId: string) => {
-    if (confirm('Bạn có chắc muốn xóa SSH Key này?')) {
+    if (confirm(t('confirmDeleteKey'))) {
       const updatedKeys = vaultData.keys.filter((k) => k.id !== keyId);
       saveVaultData({ ...vaultData, keys: updatedKeys });
     }
@@ -783,6 +786,9 @@ export const App: React.FC = () => {
           onClose={() => setIsAIOpen(false)}
           settings={settings}
           activeTabId={activeTabId || undefined}
+          activeServer={tabs.find((t) => t.id === activeTabId)?.server || null}
+          servers={vaultData.servers}
+          keys={vaultData.keys}
           onPasteToTerminal={handlePasteToTerminal}
         />
       </div>

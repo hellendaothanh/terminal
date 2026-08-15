@@ -30,12 +30,15 @@
     },
     "publish": null,
     "mac": {
+      "icon": "public/icon.icns",
+      "category": "public.app-category.developer-tools",
       "target": [
         "dmg",
         "zip"
       ]
     },
     "win": {
+      "icon": "public/icon.png",
       "target": [
         {
           "target": "nsis",

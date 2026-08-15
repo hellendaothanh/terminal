@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- App Rounded Icon Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="url(#glowGrad)" stroke-width="4" stroke-opacity="0.6" />
+
+  <!-- Terminal Window Bar -->
+  <rect x="56" y="80" width="400" height="352" rx="24" fill="#090d16" fill-opacity="0.85" stroke="#334155" stroke-width="3" />
+  
+  <!-- Traffic Light Window Buttons -->
+  <circle cx="96" cy="116" r="8" fill="#ef4444" />
+  <circle cx="124" cy="116" r="8" fill="#f59e0b" />
+  <circle cx="152" cy="116" r="8" fill="#10b981" />
+  <line x1="56" y1="144" x2="456" y2="144" stroke="#1e293b" stroke-width="2" />
+
+  <!-- Terminal Prompt Symbol >_ with Neon Cyan & Purple Gradient -->
+  <path d="M 120 200 L 210 270 L 120 340" fill="none" stroke="url(#accentGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+  <line x1="240" y1="340" x2="350" y2="340" stroke="#38bdf8" stroke-width="24" stroke-linecap="round" filter="url(#glow)" />
+
+  <!-- AI Sparkle / Database Node Accent -->
+  <path d="M 370 190 Q 370 230 400 230 Q 370 230 370 270 Q 370 230 340 230 Q 370 230 370 190 Z" fill="url(#accentGrad)" opacity="0.9" />
+  <circle cx="370" cy="230" r="4" fill="#ffffff" />
+</svg>
