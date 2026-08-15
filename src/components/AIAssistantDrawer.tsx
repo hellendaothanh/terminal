@@ -190,7 +190,12 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
         throw new Error('AI API is not supported in this runtime environment.');
       }
 
-      const replyText = await window.api.aiSendMessage(finalPrompt, aiConfig);
+      const combinedAiConfig = {
+        ...aiConfig,
+        language: settings.language || 'vi'
+      };
+
+      const replyText = await window.api.aiSendMessage(finalPrompt, combinedAiConfig);
 
       const aiReply: AIMessage = {
         id: 'msg_' + (Date.now() + 1),
@@ -201,10 +206,13 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
 
       setMessages((prev) => [...prev, aiReply]);
     } catch (err: any) {
+      const isEn = settings.language === 'en';
       const errorReply: AIMessage = {
         id: 'msg_' + (Date.now() + 1),
         role: 'assistant',
-        content: `❌ Lỗi khi gửi yêu cầu tới AI: ${err.message || 'Lỗi không xác định.'}\nVui lòng kiểm tra lại API Key hoặc nhà cung cấp AI trong Cài đặt (Settings -> AI).`,
+        content: isEn
+          ? `❌ Error sending request to AI: ${err.message || 'Unknown error.'}\nPlease check your API Key or AI Provider in Settings (Settings -> AI).`
+          : `❌ Lỗi khi gửi yêu cầu tới AI: ${err.message || 'Lỗi không xác định.'}\nVui lòng kiểm tra lại API Key hoặc nhà cung cấp AI trong Cài đặt (Settings -> AI).`,
         timestamp: Date.now()
       };
       setMessages((prev) => [...prev, errorReply]);
