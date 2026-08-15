@@ -61,13 +61,19 @@ contextBridge.exposeInMainWorld('api', {
   auditGetCast: (logId: string) => ipcRenderer.invoke('audit:get-cast', logId),
   auditExport: (logId: string, format: 'cast' | 'txt') => ipcRenderer.invoke('audit:export', { logId, format }),
 
-  /* AI APIs */
+  /* AI & DevOps Playbook APIs */
   aiTestKey: (settings: any) => ipcRenderer.invoke('ai:test-key', settings),
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => ipcRenderer.invoke('ai:chat', { settings, userPrompt, history, contextSnippet }),
   aiSendMessage: async (prompt: string, aiConfig: any) => {
     const res = await ipcRenderer.invoke('ai:chat', { settings: aiConfig, userPrompt: prompt, history: [] });
     return res?.reply || res?.error || 'No response from AI.';
   },
+  aiGeneratePlaybook: (settings: any, userPrompt: string, contextSnippet?: string, targetServerInfo?: string) =>
+    ipcRenderer.invoke('ai:generate-playbook', { settings, userPrompt, contextSnippet, targetServerInfo }),
+  playbookExecuteStep: (server: any, command: string, key?: any, vaultConfig?: any) =>
+    ipcRenderer.invoke('playbook:execute-step', { server, command, key, vaultConfig }),
+  serverInspectTelemetry: (server: any, key?: any, vaultConfig?: any) =>
+    ipcRenderer.invoke('server:inspect-telemetry', { server, key, vaultConfig }),
 
   /* Database APIs */
   dbConnect: (options: any) => ipcRenderer.invoke('db:connect', options),

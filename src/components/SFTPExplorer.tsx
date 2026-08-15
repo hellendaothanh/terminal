@@ -210,7 +210,10 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
 
   const handleDelete = async () => {
     if (!selectedFile) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa "${selectedFile.name}"?`)) {
+    const confirmMsg = settings?.language === 'en'
+      ? `Are you sure you want to delete "${selectedFile.name}"?`
+      : `Bạn có chắc chắn muốn xóa "${selectedFile.name}"?`;
+    if (confirm(confirmMsg)) {
       const targetPath = currentPath === '/' ? `/${selectedFile.name}` : `${currentPath}/${selectedFile.name}`;
       const res = await window.api.sftpDelete(sessionId, targetPath, selectedFile.type === 'd');
       if (res.success) {

@@ -153,4 +153,167 @@ ${userPrompt}`;
       return { success: false, error: err.message };
     }
   }
+
+  public async generatePlaybook(
+    settings: AISettings,
+    userPrompt: string,
+    contextSnippet?: string,
+    targetServerInfo?: string
+  ): Promise<{ success: boolean; playbook?: any; error?: string }> {
+    try {
+      if (!settings || !settings.enabled) {
+        return { success: false, error: 'Tính năng AI chưa được kích hoạt trong Cài Đặt.' };
+      }
+
+      const isEn = (settings as any).language === 'en';
+      const systemInstruction = isEn
+        ? `You are an elite Site Reliability Engineer (SRE) and DevOps Automation Architect.
+Your task is to parse the user's natural language request into a robust, idempotent, multi-step DevOps Playbook.
+Target Server Information: ${targetServerInfo || 'Linux Server (Debian/Ubuntu/RHEL/CentOS)'}
+
+CRITICAL RULES:
+1. Each step must have:
+   - "name": Concise step title (e.g. "Backup Nginx Configuration", "Install Dependencies", "Deploy App", "Verify Service Health").
+   - "description": Clear explanation of what this step does and why.
+   - "checkCommand": A SAFE, non-destructive read-only command used for Dry-Run and Pre-check (e.g. "nginx -t", "docker ps | grep app", "systemctl is-active mysqld || true", "test -f /etc/config.json && echo EXISTS || echo MISSING", "df -h /").
+   - "command": The exact executable shell command for this step. Use idempotent flags where possible (e.g. "mkdir -p", "apt-get update -y && apt-get install -y --no-install-recommends", "cp -n", "systemctl restart").
+   - "rollbackCommand": The exact shell command to undo/revert this step if a subsequent step fails (e.g. "mv /etc/nginx/nginx.conf.bak /etc/nginx/nginx.conf && systemctl reload nginx", "docker stop new_container && docker start old_container", "rm -rf /opt/temp_dir").
+   - "riskLevel": One of "LOW", "MEDIUM", "HIGH", "CRITICAL".
+   - "timeoutSeconds": Reasonable timeout (e.g. 30 to 300).
+   - "ignoreError": boolean (true only if non-fatal like optional cleanup).
+
+2. You MUST return ONLY valid, raw JSON with no Markdown wrappers, backticks, or other text.
+Format JSON schema:
+{
+  "title": "Short title of the playbook",
+  "description": "Comprehensive summary of the automation flow",
+  "targetEnvironment": "ALL",
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "...",
+      "description": "...",
+      "checkCommand": "...",
+      "command": "...",
+      "rollbackCommand": "...",
+      "riskLevel": "LOW|MEDIUM|HIGH|CRITICAL",
+      "timeoutSeconds": 60,
+      "ignoreError": false
+    }
+  ]
+}`
+        : `Bạn là Chuyên gia Cao cấp về Tự động hóa Hạ tầng SRE và DevOps Architect.
+Nhiệm vụ của bạn là chuyển đổi yêu cầu ngôn ngữ tự nhiên của người dùng thành một Kịch bản Tự động hóa DevOps nhiều bước (Multi-Step Playbook) có tính ổn định cao, an toàn và có khả năng phục hồi.
+Thông tin Máy chủ Đích: ${targetServerInfo || 'Máy chủ Linux (Debian/Ubuntu/CentOS/RHEL)'}
+
+QUY TẮC BẮT BUỘC:
+1. Mỗi bước (step) cần có:
+   - "name": Tên bước ngắn gọn, rõ ràng (Ví dụ: "Sao lưu cấu hình Nginx", "Cài đặt gói phụ thuộc", "Khởi động Service", "Kiểm tra cổng dịch vụ").
+   - "description": Mô tả chi tiết mục đích và hành vi của bước.
+   - "checkCommand": Lệnh kiểm tra an toàn (chỉ đọc / non-destructive) để chạy Dry-Run & Pre-check (Ví dụ: "nginx -t", "systemctl is-active nginx || true", "test -d /var/www/app && echo EXISTS || echo MISSING", "curl -sI http://localhost:8080 || true").
+   - "command": Câu lệnh shell thực thi chính xác của bước. Hãy dùng cờ idempotent nếu có thể ("mkdir -p", "apt-get install -y", "systemctl restart").
+   - "rollbackCommand": Câu lệnh hoàn tác khôi phục lại trạng thái trước đó nếu bước này hoặc các bước sau bị lỗi (Ví dụ: "mv /etc/nginx/nginx.conf.bak /etc/nginx/nginx.conf && systemctl reload nginx", "docker rollback...", "rm -rf /opt/app_tmp").
+   - "riskLevel": Một trong các mức "LOW", "MEDIUM", "HIGH", "CRITICAL".
+   - "timeoutSeconds": Thời gian chờ tối đa (giây, vd: 30 - 300).
+   - "ignoreError": boolean (true nếu bước phụ không bắt buộc thành công).
+
+2. CHỈ TRẢ VỀ DUY NHẤT một chuỗi JSON thuần hợp lệ (Raw JSON), không dùng markdown code block \`\`\`json, không kèm lời giải thích bên ngoài.
+Cấu trúc JSON:
+{
+  "title": "Tiêu đề kịch bản",
+  "description": "Mô tả tổng quát quy trình",
+  "targetEnvironment": "ALL",
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "...",
+      "description": "...",
+      "checkCommand": "...",
+      "command": "...",
+      "rollbackCommand": "...",
+      "riskLevel": "LOW|MEDIUM|HIGH|CRITICAL",
+      "timeoutSeconds": 60,
+      "ignoreError": false
+    }
+  ]
+}`;
+
+      let fullPrompt = userPrompt;
+      if (contextSnippet && contextSnippet.trim()) {
+        fullPrompt = `[Context Data / System Status]:\n${contextSnippet.trim()}\n\n[DevOps Playbook Goal]:\n${userPrompt}`;
+      }
+
+      let rawResponse = '';
+
+      if (settings.provider === 'gemini') {
+        const model = settings.model || 'gemini-1.5-flash';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${settings.apiKey}`;
+        const contents = [
+          { role: 'user', parts: [{ text: systemInstruction }] },
+          { role: 'user', parts: [{ text: fullPrompt }] }
+        ];
+
+        const res = await this.makeRequest(url, { body: { contents } });
+        rawResponse = res.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        // OpenAI or Custom
+        const baseUrl = (settings.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+        const model = settings.model || 'gpt-4o-mini';
+        const url = `${baseUrl}/chat/completions`;
+        const headers: Record<string, string> = {};
+        if (settings.apiKey) headers['Authorization'] = `Bearer ${settings.apiKey}`;
+
+        const messages = [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: fullPrompt }
+        ];
+
+        const res = await this.makeRequest(url, {
+          headers,
+          body: { model, messages, temperature: 0.2 }
+        });
+        rawResponse = res.choices?.[0]?.message?.content || '';
+      }
+
+      if (!rawResponse) {
+        return { success: false, error: 'Không nhận được dữ liệu từ AI Provider.' };
+      }
+
+      // Clean markdown code blocks if AI accidentally added them
+      let cleanedJson = rawResponse.trim();
+      if (cleanedJson.startsWith('```json')) {
+        cleanedJson = cleanedJson.slice(7);
+      } else if (cleanedJson.startsWith('```')) {
+        cleanedJson = cleanedJson.slice(3);
+      }
+      if (cleanedJson.endsWith('```')) {
+        cleanedJson = cleanedJson.slice(0, -3);
+      }
+      cleanedJson = cleanedJson.trim();
+
+      const parsedPlaybook = JSON.parse(cleanedJson);
+      parsedPlaybook.id = 'playbook_' + Date.now();
+      parsedPlaybook.createdAt = Date.now();
+
+      if (Array.isArray(parsedPlaybook.steps)) {
+        parsedPlaybook.steps = parsedPlaybook.steps.map((s: any, idx: number) => ({
+          id: s.id || `step_${idx + 1}`,
+          name: s.name || `Step ${idx + 1}`,
+          description: s.description || '',
+          checkCommand: s.checkCommand || '',
+          command: s.command || '',
+          rollbackCommand: s.rollbackCommand || '',
+          riskLevel: s.riskLevel || 'LOW',
+          timeoutSeconds: s.timeoutSeconds || 60,
+          ignoreError: Boolean(s.ignoreError),
+          status: 'PENDING'
+        }));
+      }
+
+      return { success: true, playbook: parsedPlaybook };
+    } catch (err: any) {
+      return { success: false, error: 'Lỗi tạo Playbook: ' + err.message };
+    }
+  }
 }
+

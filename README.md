@@ -40,11 +40,13 @@
 * **SQL Query Console:** Interactive SQL editor with `Ctrl + Enter` (or `Cmd + Enter`) execution shortcut.
 * **Data Grid & CSV Export:** Styled dark-mode data table view with row count breakdown, execution time measurement (ms), and one-click CSV export.
 
-### 7. 🤖 DevOps & Database AI Assistant
+### 7. 🤖 DevOps & Database AI Assistant & Multi-Step Playbook Generator
+* **Natural Language to DevOps Playbook:** Transform natural language requests into structured, multi-step Ansible-like or Bash execution playbooks with safety check commands (Dry-Run / Pre-Check) and automatic rollback commands (LIFO undo stack on failure).
+* **Live Server Telemetry Context:** Agentless inspection retrieves live remote OS distribution, Kernel, CPU model/cores, RAM availability, Disk partition usage, and installed services (Docker, Node, Python, Nginx, MySQL) to tailor AI responses and scripts to the exact server environment.
 * **Flexible Provider Support:** Native integration with **Google Gemini AI** (`gemini-1.5-flash`, `gemini-2.0-flash`), **OpenAI** (`gpt-4o`, `gpt-4o-mini`), and **Custom Endpoints (Ollama / vLLM / LocalAI / DeepSeek)**.
-* **Free-Text Model Selection:** Type any model string directly into the model field with autocomplete recommendations.
-* **Auto-Capture Live Context:** One-click **"📥 Auto-Capture Live Terminal / DB Context"** button imports recent terminal lines, active SQL queries, and error stack traces directly into the AI prompt.
-* **Rich Markdown Formatter:** Clean HTML/Markdown renderer with syntax highlighting and one-click **"Paste to Terminal"** buttons.
+* **Auto-Capture Live Screen Context:** One-click **"📥 Auto-Capture Live Terminal / DB Context"** button imports recent terminal lines, active SQL queries, and error stack traces directly into the AI prompt.
+* **Resizable & Expandable Workspace:** Drag-to-resize drawer handle (400px - 85vw) with a one-click Maximize toggle for spacious playbook editing and terminal logs inspection.
+* **Rich Markdown Formatter & Export:** Clean HTML/Markdown renderer with syntax highlighting, one-click **"Paste to Terminal"**, and export to **Bash (.sh)**, **Ansible (.yml)**, and **JSON Playbook**.
 
 ### 8. 🔑 KeePass-style Password Manager
 * **Secure Vault Storage:** Encrypt and store unlimited login credentials (Title, Username, Password, URL, Notes) using AES-256-GCM.

@@ -47,6 +47,9 @@ export interface ElectronAPI {
   aiTestKey: (settings: any) => Promise<{ success: boolean; message?: string; error?: string }>;
   aiChat: (settings: any, userPrompt: string, history: any[], contextSnippet?: string) => Promise<{ success: boolean; reply?: string; error?: string }>;
   aiSendMessage: (prompt: string, aiConfig: any) => Promise<string>;
+  aiGeneratePlaybook: (settings: any, userPrompt: string, contextSnippet?: string, targetServerInfo?: string) => Promise<{ success: boolean; playbook?: any; error?: string }>;
+  playbookExecuteStep: (server: any, command: string, key?: any, vaultConfig?: any) => Promise<{ success: boolean; output: string; error?: string; executionTimeMs: number }>;
+  serverInspectTelemetry: (server: any, key?: any, vaultConfig?: any) => Promise<{ success: boolean; info: string; error?: string }>;
 
   dbConnect: (options: any) => Promise<{ success: boolean; error?: string }>;
   dbListDatabases: (sessionId: string, dbType: string) => Promise<{ success: boolean; databases?: string[]; error?: string }>;
