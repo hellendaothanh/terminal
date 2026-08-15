@@ -18,8 +18,9 @@ export function createSocksServer(
     let phase = 'handshake';
     let requestBuffer = Buffer.alloc(0);
 
-    socket.on('data', (data) => {
+    socket.on('data', (rawChunk) => {
       try {
+        const data = Buffer.isBuffer(rawChunk) ? rawChunk : Buffer.from(rawChunk);
         if (phase === 'handshake') {
           if (data.length < 2) {
             socket.end();
