@@ -89,7 +89,7 @@
     "electron-builder": "^26.15.3",
     "eslint-plugin-security": "^4.0.1",
     "tree-kill": "^1.2.2",
-    "typescript": "^5.7.2",
+    "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vite-plugin-electron": "^1.1.1",
     "vite-plugin-electron-renderer": "^1.0.0"
