@@ -43,7 +43,7 @@
 ### 7. 🤖 Trợ Lý AI Chuyên Sâu & Bộ Sinh DevOps Playbook Tự Động
 * **Chuyển Ngôn Ngữ Tự Nhiên sang Kịch Bản DevOps Đa Bước:** Tự động phân tích yêu cầu bằng lời nói/văn bản thành kịch bản thực thi dạng Ansible hoặc Bash đa bước với lệnh kiểm tra an toàn (**Dry-Run / Pre-Check**) và cơ chế hoàn tác tự động (**LIFO Automatic Rollback**) khi có lỗi.
 * **Tự Động Nạp Tình Trạng Máy Chủ (Live Server Telemetry):** Cơ chế quét agentless siêu nhẹ tự động nạp phân phối OS (Ubuntu, Debian, CentOS, RHEL), Kernel, CPU Cores, RAM, dung lượng Disk và danh sách dịch vụ cài sẵn (Docker, NodeJS, Python, Nginx, MySQL) để sinh lệnh chính xác 100% theo môi trường thực tế.
-* **Nhà Cung Cấp Linh Hoạt:** Hỗ trợ **Google Gemini AI** (`gemini-1.5-flash`, `gemini-2.0-flash`), **OpenAI** (`gpt-4o`, `gpt-4o-mini`) và **Custom API (Ollama / vLLM / LocalAI / DeepSeek)** với Custom Base URL.
+* **Nhà Cung Cấp Linh Hoạt:** Hỗ trợ **Google Gemini AI**, **OpenAI** và **Custom API (Ollama / vLLM / LocalAI / DeepSeek)** với Custom Base URL.
 * **Nạp Ngữ Cảnh Màn Hình:** Nút **"📥 Nạp Tự Động Từ Màn Hình Terminal/CSDL"** tự nạp log Terminal hoặc câu lệnh/vết lỗi SQL thời gian thực cho AI phân tích.
 * **Tùy Chỉnh Kích Thước Khung AI Linh Hoạt:** Thanh kéo mép trái hỗ trợ kéo thả chuột (400px - 85vw) cùng nút Phóng to / Thu nhỏ (Maximize) giúp hiển thị kịch bản và log terminal rõ ràng, thoáng đãng.
 * **Định Dạng Markdown & Xuất Kịch Bản:** Hỗ trợ nút **"Dán Lệnh"** trực tiếp vào Terminal, xuất kịch bản ra file **Bash (.sh)**, **Ansible (.yml)** hoặc **JSON Playbook**.

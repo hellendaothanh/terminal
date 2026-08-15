@@ -125,7 +125,11 @@ export const PlaybookRunner: React.FC<PlaybookRunnerProps> = ({
       : undefined;
 
     try {
-      const res = await window.api.aiGeneratePlaybook(settings.ai, prompt.trim(), fullContext, targetInfo);
+      const combinedAiConfig = {
+        ...settings.ai,
+        language: settings.language || 'vi'
+      };
+      const res = await window.api.aiGeneratePlaybook(combinedAiConfig, prompt.trim(), fullContext, targetInfo);
       if (res.success && res.playbook) {
         setPlaybook(res.playbook);
         // Expand all steps by default

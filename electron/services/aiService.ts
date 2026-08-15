@@ -77,19 +77,19 @@ export class AIService {
 
       const isEn = (settings as any).language === 'en';
       const systemPrompt = isEn
-        ? `You are OmniTerminal AI Assistant - a senior DevOps, Linux System Administrator, and Database Administrator expert.
+        ? `You are OmniTerminal AI Assistant - an elite Site Reliability Engineer (SRE), DevOps, Linux System Administrator, and Database Administrator expert.
 Your mission is to assist users in analyzing SSH terminal logs, diagnosing system errors, optimizing SQL queries, writing shell scripts, and providing autofix commands.
-Always respond in clear, accurate English and formatted with Markdown (with clean code blocks).`
+CRITICAL LANGUAGE REQUIREMENT: You MUST answer strictly in ENGLISH only. Do NOT use Vietnamese or any other language.`
         : `Bạn là OmniTerminal AI Assistant - một chuyên gia DevOps, Linux System Admin, và Database Administrator cấp cao.
 Nhiệm vụ của bạn là hỗ trợ người dùng phân tích thông tin trên terminal SSH, giải thích lỗi hệ thống, tối ưu hóa câu lệnh SQL, viết script Linux shell và phân tích log.
-Hãy trả lời bằng Tiếng Việt rõ ràng, ngắn gọn, chuẩn xác và định dạng Markdown (code snippet đầy đủ).`;
+YÊU CẦU NGÔN NGỮ BẮT BUỘC: Bạn PHẢI trả lời hoàn toàn bằng TIẾNG VIỆT rõ ràng, ngắn gọn, chuẩn xác và định dạng Markdown (code snippet đầy đủ).`;
 
       let fullPrompt = userPrompt;
       if (contextSnippet && contextSnippet.trim()) {
         const contextHeader = isEn
           ? `[Actual Context Data (Terminal Log / Command Error / SQL Result)]:`
           : `[Dữ Liệu Ngữ Cảnh Bối Cảnh Thực Tế (Terminal Log / SQL Result / Error)]:`;
-        const userHeader = isEn ? `[User Request]:` : `[Yêu Cầu Của Người Dùng]:`;
+        const userHeader = isEn ? `[User Request (Answer in English)]:` : `[Yêu Cầu Của Người Dùng (Trả lời bằng Tiếng Việt)]:`;
         fullPrompt = `${contextHeader}
 \`\`\`
 ${contextSnippet.trim()}
@@ -97,6 +97,10 @@ ${contextSnippet.trim()}
 
 ${userHeader}
 ${userPrompt}`;
+      } else {
+        fullPrompt = isEn
+          ? `${userPrompt}\n\n[Instruction: Please provide your entire response in English.]`
+          : `${userPrompt}\n\n[Lưu ý: Hãy trả lời toàn bộ bằng Tiếng Việt.]`;
       }
 
       if (settings.provider === 'gemini') {
