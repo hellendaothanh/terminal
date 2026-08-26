@@ -1,7 +1,7 @@
 {
   "name": "omni-terminal",
   "private": true,
-  "version": "1.5.23",
+  "version": "1.5.24",
   "description": "Cross-platform Server & Database Management Tool integrating SSH, SFTP, RDP, MySQL, PostgreSQL, Redis, MongoDB and AI Assistant",
   "main": "dist-electron/main.js",
   "type": "module",
