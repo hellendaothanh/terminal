@@ -4,6 +4,16 @@ All notable changes to **OmniTerminal** are documented in this file.
 
 This changelog is auto-generated from [Conventional Commits](https://www.conventionalcommits.org/) by `scripts/generate-changelog.mjs` on every release.
 
+## [v1.5.24](https://github.com/hellendaothanh/terminal/compare/v1.5.23...v1.5.24) - 2026-08-26
+
+### Features
+
+- **changelog:** auto-generate English release notes from conventional commits on release ([`685f83b`](https://github.com/hellendaothanh/terminal/commit/685f83b))
+
+### Dependency Updates
+
+- bump electron to 44, vite to 8.2.2 and update outdated dependencies ([`94588b0`](https://github.com/hellendaothanh/terminal/commit/94588b0))
+
 ## [v1.5.23](https://github.com/hellendaothanh/terminal/compare/v1.5.22...v1.5.23) - 2026-08-15
 
 ### Features
