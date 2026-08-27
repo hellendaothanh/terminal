@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ServerConfig, TerminalSettings } from '../types';
-import { 
-  Box, Layers, RefreshCw, Terminal, FileText, Play, Square, RotateCcw, 
-  Search, CheckCircle, AlertCircle, Server, ChevronRight, ChevronDown, 
-  Sliders, Settings, Download, Trash2, Maximize2, Minimize2, Activity,
-  Database, ShieldAlert, Cpu, HardDrive, Plus, PlusCircle
+import {
+  Box, Layers, RefreshCw, Terminal, FileText, Play, Square,
+  Search, ChevronRight, ChevronDown,
+  Trash2, Maximize2, Minimize2,
+  Plus
 } from 'lucide-react';
-import { useTranslation } from '../i18n/useTranslation';
+import { INITIAL_DOCKER_RESOURCES, INITIAL_K8S_RESOURCES } from './docker-k8s/constants';
+import type { ResourceItem } from './docker-k8s/types';
+import { LogsTab, TerminalTab, YamlTab, MetricsTab } from './docker-k8s/DrawerTabs';
+import { HelmInstallModal, HelmUpgradeModal, HelmRollbackModal } from './docker-k8s/HelmModals';
 
 interface DockerK8sPanelProps {
   servers: ServerConfig[];
@@ -14,26 +17,10 @@ interface DockerK8sPanelProps {
   settings?: TerminalSettings;
 }
 
-// Interfaces
-interface ResourceItem {
-  id: string;
-  name: string;
-  type: string;
-  image?: string;
-  status: string;
-  cpu: number;
-  memory: number;
-  ip?: string;
-  ports?: string;
-  age: string;
-}
-
 export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
   servers,
-  onOpenExecTerminal,
   settings
 }) => {
-  const { t } = useTranslation(settings);
   const sshServers = servers.filter((s) => s.protocol === 'SSH');
 
   // Core UI States
@@ -96,65 +83,9 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
   const logsEndRef = useRef<HTMLDivElement | null>(null);
 
   // Raw mock database
-  const [dockerResources, setDockerResources] = useState<Record<string, ResourceItem[]>>({
-    containers: [
-      { id: 'c102a39f', name: 'nginx-ingress-gateway', type: 'Container', image: 'nginx:alpine', status: 'running', cpu: 12, memory: 128, ip: '172.17.0.2', ports: '80:80, 443:443', age: '2d' },
-      { id: 'f87b2011', name: 'redis-cache-cluster', type: 'Container', image: 'redis:7-alpine', status: 'running', cpu: 4, memory: 64, ip: '172.17.0.3', ports: '6379:6379', age: '5d' },
-      { id: 'a912e45d', name: 'postgres-db-primary', type: 'Container', image: 'postgres:15', status: 'running', cpu: 18, memory: 512, ip: '172.17.0.4', ports: '5432:5432', age: '10d' },
-      { id: 'b5510c8e', name: 'payment-microservice-api', type: 'Container', image: 'node:18-slim', status: 'stopped', cpu: 0, memory: 0, ip: '172.17.0.5', ports: '3000:3000', age: '1d' }
-    ],
-    images: [
-      { id: 'img-nginx', name: 'nginx:alpine', type: 'Image', status: 'active', cpu: 0, memory: 0, age: '15d', ports: '23.4 MB' },
-      { id: 'img-redis', name: 'redis:7-alpine', type: 'Image', status: 'active', cpu: 0, memory: 0, age: '30d', ports: '32.1 MB' },
-      { id: 'img-postgres', name: 'postgres:15', type: 'Image', status: 'active', cpu: 0, memory: 0, age: '45d', ports: '379 MB' }
-    ],
-    volumes: [
-      { id: 'vol-postgres', name: 'pg_data_vol', type: 'Volume', status: 'active', cpu: 0, memory: 0, age: '10d', ports: 'Local /var/lib/postgresql/data' },
-      { id: 'vol-redis', name: 'redis_config_vol', type: 'Volume', status: 'active', cpu: 0, memory: 0, age: '5d', ports: 'Local /data' }
-    ],
-    networks: [
-      { id: 'net-bridge', name: 'bridge', type: 'Network', status: 'active', cpu: 0, memory: 0, age: '60d', ports: 'bridge / local' },
-      { id: 'net-overlay', name: 'app_overlay_net', type: 'Network', status: 'active', cpu: 0, memory: 0, age: '12d', ports: 'overlay / swarm' }
-    ]
-  });
+  const [dockerResources, setDockerResources] = useState<Record<string, ResourceItem[]>>(INITIAL_DOCKER_RESOURCES);
 
-  const [k8sResources, setK8sResources] = useState<Record<string, ResourceItem[]>>({
-    pods: [
-      { id: 'pod-auth', name: 'auth-service-589f6d79b-4k2x9', type: 'Pod', image: 'auth-service:v1.4.2', status: 'running', cpu: 15, memory: 256, ip: '10.244.1.15', age: '3d' },
-      { id: 'pod-pay', name: 'payment-gateway-7c4d989f-8m1l2', type: 'Pod', image: 'payment-gateway:v2.1', status: 'running', cpu: 22, memory: 312, ip: '10.244.2.42', age: '5d' },
-      { id: 'pod-worker', name: 'background-worker-6b8c9d-9q5z1', type: 'Pod', image: 'worker:latest', status: 'CrashLoopBackOff', cpu: 0, memory: 0, ip: '10.244.1.88', age: '1d' },
-      { id: 'pod-front', name: 'frontend-nextjs-84b79c-3t7v4', type: 'Pod', image: 'nextjs-app:v3.0.1', status: 'running', cpu: 8, memory: 180, ip: '10.244.2.19', age: '7d' }
-    ],
-    deployments: [
-      { id: 'dep-auth', name: 'auth-service', type: 'Deployment', image: 'Replicas: 2/2', status: 'active', cpu: 15, memory: 512, age: '30d' },
-      { id: 'dep-payment', name: 'payment-gateway', type: 'Deployment', image: 'Replicas: 1/1', status: 'active', cpu: 22, memory: 312, age: '25d' },
-      { id: 'dep-worker', name: 'background-worker', type: 'Deployment', image: 'Replicas: 0/1 (Degraded)', status: 'CrashLoopBackOff', cpu: 0, memory: 0, age: '12d' }
-    ],
-    statefulsets: [
-      { id: 'sts-db', name: 'postgres-db-stateful', type: 'StatefulSet', image: 'Replicas: 1/1', status: 'active', cpu: 18, memory: 512, age: '15d' }
-    ],
-    services: [
-      { id: 'svc-auth', name: 'auth-service-svc', type: 'Service', image: 'ClusterIP / Port 80', status: 'active', cpu: 0, memory: 0, ip: '10.96.42.11', age: '30d' },
-      { id: 'svc-payment', name: 'payment-svc', type: 'Service', image: 'LoadBalancer / Port 443', status: 'active', cpu: 0, memory: 0, ip: '34.120.45.99', age: '25d' }
-    ],
-    ingress: [
-      { id: 'ing-main', name: 'main-routing-ingress', type: 'Ingress', image: 'nginx-ingress', status: 'active', cpu: 0, memory: 0, ip: 'api.omniterminal.dev', age: '30d' }
-    ],
-    configmaps: [
-      { id: 'cm-app', name: 'app-global-config', type: 'ConfigMap', image: 'Keys: 8', status: 'active', cpu: 0, memory: 0, age: '45d' },
-      { id: 'sec-db', name: 'database-credentials-secret', type: 'Secret', image: 'Keys: 3 (Encrypted)', status: 'active', cpu: 0, memory: 0, age: '45d' }
-    ],
-    helmReleases: [
-      { id: 'helm-nginx', name: 'ingress-nginx', type: 'HelmRelease', image: 'Chart: ingress-nginx-4.8.3 / Version: 1.9.4', status: 'deployed', cpu: 0, memory: 0, age: '12d', ip: 'Revision: 2' },
-      { id: 'helm-prometheus', name: 'prometheus-stack', type: 'HelmRelease', image: 'Chart: kube-prometheus-stack-55.0.0 / Version: v0.70.0', status: 'deployed', cpu: 0, memory: 0, age: '4d', ip: 'Revision: 1' },
-      { id: 'helm-redis', name: 'redis-cluster', type: 'HelmRelease', image: 'Chart: redis-18.6.1 / Version: 7.2.3', status: 'failed', cpu: 0, memory: 0, age: '2h', ip: 'Revision: 3' }
-    ],
-    crds: [
-      { id: 'crd-cert', name: 'certificates.cert-manager.io', type: 'CRD', image: 'Group: cert-manager.io / Scope: Namespaced', status: 'active', cpu: 0, memory: 0, age: '30d' },
-      { id: 'crd-issuer', name: 'clusterissuers.cert-manager.io', type: 'CRD', image: 'Group: cert-manager.io / Scope: Cluster', status: 'active', cpu: 0, memory: 0, age: '30d' },
-      { id: 'crd-prom', name: 'prometheuses.monitoring.coreos.com', type: 'CRD', image: 'Group: monitoring.coreos.com / Scope: Cluster', status: 'active', cpu: 0, memory: 0, age: '15d' }
-    ]
-  });
+  const [k8sResources, setK8sResources] = useState<Record<string, ResourceItem[]>>(INITIAL_K8S_RESOURCES);
 
   // Simulated live logs
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
@@ -953,172 +884,34 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
             {!isDrawerCollapsed && (
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-tertiary)' }}>
                 
-                {/* 1. Logs Tab Content */}
+                {/* Drawer Tab Contents */}
                 {drawerActiveTab === 'logs' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    {/* Log Filter header bar */}
-                    <div style={{ display: 'flex', padding: '6px 16px', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                        <Search size={12} style={{ color: 'var(--text-dim)' }} />
-                        <input 
-                          type="text" 
-                          placeholder="Regex Filter..." 
-                          value={logsRegex} 
-                          onChange={(e) => setLogsRegex(e.target.value)}
-                          style={{
-                            border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none', width: '200px'
-                          }}
-                        />
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={autoScrollLogs} 
-                            onChange={(e) => setAutoScrollLogs(e.target.checked)} 
-                          />
-                          Auto-scroll
-                        </label>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '3px 8px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => {
-                            const blob = new Blob([liveLogs.join('\n')], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${selectedResource ? selectedResource.name : 'resource'}-logs.txt`;
-                            a.click();
-                          }}
-                        >
-                          <Download size={11} /> Download
-                        </button>
-                      </div>
-                    </div>
-                    {/* Log Output Console */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px', fontFamily: 'monospace', fontSize: '0.75rem', color: '#a7f3d0' }}>
-                      {liveLogs
-                        .filter(line => !logsRegex || new RegExp(logsRegex, 'i').test(line))
-                        .map((line, idx) => (
-                          <div key={idx} style={{ lineHeight: '1.4' }}>{line}</div>
-                        ))
-                      }
-                      <div ref={logsEndRef} />
-                    </div>
-                  </div>
+                  <LogsTab
+                    logs={liveLogs}
+                    logsRegex={logsRegex}
+                    onLogsRegexChange={setLogsRegex}
+                    autoScroll={autoScrollLogs}
+                    onAutoScrollChange={setAutoScrollLogs}
+                    resourceName={selectedResource?.name}
+                    logsEndRef={logsEndRef}
+                  />
                 )}
 
-                {/* 2. Interactive Terminal Tab Content */}
                 {drawerActiveTab === 'terminal' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '10px 16px', fontFamily: 'monospace', fontSize: '0.75rem', color: '#f3f4f6' }}>
-                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {terminalHistory.map((line, idx) => (
-                        <div key={idx} style={{ whiteSpace: 'pre-wrap' }}>{line}</div>
-                      ))}
-                    </div>
-                    <form onSubmit={handleTerminalSubmit} style={{ display: 'flex', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', marginTop: '6px' }}>
-                      <span style={{ color: 'var(--accent-primary)', marginRight: '6px', fontWeight: 600 }}>$</span>
-                      <input 
-                        type="text" 
-                        value={terminalInput} 
-                        onChange={(e) => setTerminalInput(e.target.value)}
-                        placeholder="Type shell command (e.g. ls, df -h, env) and press Enter..."
-                        style={{
-                          flex: 1, background: 'transparent', border: 'none', color: '#fff', outline: 'none', fontSize: '0.75rem', fontFamily: 'monospace'
-                        }}
-                      />
-                    </form>
-                  </div>
+                  <TerminalTab
+                    history={terminalHistory}
+                    input={terminalInput}
+                    onInputChange={setTerminalInput}
+                    onSubmit={handleTerminalSubmit}
+                  />
                 )}
 
-                {/* 3. YAML / Inspect Tab Content */}
                 {drawerActiveTab === 'yaml' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    {/* Monaco style editor container */}
-                    <div style={{ flex: 1, overflow: 'auto', padding: '10px 16px', fontFamily: 'monospace', fontSize: '0.75rem', backgroundColor: 'var(--bg-tertiary)', color: '#cbd5e1' }}>
-                      <textarea
-                        value={yamlContent}
-                        onChange={(e) => setYamlContent(e.target.value)}
-                        style={{
-                          width: '100%', height: '100%', background: 'transparent', border: 'none', color: '#e2e8f0', outline: 'none', fontFamily: 'monospace', fontSize: '0.75rem', resize: 'none'
-                        }}
-                      />
-                    </div>
-                  </div>
+                  <YamlTab content={yamlContent} onChange={setYamlContent} />
                 )}
 
-                {/* 4. Resource Metrics Tab Content */}
                 {drawerActiveTab === 'metrics' && (
-                  <div style={{ display: 'flex', padding: '16px', gap: '16px', height: '100%', overflowY: 'auto' }}>
-                    
-                    {/* CPU Metrics Card */}
-                    <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Cpu size={12} style={{ color: 'var(--accent-primary)' }} /> CPU UTILIZATION
-                        </span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                          {metricHistory.cpu[metricHistory.cpu.length - 1].toFixed(1)}%
-                        </span>
-                      </div>
-                      
-                      {/* SVG CPU Sparkline */}
-                      <div style={{ flex: 1, minHeight: '60px' }}>
-                        <svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                          <defs>
-                            <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="var(--accent-primary)" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0.0" />
-                            </linearGradient>
-                          </defs>
-                          <path 
-                            d={`M 0 30 ${metricHistory.cpu.map((val, idx) => `L ${(idx / (metricHistory.cpu.length - 1)) * 100} ${30 - (val / 100) * 30}`).join(' ')} L 100 30 Z`} 
-                            fill="url(#cpuGrad)" 
-                          />
-                          <path 
-                            d={metricHistory.cpu.map((val, idx) => `${idx === 0 ? 'M' : 'L'} ${(idx / (metricHistory.cpu.length - 1)) * 100} ${30 - (val / 100) * 30}`).join(' ')} 
-                            fill="none" 
-                            stroke="var(--accent-primary)" 
-                            strokeWidth="1.5" 
-                          />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* RAM Metrics Card */}
-                    <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Activity size={12} style={{ color: '#c084fc' }} /> MEMORY ALLOCATION
-                        </span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                          {metricHistory.memory[metricHistory.memory.length - 1].toFixed(1)}%
-                        </span>
-                      </div>
-
-                      {/* SVG Memory Sparkline */}
-                      <div style={{ flex: 1, minHeight: '60px' }}>
-                        <svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                          <defs>
-                            <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#c084fc" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#c084fc" stopOpacity="0.0" />
-                            </linearGradient>
-                          </defs>
-                          <path 
-                            d={`M 0 30 ${metricHistory.memory.map((val, idx) => `L ${(idx / (metricHistory.memory.length - 1)) * 100} ${30 - (val / 100) * 30}`).join(' ')} L 100 30 Z`} 
-                            fill="url(#memGrad)" 
-                          />
-                          <path 
-                            d={metricHistory.memory.map((val, idx) => `${idx === 0 ? 'M' : 'L'} ${(idx / (metricHistory.memory.length - 1)) * 100} ${30 - (val / 100) * 30}`).join(' ')} 
-                            fill="none" 
-                            stroke="#c084fc" 
-                            strokeWidth="1.5" 
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+                  <MetricsTab metricHistory={metricHistory} />
                 )}
 
               </div>
@@ -1187,195 +980,41 @@ export const DockerK8sPanel: React.FC<DockerK8sPanelProps> = ({
         </>
       )}
 
-      {/* Install Helm Release Modal */}
-      {showInstallHelmModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-focus)',
-            borderRadius: 'var(--radius-md)',
-            padding: '24px',
-            width: '450px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <PlusCircle style={{ color: '#c084fc' }} size={20} />
-              {settings?.language === 'vi' ? 'Cài đặt Helm Chart' : 'Install Helm Chart'}
-            </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Release Name *</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  value={helmReleaseName}
-                  onChange={(e) => setHelmReleaseName(e.target.value)}
-                  placeholder="e.g. my-nginx"
-                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Chart Reference *</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  value={helmChartName}
-                  onChange={(e) => setHelmChartName(e.target.value)}
-                  placeholder="e.g. bitnami/nginx"
-                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Chart Version</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  value={helmVersion}
-                  onChange={(e) => setHelmVersion(e.target.value)}
-                  placeholder="e.g. 15.1.2"
-                  style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
-                />
-              </div>
+      {/* Helm Release Modals */}
+      <HelmInstallModal
+        isOpen={showInstallHelmModal}
+        language={settings?.language}
+        releaseName={helmReleaseName}
+        onReleaseNameChange={setHelmReleaseName}
+        chartName={helmChartName}
+        onChartNameChange={setHelmChartName}
+        version={helmVersion}
+        onVersionChange={setHelmVersion}
+        values={helmValues}
+        onValuesChange={setHelmValues}
+        onCancel={() => setShowInstallHelmModal(false)}
+        onInstall={handleInstallHelm}
+      />
 
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Values (YAML)</label>
-                <textarea 
-                  className="input-field"
-                  rows={4}
-                  value={helmValues}
-                  onChange={(e) => setHelmValues(e.target.value)}
-                  style={{ width: '100%', fontSize: '0.78rem', marginTop: '4px', fontFamily: 'monospace', resize: 'vertical' }}
-                />
-              </div>
-            </div>
+      <HelmUpgradeModal
+        isOpen={showUpgradeHelmModal}
+        language={settings?.language}
+        targetName={targetUpgradeItem?.name}
+        version={upgradeVersion}
+        onVersionChange={setUpgradeVersion}
+        onCancel={() => setShowUpgradeHelmModal(false)}
+        onUpgrade={handleUpgradeHelm}
+      />
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <button className="btn-secondary" onClick={() => setShowInstallHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
-                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
-              </button>
-              <button className="btn-primary" onClick={handleInstallHelm} disabled={!helmReleaseName} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
-                {settings?.language === 'vi' ? 'Cài Đặt' : 'Install'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upgrade Helm Release Modal */}
-      {showUpgradeHelmModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-focus)',
-            borderRadius: 'var(--radius-md)',
-            padding: '24px',
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-              🚀 {settings?.language === 'vi' ? `Nâng cấp: ${targetUpgradeItem?.name}` : `Upgrade: ${targetUpgradeItem?.name}`}
-            </h3>
-            
-            <div>
-              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Target Chart Version *</label>
-              <input 
-                type="text" 
-                className="input-field" 
-                value={upgradeVersion}
-                onChange={(e) => setUpgradeVersion(e.target.value)}
-                placeholder="e.g. 15.2.0"
-                style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button className="btn-secondary" onClick={() => setShowUpgradeHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
-                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
-              </button>
-              <button className="btn-primary" onClick={handleUpgradeHelm} disabled={!upgradeVersion} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
-                {settings?.language === 'vi' ? 'Nâng Cấp' : 'Upgrade'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rollback Helm Release Modal */}
-      {showRollbackHelmModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-focus)',
-            borderRadius: 'var(--radius-md)',
-            padding: '24px',
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-              ⏮ {settings?.language === 'vi' ? `Rollback: ${targetRollbackItem?.name}` : `Rollback: ${targetRollbackItem?.name}`}
-            </h3>
-            
-            <div>
-              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Target Revision *</label>
-              <select 
-                className="input-field" 
-                value={rollbackRevision}
-                onChange={(e) => setRollbackRevision(e.target.value)}
-                style={{ width: '100%', height: '32px', fontSize: '0.8rem', marginTop: '4px' }}
-              >
-                <option value="1">Revision 1</option>
-                <option value="2">Revision 2</option>
-                <option value="3">Revision 3</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button className="btn-secondary" onClick={() => setShowRollbackHelmModal(false)} style={{ height: '32px', fontSize: '0.75rem' }}>
-                {settings?.language === 'vi' ? 'Hủy' : 'Cancel'}
-              </button>
-              <button className="btn-primary" onClick={handleRollbackHelm} style={{ height: '32px', fontSize: '0.75rem', backgroundColor: '#c084fc', borderColor: '#c084fc' }}>
-                {settings?.language === 'vi' ? 'Rollback' : 'Rollback'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <HelmRollbackModal
+        isOpen={showRollbackHelmModal}
+        language={settings?.language}
+        targetName={targetRollbackItem?.name}
+        revision={rollbackRevision}
+        onRevisionChange={setRollbackRevision}
+        onCancel={() => setShowRollbackHelmModal(false)}
+        onRollback={handleRollbackHelm}
+      />
 
     </div>
   );

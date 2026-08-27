@@ -4,13 +4,21 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { ServerConfig, SSHKey, TerminalSettings } from '../types';
-import { Copy, Clipboard, ZoomIn, ZoomOut, KeyRound, Check, AlertCircle, RotateCcw, Sparkles, ChevronDown, ChevronUp, Bookmark, Share2, Users, Radio, Lock, Globe } from 'lucide-react';
+import { Check, AlertCircle, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
 import { ReAuthModal } from './ReAuthModal';
 import { ServerMetricsDashboard } from './ServerMetricsDashboard';
 import { ShellSmartAssistant } from './ShellSmartAssistant';
-import { CommandGuardApprovalModal } from './CommandGuardApprovalModal';
 import { QuickCommandsPanel } from './QuickCommandsPanel';
 import { useTranslation } from '../i18n/useTranslation';
+import { TERMINAL_THEMES } from './ssh-terminal/terminalThemes';
+import { COMMON_CMD_LIST, findAnomalyKeyword } from './ssh-terminal/constants';
+import { renderFormattedExplanation } from './ssh-terminal/markdownRenderer';
+import { getTerminalContextText } from './ssh-terminal/bufferUtils';
+import { useLiveShare } from './ssh-terminal/useLiveShare';
+import type { ShareMode } from './ssh-terminal/useLiveShare';
+import { LiveShareModal } from './ssh-terminal/LiveShareModal';
+import { TerminalToolbar } from './ssh-terminal/TerminalToolbar';
+import { TerminalContextMenu } from './ssh-terminal/TerminalContextMenu';
 
 interface SSHTerminalProps {
   sessionId: string;
@@ -21,51 +29,6 @@ interface SSHTerminalProps {
   settings: TerminalSettings;
   onUpdateServerPassword?: (serverId: string, newPassword: string) => void;
 }
-
-const THEMES: Record<string, any> = {
-  'one-dark': {
-    background: '#1e222a',
-    foreground: '#abb2bf',
-    cursor: '#528bff',
-    selectionBackground: '#3e4451',
-    black: '#1e222a',
-    red: '#e06c75',
-    green: '#98c379',
-    yellow: '#d19a66',
-    blue: '#61afef',
-    magenta: '#c678dd',
-    cyan: '#56b6c2',
-    white: '#abb2bf'
-  },
-  dracula: {
-    background: '#282a36',
-    foreground: '#f8f8f2',
-    cursor: '#f8f8f2',
-    selectionBackground: '#44475a',
-    black: '#21222c',
-    red: '#ff5555',
-    green: '#50fa7b',
-    yellow: '#f1fa8c',
-    blue: '#bd93f9',
-    magenta: '#ff79c6',
-    cyan: '#8be9fd',
-    white: '#f8f8f2'
-  },
-  monokai: {
-    background: '#272822',
-    foreground: '#f8f8f2',
-    cursor: '#f8f8f0',
-    selectionBackground: '#49483e',
-    black: '#272822',
-    red: '#f92672',
-    green: '#a6e22e',
-    yellow: '#e6db74',
-    blue: '#66d9ef',
-    magenta: '#ae81ff',
-    cyan: '#a1efe4',
-    white: '#f8f8f2'
-  }
-};
 
 export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   sessionId,
@@ -86,9 +49,6 @@ export const SSHTerminal: React.FC<SSHTerminalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(settings.fontSize || 14);
   const [isReAuthOpen, setIsReAuthOpen] = useState(false);
-
-  const [guardModalOpen, setGuardModalOpen] = useState<boolean>(false);
-  const [pendingCommand, setPendingCommand] = useState<{ command: string; risk: 'HIGH' | 'MEDIUM' } | null>(null);
 
   const [currentInput, setCurrentInput] = useState<string>('');
   const [historyCommands, setHistoryCommands] = useState<string[]>([]);
@@ -198,56 +158,10 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
   const currentInputRef = useRef<string>('');
   const historyCommandsRef = useRef<string[]>([]);
 
-  const HIGH_RISK_COMMANDS = ['rm -rf', 'drop database', 'drop table', 'truncate', 'chmod 777', 'mkfs', 'dd if=', 'shutdown', 'reboot', 'systemctl stop'];
-
-  const checkDangerousCommand = (cmd: string): 'HIGH' | 'MEDIUM' | null => {
-    const lower = cmd.toLowerCase();
-    if (HIGH_RISK_COMMANDS.some((kw) => lower.includes(kw))) return 'HIGH';
-    return null;
-  };
-
-  const ANOMALY_KEYWORDS = [
-    'option requires an argument',
-    'requires an argument',
-    'unrecognized option',
-    'invalid option',
-    'invalid argument',
-    'syntax error',
-    'SyntaxError',
-    'command not found',
-    'not found',
-    'no such file or directory',
-    'No such file or directory',
-    'Permission denied',
-    'Permission Denied',
-    'permission denied',
-    'Access denied',
-    'Access Denied',
-    'OutOfMemory',
-    'Out of memory',
-    'OOMKilled',
-    'Connection Refused',
-    'Connection refused',
-    'Segmentation Fault',
-    'segmentation fault',
-    'FATAL ERROR',
-    'Panic: ',
-    'Uncaught Exception',
-    'Cannot find module',
-    'is not recognized as an internal or external command',
-    'fatal:',
-    'FAILED',
-    'failed to start',
-    'Unit not found',
-    'could not find unit'
-  ];
-
   const checkAnomalyLogs = (text: string) => {
-    for (const kw of ANOMALY_KEYWORDS) {
-      if (text.includes(kw)) {
-        setAnomalyAlert(settings.language === 'vi' ? `Phát hiện lỗi log: "${kw}"` : `Error detected in logs: "${kw}"`);
-        break;
-      }
+    const kw = findAnomalyKeyword(text);
+    if (kw) {
+      setAnomalyAlert(settings.language === 'vi' ? `Phát hiện lỗi log: "${kw}"` : `Error detected in logs: "${kw}"`);
     }
   };
 
@@ -335,35 +249,8 @@ Return ONLY a raw JSON array of strings, for example: ["command1", "command2", "
       });
   };
 
-  const getTerminalBufferText = (): string => {
-    if (terminalRef.current) {
-      const selection = terminalRef.current.getSelection();
-      if (selection && selection.trim().length > 0) {
-        return selection;
-      }
-      const buffer = terminalRef.current.buffer.active;
-      const lines: string[] = [];
-      const start = Math.max(0, buffer.length - 40);
-      for (let i = start; i < buffer.length; i++) {
-        const line = buffer.getLine(i);
-        if (line) {
-          const str = line.translateToString(true);
-          if (str.trim().length > 0) lines.push(str);
-        }
-      }
-      if (lines.length > 0) {
-        return lines.join('\n');
-      }
-    }
-    if (recentOutputRef.current && recentOutputRef.current.trim().length > 0) {
-      return recentOutputRef.current.trim().split('\n').slice(-30).join('\n');
-    }
-    const bufferGetter = (window as any).__activeBuffers?.[sessionId];
-    return bufferGetter ? bufferGetter().text : '';
-  };
-
   const handleTriggerAutofix = async () => {
-    const textContext = getTerminalBufferText();
+    const textContext = getTerminalContextText(terminalRef.current, recentOutputRef.current, sessionId);
     const osInfo = detectedOs ? `Operating System: ${detectedOs}` : `Host: ${currentServer.host}`;
 
     setShowAiPanel(true);
@@ -409,191 +296,6 @@ Formatting requirements:
     }
   };
 
-  const renderFormattedExplanation = (content: string) => {
-    // 1. Separate code blocks (```...```) from regular markdown text
-    const blockRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
-    const elements: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    const renderInline = (text: string) => {
-      // Inline markdown: **bold**, `code`, *italic*
-      const inlineRegex = /(\*\*.*?\*\*|`.*?`|\*.*?\*)/g;
-      const parts = text.split(inlineRegex);
-      return parts.map((sub, sIdx) => {
-        if (sub.startsWith('**') && sub.endsWith('**') && sub.length >= 4) {
-          return <strong key={sIdx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>{sub.slice(2, -2)}</strong>;
-        }
-        if (sub.startsWith('*') && sub.endsWith('*') && sub.length >= 2 && !sub.startsWith('**')) {
-          return <em key={sIdx} style={{ color: 'var(--text-main)', fontStyle: 'italic' }}>{sub.slice(1, -1)}</em>;
-        }
-        if (sub.startsWith('`') && sub.endsWith('`') && sub.length >= 2) {
-          return (
-            <code
-              key={sIdx}
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                color: '#38bdf8',
-                padding: '2px 5px',
-                borderRadius: '4px',
-                fontSize: '0.74rem',
-                fontFamily: 'monospace',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              {sub.slice(1, -1)}
-            </code>
-          );
-        }
-        return sub;
-      });
-    };
-
-    const renderTextSection = (rawText: string, keyOffset: number) => {
-      const lines = rawText.split('\n');
-      return lines.map((line, idx) => {
-        const trimmed = line.trim();
-        if (!trimmed) return <div key={`${keyOffset}-${idx}`} style={{ height: '4px' }} />;
-
-        // Horizontal dividers
-        if (/^(?:---+|\*\*\*+|___+)$/.test(trimmed)) {
-          return <hr key={`${keyOffset}-${idx}`} style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '8px 0' }} />;
-        }
-
-        // Headings (e.g. #, ##, ###, or numbered headings like 1. Cause of the Failure)
-        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
-        if (headingMatch) {
-          const level = headingMatch[1].length;
-          const text = headingMatch[2];
-          const fontSize = level === 1 ? '0.95rem' : level === 2 ? '0.88rem' : '0.82rem';
-          return (
-            <h4 key={`${keyOffset}-${idx}`} style={{ fontSize, fontWeight: 700, color: 'var(--accent-primary)', margin: '8px 0 3px 0' }}>
-              {renderInline(text)}
-            </h4>
-          );
-        }
-
-        const numberedHeadingMatch = line.match(/^(\d+\.\s+[A-Za-zÀ-ỹ\s]+)$/);
-        if (numberedHeadingMatch) {
-          return (
-            <h4 key={`${keyOffset}-${idx}`} style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-primary)', margin: '8px 0 3px 0' }}>
-              {renderInline(numberedHeadingMatch[1])}
-            </h4>
-          );
-        }
-
-        // Bullet list items
-        const listMatch = line.match(/^(\*|-|\+)\s+(.+)$/);
-        if (listMatch) {
-          return (
-            <div key={`${keyOffset}-${idx}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', margin: '2px 0 2px 10px', color: 'var(--text-main)' }}>
-              <span style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', lineHeight: '1.2' }}>•</span>
-              <span style={{ lineHeight: '1.4' }}>{renderInline(listMatch[2])}</span>
-            </div>
-          );
-        }
-
-        return (
-          <p key={`${keyOffset}-${idx}`} style={{ margin: '3px 0', lineHeight: '1.45', color: 'var(--text-main)' }}>
-            {renderInline(line)}
-          </p>
-        );
-      });
-    };
-
-    let blockIdx = 0;
-    while ((match = blockRegex.exec(content)) !== null) {
-      if (match.index > lastIndex) {
-        const textBefore = content.substring(lastIndex, match.index);
-        elements.push(
-          <div key={`text-${blockIdx}`}>
-            {renderTextSection(textBefore, blockIdx * 1000)}
-          </div>
-        );
-      }
-
-      const lang = match[1] || 'bash';
-      const code = match[2].trim();
-
-      elements.push(
-        <div
-          key={`code-${blockIdx}`}
-          style={{
-            margin: '6px 0',
-            backgroundColor: 'var(--bg-tertiary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '6px',
-            overflow: 'hidden'
-          }}
-        >
-          {lang && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '2px 8px',
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              fontSize: '0.65rem',
-              color: 'var(--text-dim)',
-              borderBottom: '1px solid var(--border-subtle)',
-              fontFamily: 'monospace'
-            }}>
-              <span>{lang}</span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(code);
-                  showToast('success', t('copyToastSuccess').replace('{count}', String(code.length)));
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-dim)',
-                  cursor: 'pointer',
-                  fontSize: '0.68rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px'
-                }}
-              >
-                <Copy size={11} />
-                <span>{t('copySuccess') ? 'Copy' : 'Copy'}</span>
-              </button>
-            </div>
-          )}
-          <pre
-            style={{
-              margin: 0,
-              padding: '8px 10px',
-              fontFamily: 'monospace',
-              fontSize: '0.74rem',
-              color: '#38bdf8',
-              backgroundColor: 'transparent',
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-all'
-            }}
-          >
-            {code}
-          </pre>
-        </div>
-      );
-
-      lastIndex = blockRegex.lastIndex;
-      blockIdx++;
-    }
-
-    if (lastIndex < content.length) {
-      const remainingText = content.substring(lastIndex);
-      elements.push(
-        <div key={`text-final`}>
-          {renderTextSection(remainingText, blockIdx * 1000)}
-        </div>
-      );
-    }
-
-    return elements;
-  };
-
   const handleReconnect = () => {
     window.api.sshDisconnect(sessionId);
     if (terminalRef.current) {
@@ -611,7 +313,7 @@ Formatting requirements:
       fontSize: fontSize,
       cursorBlink: settings.cursorBlink ?? true,
       scrollback: settings.scrollback || 5000,
-      theme: THEMES[settings.theme] || THEMES['one-dark'],
+      theme: TERMINAL_THEMES[settings.theme] || TERMINAL_THEMES['one-dark'],
       allowProposedApi: true,
       scrollSensitivity: 2
     });
@@ -648,40 +350,6 @@ Formatting requirements:
         setGhostPosition(null);
         return;
       }
-
-      const COMMON_CMD_LIST = [
-        'ping -c 4 8.8.8.8',
-        'ping -c 4 google.com',
-        'df -h',
-        'free -h',
-        'uptime',
-        'ip a',
-        'ss -tulpn',
-        'netstat -tulpn',
-        'top -b -n 1',
-        'htop',
-        'cat /etc/os-release',
-        'uname -a',
-        'journalctl -xe --no-pager -n 50',
-        'journalctl -xe',
-        'systemctl status',
-        'systemctl list-units --type=service --state=running',
-        'docker ps -a',
-        'docker stats --no-stream',
-        'docker-compose ps',
-        'docker-compose up -d',
-        'kubectl get pods -A',
-        'kubectl get nodes -o wide',
-        'tail -n 50 /var/log/syslog',
-        'tail -n 50 /var/log/messages',
-        'tail -n 50 /var/log/nginx/error.log',
-        'ps aux --sort=-%mem | head -n 10',
-        'ps aux --sort=-%cpu | head -n 10',
-        'whoami',
-        'id',
-        'pwd',
-        'ls -la'
-      ];
 
       const allCandidates = Array.from(new Set([...(history || []).slice().reverse(), ...COMMON_CMD_LIST]));
       const matched = allCandidates.find((cmd) => cmd.toLowerCase().startsWith(trimmed) && cmd.length > typed.length);
@@ -1025,189 +693,36 @@ Formatting requirements:
     startConnection(updated);
   };
 
-  // Remote Web Share / Live Pairing states
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareMode, setShareMode] = useState<'READONLY' | 'INTERACTIVE'>('READONLY');
-  const shareModeRef = useRef<'READONLY' | 'INTERACTIVE'>('READONLY');
-  const [shareLink, setShareLink] = useState('');
-  const [shareKey, setShareKey] = useState('');
-  const [shareRoomId, setShareRoomId] = useState('');
-  const [isLiveShared, setIsLiveShared] = useState(false);
-  const peerInstanceRef = useRef<any>(null);
-  const activeConnectionsRef = useRef<any[]>([]);
-
-  // Function to compute full live share URL
-  const getLiveShareUrl = (roomId: string, key: string, mode: 'READONLY' | 'INTERACTIVE') => {
-    const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim()) 
-      ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '') 
+  // Remote Web Share / Live Pairing (WebRTC host feature)
+  const buildLiveShareUrl = (roomId: string, key: string, mode: ShareMode) => {
+    const baseUrl = (settings.liveShareRelayUrl && settings.liveShareRelayUrl.trim())
+      ? settings.liveShareRelayUrl.trim().replace(/\/+$/, '')
       : 'https://hellendaothanh.github.io/terminal';
     return `${baseUrl}?room=${roomId}&key=${key}&mode=${mode.toLowerCase()}&server=${encodeURIComponent(currentServer.name)}`;
   };
 
-  // Switch mode dynamically and update active link & permissions instantly
-  const handleSwitchShareMode = (newMode: 'READONLY' | 'INTERACTIVE') => {
-    setShareMode(newMode);
-    shareModeRef.current = newMode;
-
-    if (isLiveShared && shareRoomId && shareKey) {
-      const updatedUrl = getLiveShareUrl(shareRoomId, shareKey, newMode);
-      setShareLink(updatedUrl);
-      
-      // Notify all connected Web viewers about the permission change
-      if (activeConnectionsRef.current && activeConnectionsRef.current.length > 0) {
-        activeConnectionsRef.current.forEach((conn) => {
-          if (conn && conn.open) {
-            try {
-              conn.send({ type: 'MODE_UPDATED', mode: newMode });
-            } catch (_) {}
-          }
-        });
-      }
-      showToast('success', newMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
-    }
-  };
-
-  interface LiveViewer {
-    id: string;
-    ip: string;
-    joinedAt: string;
-    platform?: string;
-  }
-
-  const [showLiveViewersPopover, setShowLiveViewersPopover] = useState(false);
-  const [activeViewers, setActiveViewers] = useState<LiveViewer[]>([]);
-
-  // Cleanup WebRTC Peer on unmount or stop
-  const cleanupPeer = () => {
-    if (activeConnectionsRef.current) {
-      activeConnectionsRef.current.forEach((conn) => {
-        try { conn.close(); } catch (_) {}
-      });
-      activeConnectionsRef.current = [];
-    }
-    if (peerInstanceRef.current) {
-      try { peerInstanceRef.current.destroy(); } catch (_) {}
-      peerInstanceRef.current = null;
-    }
-    setActiveViewers([]);
-    setShowLiveViewersPopover(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      cleanupPeer();
-    };
-  }, []);
-
-  const handleStartLiveShare = () => {
-    cleanupPeer();
-
-    // Generate strong, cryptographically secure 256-bit / 32-char Access Key
-    const secureKey = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Unpredictable Room ID
-    const randomSalt = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 8);
-    const roomId = `omni_${sessionId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6)}_${randomSalt}`;
-
-    setShareKey(secureKey);
-    setShareRoomId(roomId);
-    shareModeRef.current = shareMode;
-
-    // Initialize PeerJS Host Server with reliable Google STUN servers
-    const PeerClass = (window as any).Peer;
-    if (PeerClass) {
-      try {
-        const peer = new PeerClass(roomId, {
-          config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun2.l.google.com:19302' }
-            ]
-          }
-        });
-        peerInstanceRef.current = peer;
-
-        peer.on('open', (id: string) => {
-          console.log('[Live Share Host] WebRTC Peer Room opened:', id);
-        });
-
-        peer.on('connection', (conn: any) => {
-          console.log('[Live Share Host] New remote viewer connected:', conn.peer);
-          
-          conn.on('open', () => {
-            // Verify access key handshake
-            conn.on('data', (data: any) => {
-              if (data && data.type === 'AUTH') {
-                if (data.key === secureKey) {
-                  activeConnectionsRef.current.push(conn);
-                  
-                  const viewerIp = data.ip || conn.peer || '127.0.0.1';
-                  const viewerItem: LiveViewer = {
-                    id: conn.peer,
-                    ip: viewerIp,
-                    joinedAt: new Date().toLocaleTimeString(),
-                    platform: data.platform || 'Web'
-                  };
-
-                  setActiveViewers((prev) => [...prev.filter(v => v.id !== conn.peer), viewerItem]);
-
-                  // Enforce current host-authorized permission mode, not the client's self-claimed mode!
-                  conn.send({ type: 'AUTH_OK', mode: shareModeRef.current });
-                  showToast('success', t('liveViewerJoined').replace('{ip}', viewerIp));
-                } else {
-                  conn.send({ type: 'AUTH_FAILED', message: 'Invalid Access Key' });
-                  conn.close();
-                }
-              } else if (data && data.type === 'INPUT') {
-                // STRICT SECURITY: Only execute input if Host is currently in INTERACTIVE mode!
-                if (shareModeRef.current === 'INTERACTIVE' && data.payload) {
-                  window.api.sshWrite(sessionId, data.payload);
-                } else {
-                  // Reject un-authorized input attempts
-                  conn.send({ type: 'INPUT_REJECTED', message: 'Read-Only Mode: Typing is disabled by Host' });
-                }
-              }
-            });
-          });
-
-          conn.on('close', () => {
-            activeConnectionsRef.current = activeConnectionsRef.current.filter(c => c !== conn);
-            setActiveViewers((prev) => {
-              const leavingViewer = prev.find(v => v.id === conn.peer);
-              if (leavingViewer) {
-                showToast('empty', t('liveViewerLeft').replace('{ip}', leavingViewer.ip));
-              }
-              return prev.filter(v => v.id !== conn.peer);
-            });
-          });
-        });
-
-        peer.on('error', (err: any) => {
-          console.error('[Live Share Host] Peer error:', err);
-        });
-      } catch (e) {
-        console.error('Failed to init PeerJS Host:', e);
-      }
-    }
-
-    const url = getLiveShareUrl(roomId, secureKey, shareMode);
-    setShareLink(url);
-    setIsLiveShared(true);
-    showToast('success', shareMode === 'READONLY' ? t('liveShareReadonlyStarted') : t('liveShareInteractiveStarted'));
-  };
-
-  const handleStopLiveShare = () => {
-    cleanupPeer();
-    setShareLink('');
-    setShareKey('');
-    setShareRoomId('');
-    setIsLiveShared(false);
-    setIsShareModalOpen(false);
-    showToast('empty', t('liveShareStopped'));
-  };
+  const {
+    isShareModalOpen,
+    setIsShareModalOpen,
+    shareMode,
+    shareKey,
+    shareLink,
+    isLiveShared,
+    showLiveViewersPopover,
+    setShowLiveViewersPopover,
+    activeViewers,
+    activeConnectionsRef,
+    handleSwitchShareMode,
+    handleStartLiveShare,
+    handleStopLiveShare
+  } = useLiveShare({
+    sessionId,
+    settings,
+    currentServer,
+    t,
+    showToast,
+    buildShareUrl: buildLiveShareUrl
+  });
 
   const envColor = currentServer.environment === 'PRODUCTION' 
     ? 'var(--env-prod)' 
@@ -1227,7 +742,7 @@ Formatting requirements:
       flexDirection: 'column',
       height: '100%',
       width: '100%',
-      backgroundColor: THEMES[settings.theme]?.background || '#1e222a',
+      backgroundColor: TERMINAL_THEMES[settings.theme]?.background || '#1e222a',
       position: 'relative',
       border: envBorder,
       boxShadow: currentServer.environment === 'PRODUCTION' ? 'inset 0 0 15px rgba(244, 63, 94, 0.15)' : 'none'
@@ -1299,325 +814,32 @@ Formatting requirements:
       )}
 
       {/* Quick Terminal Control Bar */}
-      <div style={{
-        height: settings.uiDensity === 'compact' ? '28px' : '32px',
-        backgroundColor: 'var(--bg-tertiary)',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 12px',
-        fontSize: '0.75rem',
-        color: 'var(--text-muted)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              padding: '1px 6px',
-              borderRadius: '3px',
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              backgroundColor: currentServer.environment === 'PRODUCTION' ? 'rgba(244, 63, 94, 0.25)' : currentServer.environment === 'STAGING' ? 'rgba(234, 179, 8, 0.25)' : 'rgba(34, 197, 94, 0.2)',
-              color: envColor,
-              border: `1px solid ${envColor}`
-            }}
-          >
-            {currentServer.environment}
-          </span>
-          <span style={{ color: isConnected ? 'var(--accent-success)' : 'var(--accent-danger)', fontWeight: 600 }}>
-            ● {currentServer.name}
-          </span>
-          <span>({currentServer.username}@{currentServer.host})</span>
-          {!isConnected && !connecting && (
-            <span style={{ color: 'var(--accent-danger)', fontSize: '0.72rem' }}>{t('disconnectedStatus')}</span>
-          )}
-        </div>
-
-        {/* Real-time Server Metrics Widget */}
-        <ServerMetricsDashboard server={currentServer} keyObj={keyObj} compact={true} refreshIntervalMs={3000} vaultConfig={settings.hashicorpVault} language={settings.language} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {/* Reconnect Button */}
-          <button
-            onClick={handleReconnect}
-            style={{
-              backgroundColor: isConnected ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.2)',
-              color: isConnected ? 'var(--accent-primary)' : 'var(--accent-danger)',
-              border: isConnected ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(239, 68, 68, 0.4)',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '0.72rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontWeight: 500
-            }}
-            title={t('reconnectTooltip')}
-          >
-            <RotateCcw size={12} />
-            <span>{t('reconnect')}</span>
-          </button>
-
-          {error && (
-            <button
-              onClick={() => setIsReAuthOpen(true)}
-              style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                color: 'var(--accent-warning)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                borderRadius: '4px',
-                padding: '2px 8px',
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <KeyRound size={12} />
-              <span>{t('changePassword')}</span>
-            </button>
-          )}
-
-          {/* Dynamic Copy Button */}
-          <button
-            onClick={handleCopy}
-            style={{
-              background: copyStatus === 'success' ? 'rgba(34, 197, 94, 0.15)' : copyStatus === 'empty' ? 'rgba(245, 158, 11, 0.15)' : 'none',
-              border: copyStatus === 'success' ? '1px solid rgba(34, 197, 94, 0.4)' : copyStatus === 'empty' ? '1px solid rgba(245, 158, 11, 0.4)' : 'none',
-              borderRadius: '4px',
-              padding: '2px 6px',
-              color: copyStatus === 'success' ? 'var(--accent-success)' : copyStatus === 'empty' ? 'var(--accent-warning)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.75rem',
-              transition: 'all 0.2s ease'
-            }}
-            title={t('copyTooltip')}
-          >
-            {copyStatus === 'success' ? <Check size={13} /> : copyStatus === 'empty' ? <AlertCircle size={13} /> : <Copy size={13} />}
-            <span>{copyStatus === 'success' ? t('copySuccess') : copyStatus === 'empty' ? t('copyEmpty') : 'Copy'}</span>
-          </button>
-
-          {/* Dynamic Paste Button */}
-          <button
-            onClick={handlePaste}
-            style={{
-              background: copyStatus === 'pasted' ? 'rgba(34, 197, 94, 0.15)' : 'none',
-              border: copyStatus === 'pasted' ? '1px solid rgba(34, 197, 94, 0.4)' : 'none',
-              borderRadius: '4px',
-              padding: '2px 6px',
-              color: copyStatus === 'pasted' ? 'var(--accent-success)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.75rem',
-              transition: 'all 0.2s ease'
-            }}
-            title={t('pasteTooltip')}
-          >
-            {copyStatus === 'pasted' ? <Check size={13} /> : <Clipboard size={13} />}
-            <span>{copyStatus === 'pasted' ? t('pastedSuccess') : 'Paste'}</span>
-          </button>
-
-          {/* Live Share Button with Dropdown Viewers Popover */}
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: isLiveShared ? 'rgba(239, 68, 68, 0.15)' : 'none',
-              border: isLiveShared ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid transparent',
-              borderRadius: '4px',
-              transition: 'all 0.2s ease'
-            }}>
-              <button
-                onClick={() => setIsShareModalOpen(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '2px 4px 2px 6px',
-                  color: isLiveShared ? 'var(--accent-danger)' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '0.75rem'
-                }}
-                title={t('liveShareTooltip')}
-              >
-                {isLiveShared ? <Radio size={13} className="spin" /> : <Share2 size={13} />}
-                <span>{isLiveShared ? `${t('liveSharingBadge')} (${activeViewers.length})` : t('liveShareBtn')}</span>
-              </button>
-
-              {isLiveShared && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLiveViewersPopover(!showLiveViewersPopover);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    borderLeft: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: 'var(--accent-danger)',
-                    cursor: 'pointer',
-                    padding: '2px 4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  title={t('liveActiveViewersTitle')}
-                >
-                  {showLiveViewersPopover ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </button>
-              )}
-            </div>
-
-            {/* Quick Live Viewers Popover (Like CPU/RAM metrics overlay) */}
-            {isLiveShared && showLiveViewersPopover && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '6px',
-                width: '320px',
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                padding: '12px',
-                zIndex: 100,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    <Users size={13} style={{ color: 'var(--accent-danger)' }} />
-                    <span>{t('liveActiveViewersTitle')}</span>
-                  </div>
-                  <span style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: '8px',
-                    backgroundColor: activeViewers.length > 0 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                    color: activeViewers.length > 0 ? 'var(--accent-success)' : 'var(--text-muted)'
-                  }}>
-                    {activeViewers.length} online
-                  </span>
-                </div>
-
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{t('liveViewerModeLabel')}</span>
-                  <span style={{ fontWeight: 600, color: shareMode === 'READONLY' ? 'var(--accent-primary)' : 'var(--accent-warning)' }}>
-                    {shareMode === 'READONLY' ? t('liveShareReadonlyTitle') : t('liveShareInteractiveTitle')}
-                  </span>
-                </div>
-
-                {activeViewers.length === 0 ? (
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic', padding: '6px 0', textAlign: 'center' }}>
-                    {t('liveNoViewersYet')}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
-                    {activeViewers.map((viewer, idx) => (
-                      <div
-                        key={viewer.id || idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '4px',
-                          padding: '6px 8px',
-                          fontSize: '0.72rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-success)' }} />
-                          <span style={{ fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>
-                            {viewer.ip}
-                          </span>
-                          <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>
-                            ({viewer.platform || 'Web'})
-                          </span>
-                        </div>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
-                          {viewer.joinedAt}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    setShowLiveViewersPopover(false);
-                    setIsShareModalOpen(true);
-                  }}
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '4px 8px',
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    marginTop: '4px'
-                  }}
-                >
-                  <Share2 size={11} />
-                  <span>{t('liveShareModalTitle')}</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => setShowQuickCommands(!showQuickCommands)}
-            style={{
-              background: showQuickCommands ? 'rgba(59, 130, 246, 0.15)' : 'none',
-              border: showQuickCommands ? '1px solid rgba(59, 130, 246, 0.4)' : 'none',
-              borderRadius: '4px',
-              padding: '2px 6px',
-              color: showQuickCommands ? 'var(--accent-primary)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.75rem',
-              transition: 'all 0.2s ease'
-            }}
-            title={t('quickCommandsTooltip')}
-          >
-            <Bookmark size={13} />
-            <span>{t('quickCommands')}</span>
-          </button>
-
-          <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-subtle)', margin: '0 4px' }} />
-
-          <button
-            onClick={() => setFontSize((f) => Math.max(10, f - 1))}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-          >
-            <ZoomOut size={13} />
-          </button>
-          <span>{fontSize}px</span>
-          <button
-            onClick={() => setFontSize((f) => Math.min(24, f + 1))}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-          >
-            <ZoomIn size={13} />
-          </button>
-        </div>
-      </div>
+      <TerminalToolbar
+        settings={settings}
+        currentServer={currentServer}
+        keyObj={keyObj}
+        envColor={envColor}
+        isConnected={isConnected}
+        connecting={connecting}
+        error={error}
+        copyStatus={copyStatus}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
+        isLiveShared={isLiveShared}
+        shareMode={shareMode}
+        activeViewers={activeViewers}
+        showLiveViewersPopover={showLiveViewersPopover}
+        onToggleViewersPopover={() => setShowLiveViewersPopover(!showLiveViewersPopover)}
+        onCloseViewersPopover={() => setShowLiveViewersPopover(false)}
+        onOpenShareModal={() => setIsShareModalOpen(true)}
+        showQuickCommands={showQuickCommands}
+        onToggleQuickCommands={() => setShowQuickCommands(!showQuickCommands)}
+        onReconnect={handleReconnect}
+        onReAuth={() => setIsReAuthOpen(true)}
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        t={t}
+      />
 
       {/* Terminal Container with side-by-side Quick Commands Panel */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
@@ -1675,139 +897,15 @@ Formatting requirements:
           )}
 
           {/* Right-Click Context Menu */}
-          {contextMenu.visible && (
-            <div
-              style={{
-                position: 'fixed',
-                top: `${contextMenu.y}px`,
-                left: `${contextMenu.x}px`,
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '6px',
-                boxShadow: 'var(--shadow-xl)',
-                padding: '4px',
-                zIndex: 1000,
-                minWidth: '160px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-                animation: 'fadeIn 0.1s ease-out'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  handleCopy();
-                  setContextMenu((prev) => ({ ...prev, visible: false }));
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  background: 'none',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                  transition: 'background-color 0.15s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <Copy size={13} style={{ color: 'var(--accent-primary)' }} />
-                <span>{t('menuCopy')}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: 'var(--text-dim)' }}>Ctrl+Shift+C</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  handlePaste();
-                  setContextMenu((prev) => ({ ...prev, visible: false }));
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  background: 'none',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                  transition: 'background-color 0.15s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <Clipboard size={13} style={{ color: 'var(--accent-success)' }} />
-                <span>{t('menuPaste')}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: 'var(--text-dim)' }}>Ctrl+V</span>
-              </button>
-
-              <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '2px 0' }} />
-
-              <button
-                onClick={() => {
-                  handleSelectAll();
-                  setContextMenu((prev) => ({ ...prev, visible: false }));
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  background: 'none',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                  transition: 'background-color 0.15s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <Bookmark size={13} style={{ color: 'var(--text-muted)' }} />
-                <span>{t('menuSelectAll')}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  handleClearTerminal();
-                  setContextMenu((prev) => ({ ...prev, visible: false }));
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  background: 'none',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'var(--accent-danger)',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                  transition: 'background-color 0.15s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <RotateCcw size={13} />
-                <span>{t('menuClear')}</span>
-              </button>
-            </div>
-          )}
+          <TerminalContextMenu
+            state={contextMenu}
+            t={t}
+            onCopy={handleCopy}
+            onPaste={handlePaste}
+            onSelectAll={handleSelectAll}
+            onClear={handleClearTerminal}
+            onClose={() => setContextMenu((prev) => ({ ...prev, visible: false }))}
+          />
 
           {/* Scroll-to-bottom Helper Button */}
           {showScrollBottom && (
@@ -1899,7 +997,7 @@ Formatting requirements:
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.78rem' }}>
               <div style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                {renderFormattedExplanation(aiExplanation)}
+                {renderFormattedExplanation(aiExplanation, { t, showToast })}
               </div>
 
               {aiSuggestedCommand && (
@@ -1976,246 +1074,21 @@ Formatting requirements:
         onTriggerAiSuggestions={handleGetAiSuggestions}
       />
 
-      {/* Command Guard Approval Modal */}
-      {pendingCommand && (
-        <CommandGuardApprovalModal
-          isOpen={guardModalOpen}
-          commandOrQuery={pendingCommand.command}
-          riskLevel={pendingCommand.risk}
-          language={settings.language}
-          onApprove={() => {
-            if (terminalRef.current) {
-              window.api.sshWrite(sessionId, pendingCommand.command + '\r');
-            }
-            setGuardModalOpen(false);
-            setPendingCommand(null);
-          }}
-          onCancel={() => {
-            if (terminalRef.current) {
-              terminalRef.current.write(`\r\n\x1b[31m${t('commandGuardBlockedMsg')}\x1b[0m\r\n`);
-            }
-            setGuardModalOpen(false);
-            setPendingCommand(null);
-          }}
-        />
-      )}
-
       {/* Quick Web-based Remote Share (Live Pairing) Modal */}
-      {isShareModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100
-        }}>
-          <div style={{
-            width: '480px',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-subtle)',
-            boxShadow: 'var(--shadow-xl)',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'var(--bg-tertiary)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Share2 size={18} style={{ color: 'var(--accent-primary)' }} />
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t('liveShareModalTitle')}</span>
-              </div>
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                {t('liveShareModalDesc')}
-              </p>
-
-              <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-dim)', display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                  {t('liveShareModeLabel')}
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div
-                    onClick={() => handleSwitchShareMode('READONLY')}
-                    style={{
-                      padding: '12px',
-                      borderRadius: 'var(--radius-md)',
-                      border: shareMode === 'READONLY' ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                      backgroundColor: shareMode === 'READONLY' ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-surface)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.82rem', color: shareMode === 'READONLY' ? 'var(--accent-primary)' : 'var(--text-main)' }}>
-                      <Lock size={14} /> {t('liveShareReadonlyTitle')}
-                    </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('liveShareReadonlyDesc')}</span>
-                  </div>
-
-                  <div
-                    onClick={() => handleSwitchShareMode('INTERACTIVE')}
-                    style={{
-                      padding: '12px',
-                      borderRadius: 'var(--radius-md)',
-                      border: shareMode === 'INTERACTIVE' ? '2px solid var(--accent-warning)' : '1px solid var(--border-subtle)',
-                      backgroundColor: shareMode === 'INTERACTIVE' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-surface)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.82rem', color: shareMode === 'INTERACTIVE' ? 'var(--accent-warning)' : 'var(--text-main)' }}>
-                      <Users size={14} /> {t('liveShareInteractiveTitle')}
-                    </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('liveShareInteractiveDesc')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {isLiveShared && shareLink && (
-                <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                  <label style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-                    {t('liveShareUrlLabel')}
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={shareLink}
-                      readOnly
-                      style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}
-                    />
-                    <button
-                      className="btn-primary"
-                      onClick={() => {
-                        navigator.clipboard.writeText(shareLink);
-                        showToast('success', t('copySuccess'));
-                      }}
-                      style={{ padding: '0 12px', fontSize: '0.75rem' }}
-                    >
-                      <Copy size={13} />
-                    </button>
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--accent-success)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Radio size={12} className="spin" />
-                    <span>{t('liveShareActiveStatus')}</span>
-                  </div>
-
-                  {/* Connected Viewers & IP Address Dashboard */}
-                  <div style={{
-                    marginTop: '12px',
-                    paddingTop: '10px',
-                    borderTop: '1px dashed var(--border-subtle)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Users size={13} style={{ color: 'var(--accent-primary)' }} />
-                        {t('liveActiveViewersTitle')}:
-                      </span>
-                      <span style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '10px',
-                        backgroundColor: activeViewers.length > 0 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                        color: activeViewers.length > 0 ? 'var(--accent-success)' : 'var(--text-muted)'
-                      }}>
-                        {activeViewers.length} online
-                      </span>
-                    </div>
-
-                    {activeViewers.length === 0 ? (
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic', padding: '4px 0' }}>
-                        {t('liveNoViewersYet')}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto', marginTop: '6px' }}>
-                        {activeViewers.map((viewer, idx) => (
-                          <div
-                            key={viewer.id || idx}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              backgroundColor: 'var(--bg-secondary)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: '4px',
-                              padding: '6px 8px',
-                              fontSize: '0.72rem'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-success)' }} />
-                              <span style={{ fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>
-                                {viewer.ip}
-                              </span>
-                              <span style={{ color: 'var(--text-dim)', fontSize: '0.68rem' }}>
-                                ({viewer.platform || 'Web'})
-                              </span>
-                            </div>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>
-                              {viewer.joinedAt}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div style={{
-              padding: '14px 20px',
-              borderTop: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-tertiary)',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '10px'
-            }}>
-              {isLiveShared ? (
-                <button
-                  className="btn-secondary"
-                  onClick={handleStopLiveShare}
-                  style={{ color: 'var(--accent-danger)' }}
-                >
-                  {t('liveShareStopBtn')}
-                </button>
-              ) : (
-                <>
-                  <button className="btn-secondary" onClick={() => setIsShareModalOpen(false)}>
-                    {t('cancel')}
-                  </button>
-                  <button className="btn-primary" onClick={handleStartLiveShare}>
-                    <Share2 size={14} />
-                    <span>{t('liveShareStartBtn')}</span>
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Live Share Modal */}
+      <LiveShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        t={t}
+        showToast={showToast}
+        shareMode={shareMode}
+        shareLink={shareLink}
+        isLiveShared={isLiveShared}
+        activeViewers={activeViewers}
+        onSwitchMode={handleSwitchShareMode}
+        onStart={handleStartLiveShare}
+        onStop={handleStopLiveShare}
+      />
 
       {/* ReAuth Password Modal */}
       <ReAuthModal
